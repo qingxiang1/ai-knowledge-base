@@ -1,0 +1,38 @@
+# 操作系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+
+# 编辑器配置
+.vscode/
+.idea/
+*.iml
+
+# 日志文件
+*.log
+
+# 构建输出
+dist/
+build/
+output/
+
+# 依赖目录
+node_modules/
+vendor/
+
+# 临时文件
+tmp/
+temp/
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# Git 相关
+.gitattributes
+
+# 其他
+*.md.bak
+*.txt.bak
