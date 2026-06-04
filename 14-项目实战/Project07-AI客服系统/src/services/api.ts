@@ -1,6 +1,13 @@
+/**
+ * 文件描述: API 服务层，封装与后端客服系统的通信
+ * 作者: AI-PM-Knowledge
+ * 创建日期: 2026-06-03
+ * 最后修改日期: 2026-06-04
+ */
+
 import { ChatMessage } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = '/api';
 
 /**
  * 发送客服消息

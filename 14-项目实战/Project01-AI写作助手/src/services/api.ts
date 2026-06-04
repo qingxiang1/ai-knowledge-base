@@ -1,6 +1,13 @@
+/**
+ * 文件描述: API 服务层，封装与后端的通信
+ * 作者: AI-PM-Knowledge
+ * 创建日期: 2026-06-03
+ * 最后修改日期: 2026-06-04
+ */
+
 import { WritingRequest, WritingResponse, HistoryItem } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE = '/api/writing';
 
 /**
  * 发送写作请求
@@ -8,7 +15,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
  * @returns 写作响应
  */
 export async function generateWriting(request: WritingRequest): Promise<WritingResponse> {
-  const response = await fetch(`${API_BASE}/api/writing/generate`, {
+  const response = await fetch(`${API_BASE}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -27,7 +34,7 @@ export async function generateWriting(request: WritingRequest): Promise<WritingR
  * @returns 历史记录列表
  */
 export async function getHistory(): Promise<HistoryItem[]> {
-  const response = await fetch(`${API_BASE}/api/writing/history`);
+  const response = await fetch(`${API_BASE}/history`);
   return response.json();
 }
 
@@ -36,7 +43,7 @@ export async function getHistory(): Promise<HistoryItem[]> {
  * @param id 记录 ID
  */
 export async function deleteHistoryItem(id: string): Promise<void> {
-  await fetch(`${API_BASE}/api/writing/history/${id}`, {
+  await fetch(`${API_BASE}/history/${id}`, {
     method: 'DELETE',
   });
 }
