@@ -313,6 +313,7 @@ npx serve .
 ## 相关资源
 
 - [Gitee 仓库](https://gitee.com/weibo-3880270936/ai-knowledge-base)
+- [GitHub 仓库](https://github.com/qingxiang1/ai-knowledge-base)
 - [在线文档](https://weibo-3880270936.gitee.io/ai-knowledge-base/)
 
 ---
