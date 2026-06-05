@@ -2,12 +2,26 @@
   文件描述: RAG召回策略详解，涵盖向量召回、关键词召回、多路召回与融合策略
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # 召回策略
 
 > 召回（Recall）是 RAG 系统的核心环节，决定了系统能从知识库中找到多少相关信息。本章详解各类召回策略的原理、实现与优化方法。
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [RAG基础](./RAG基础.md) | 理解召回在 RAG 全链路中的位置——检索阶段 |
+| [Embedding](./Embedding.md) | 向量召回依赖 Embedding 模型的质量 |
+| [向量数据库](./向量数据库.md) | 召回的底层实现依赖向量数据库的检索能力 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解向量相似度计算的数学基础 |
+| [Chunk策略](./Chunk策略.md) | 分块质量直接影响召回效果 |
 
 ---
 
@@ -1314,7 +1328,21 @@ hard_negatives = optimizer.hard_negative_mining(
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [Rerank](./Rerank.md) | 召回后的精排环节，提升检索精度 |
+| [HybridSearch](./HybridSearch.md) | 多路召回的融合策略和混合检索实现 |
+| [Embedding](./Embedding.md) | 向量召回依赖 Embedding 模型质量 |
+| [向量数据库](./向量数据库.md) | 召回的底层实现依赖向量数据库 |
+| [企业知识库设计](./企业知识库设计.md) | 企业级召回策略和性能优化 |
+| [RAG基础](./RAG基础.md) | 召回在 RAG 全链路中的位置 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 向量相似度计算的数学基础 |
+
+### 外部资源
 
 - [Dense Passage Retrieval](https://arxiv.org/abs/2004.04906) - Facebook 稠密检索论文
 - [Reciprocal Rank Fusion](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf) - RRF 论文

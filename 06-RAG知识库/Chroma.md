@@ -2,12 +2,25 @@
   文件描述: Chroma向量数据库详解，涵盖安装配置、核心API、持久化与集成实践
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Chroma
 
 > Chroma 是一个开源的 AI 原生嵌入式向量数据库，以简单性和开发者体验为核心设计目标，适合快速原型和轻量级应用
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [向量数据库](./向量数据库.md) | 理解向量数据库的基本概念和索引算法 |
+| [Embedding](./Embedding.md) | Chroma 内置 Embedding 功能，需理解向量化原理 |
+| [RAG基础](./RAG基础.md) | Chroma 是 RAG 系统的轻量级存储方案 |
+| [OpenAI_API](../05-AI应用开发/OpenAI_API.md) | Chroma 可集成 OpenAI Embeddings |
 
 ---
 
@@ -930,7 +943,20 @@ Chroma 产品化要点：
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [向量数据库](./向量数据库.md) | 向量数据库的通用原理和选型对比 |
+| [Milvus](./Milvus.md) | 对比分布式向量库，适合大规模生产环境 |
+| [Weaviate](./Weaviate.md) | 对比语义搜索引擎，原生支持混合搜索 |
+| [Embedding](./Embedding.md) | Chroma 内置 Embedding 功能的模型选型 |
+| [Recall](./Recall.md) | Chroma 的查询接口是召回策略的实现 |
+| [RAG基础](./RAG基础.md) | Chroma 在 RAG 全链路中的位置 |
+
+### 外部资源
 
 - [Chroma 官方文档](https://docs.trychroma.com/)
 - [Chroma GitHub](https://github.com/chroma-core/chroma)

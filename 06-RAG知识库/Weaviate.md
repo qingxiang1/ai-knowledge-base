@@ -2,12 +2,25 @@
   文件描述: Weaviate向量数据库详解，涵盖产品特性、核心功能、云部署与性能优化
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Weaviate
 
 > Weaviate 是一款开源的语义向量搜索引擎，支持多种索引类型、原生多模态数据处理和 GraphQL/API 混合查询
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [向量数据库](./向量数据库.md) | 理解向量数据库的基本概念和索引算法 |
+| [Embedding](./Embedding.md) | Weaviate 支持多种 Embedding 模型的集成 |
+| [RAG基础](./RAG基础.md) | Weaviate 是 RAG 系统的生产级存储方案 |
+| [HybridSearch](./HybridSearch.md) | Weaviate 原生支持混合搜索，是混合检索的理想选择 |
 
 ---
 
@@ -917,7 +930,21 @@ Weaviate 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [向量数据库](./向量数据库.md) | 向量数据库的通用原理和选型对比 |
+| [Chroma](./Chroma.md) | 对比轻量级向量库，适合快速原型 |
+| [Milvus](./Milvus.md) | 对比分布式向量库，适合超大规模场景 |
+| [HybridSearch](./HybridSearch.md) | Weaviate 原生混合搜索的实现细节 |
+| [Recall](./Recall.md) | Weaviate 的检索接口是召回策略的实现 |
+| [企业知识库设计](./企业知识库设计.md) | Weaviate 的多租户和企业级部署 |
+| [RAG基础](./RAG基础.md) | Weaviate 在 RAG 全链路中的位置 |
+
+### 外部资源
 
 - [Weaviate 官方文档](https://weaviate.io/developers/weaviate)
 - [Weaviate GitHub](https://github.com/weaviate/weaviate)

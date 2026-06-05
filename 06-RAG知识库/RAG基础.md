@@ -2,12 +2,26 @@
   文件描述: RAG基础概念与架构详解，涵盖RAG原理、流程、类型及与Fine-tuning的对比
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # RAG 基础
 
 > RAG（Retrieval-Augmented Generation，检索增强生成）是当前大模型落地企业场景的核心技术，通过外挂知识库让模型具备实时、准确、可溯源的专业能力
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 RAG 解决的核心问题——大模型的"知识截止"和"幻觉" |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | RAG 检索的基础是文本向量化，需理解向量相似度计算 |
+| [Token机制](../02-AI基础知识/Token机制.md) | RAG 的检索结果需要塞入上下文窗口，受 Token 数限制 |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | RAG 生成阶段本质是"检索结果 + 用户问题"的结构化 Prompt |
+| [OpenAI_API](../05-AI应用开发/OpenAI_API.md) | RAG 系统的 Embedding 和生成阶段都依赖 API 调用 |
 
 ---
 
@@ -726,7 +740,23 @@ RAG 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [Chunk策略](./Chunk策略.md) | RAG 数据处理的第一步——文档分块策略 |
+| [Embedding](./Embedding.md) | RAG 检索的核心——文本向量化模型选型 |
+| [向量数据库](./向量数据库.md) | RAG 的存储基础设施——向量数据库选型 |
+| [Recall](./Recall.md) | RAG 检索的核心环节——召回策略与优化 |
+| [Rerank](./Rerank.md) | RAG 检索的精排环节——重排序提升精度 |
+| [HybridSearch](./HybridSearch.md) | 现代 RAG 标配——混合检索策略 |
+| [企业知识库设计](./企业知识库设计.md) | RAG 的企业级落地——系统架构与安全合规 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解向量化和相似度计算的数学基础 |
+| [成本优化](../05-AI应用开发/成本优化.md) | RAG 系统的 Embedding 和检索成本优化 |
+
+### 外部资源
 
 - [LangChain RAG Documentation](https://python.langchain.com/docs/use_cases/question_answering/)
 - [LlamaIndex RAG Guide](https://docs.llamaindex.ai/en/stable/getting_started/concepts/)
