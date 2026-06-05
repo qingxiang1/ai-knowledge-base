@@ -2,12 +2,27 @@
   文件描述: DeepSeek API 使用指南，涵盖 DeepSeek-V3、DeepSeek-R1、API 调用、推理能力等特性
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # DeepSeek API 使用指南
 
 > DeepSeek 是幻方量化旗下的大模型品牌，以高性价比、强推理能力和开源策略著称，DeepSeek-R1 在数学和代码推理上达到业界顶尖水平
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 DeepSeek MoE 架构和强化学习推理训练 |
+| [Token机制](../02-AI基础知识/Token机制.md) | DeepSeek 的 Token 计费方式（约为 GPT-4 的 1/10） |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | DeepSeek 兼容 OpenAI SDK，Prompt 设计方式一致 |
+| [ChainOfThought](../03-Prompt工程/ChainOfThought.md) | R1 推理模型自动展示思维链，与 CoT 技术密切相关 |
+| [DeepSeek系列](../04-大模型生态/DeepSeek系列.md) | 理解 DeepSeek 模型家族的技术特点和开源生态 |
+| [OpenAI_API](./OpenAI_API.md) | DeepSeek API 兼容 OpenAI SDK，理解差异即可快速上手 |
 
 ---
 
@@ -640,7 +655,21 @@ DeepSeek API 产品化要点：
 
 ---
 
-## 八、参考资源
+## 八、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [OpenAI_API](./OpenAI_API.md) | DeepSeek 兼容 OpenAI SDK，可参考 OpenAI 的调用方式 |
+| [FunctionCalling](./FunctionCalling.md) | DeepSeek V3 支持 Function Calling，R1 暂不支持 |
+| [Streaming](./Streaming.md) | R1 推理模型的流式输出包含 reasoning_content 字段 |
+| [Token管理](./Token管理.md) | R1 的 reasoning_content 会消耗额外 Token |
+| [成本优化](./成本优化.md) | DeepSeek 的极致性价比是成本优化的核心策略 |
+| [ChainOfThought](../03-Prompt工程/ChainOfThought.md) | R1 自动展示思维链，是 CoT 技术的产品化实现 |
+| [DeepSeek系列](../04-大模型生态/DeepSeek系列.md) | 理解 DeepSeek 模型家族的技术演进和开源生态 |
+
+### 外部资源
 
 - [DeepSeek 官方文档](https://platform.deepseek.com/docs)
 - [DeepSeek API 控制台](https://platform.deepseek.com/)

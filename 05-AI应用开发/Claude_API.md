@@ -2,12 +2,27 @@
   文件描述: Anthropic Claude API 使用指南，涵盖 Messages API、Vision、Tool Use、Computer Use 等特性
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Claude API 使用指南
 
 > Claude API 以超长上下文、出色的代码能力和安全对齐著称，是企业级 AI 应用的重要选择
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 Claude 的 Constitutional AI 安全对齐机制 |
+| [Token机制](../02-AI基础知识/Token机制.md) | Claude 的 200K 上下文窗口和 Token 计费方式 |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | Claude 特有的 XML 标签 Prompt 组织方式 |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | Claude 输出结构化数据的策略 |
+| [Claude系列](../04-大模型生态/Claude系列.md) | 理解 Claude 模型家族的技术特点和产品生态 |
+| [OpenAI_API](./OpenAI_API.md) | 对比 OpenAI API 的设计差异，便于迁移和选型 |
 
 ---
 
@@ -754,7 +769,21 @@ Claude API 产品化要点：
 
 ---
 
-## 九、参考资源
+## 九、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [OpenAI_API](./OpenAI_API.md) | 对比 OpenAI 的 API 设计差异（system prompt 位置、content 结构、tool_calls 格式） |
+| [FunctionCalling](./FunctionCalling.md) | 深入理解 Claude Tool Use 与 OpenAI Function Calling 的差异 |
+| [Streaming](./Streaming.md) | Claude 流式输出的实现方式和事件类型 |
+| [Token管理](./Token管理.md) | Claude 200K 上下文窗口的管理策略 |
+| [成本优化](./成本优化.md) | Prompt Caching 降低长上下文成本的策略 |
+| [ToolCalling](./ToolCalling.md) | Computer Use 是 Tool Calling 的高级形态 |
+| [Claude系列](../04-大模型生态/Claude系列.md) | 理解 Claude 模型家族的技术演进和产品生态 |
+
+### 外部资源
 
 - [Claude API 官方文档](https://docs.anthropic.com/claude/reference)
 - [Anthropic Console](https://console.anthropic.com/)

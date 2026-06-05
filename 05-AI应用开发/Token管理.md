@@ -2,12 +2,27 @@
   文件描述: Token管理与计算详解，涵盖分词原理、各平台计费、上下文管理和优化策略
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Token管理与计算
 
 > Token是大语言模型处理文本的最小单位，理解Token机制对成本控制、性能优化和上下文管理至关重要
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [Token机制](../02-AI基础知识/Token机制.md) | Token 的分词原理和编码方式（本节的前置理论基础） |
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解上下文窗口的技术原理——Transformer 的注意力机制 |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | Prompt 长度直接影响 Token 消耗和 API 成本 |
+| [Prompt优化技巧](../03-Prompt工程/Prompt优化技巧.md) | 减少 Token 消耗的 Prompt 优化策略 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI API 的 usage 字段返回 Token 消耗数据 |
+| [成本优化](./成本优化.md) | Token 管理是成本优化的基础，两者紧密关联 |
 
 ---
 
@@ -669,7 +684,23 @@ Token管理产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [成本优化](./成本优化.md) | Token 管理是成本优化的基础，两者紧密关联 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI API 的 usage 字段和计费方式 |
+| [Claude_API](./Claude_API.md) | Claude 的 Prompt Caching 降低 Token 成本 |
+| [Gemini_API](./Gemini_API.md) | Gemini 1M+ 上下文窗口的 Token 管理 |
+| [DeepSeek_API](./DeepSeek_API.md) | R1 的 reasoning_content 消耗额外 Token |
+| [Streaming](./Streaming.md) | 流式输出的首 Token 延迟指标 |
+| [FunctionCalling](./FunctionCalling.md) | 工具定义和返回结果的 Token 消耗 |
+| [Token机制](../02-AI基础知识/Token机制.md) | Token 分词原理的理论基础 |
+| [Prompt优化技巧](../03-Prompt工程/Prompt优化技巧.md) | 减少 Token 消耗的 Prompt 优化策略 |
+
+### 外部资源
 
 - [OpenAI Tokenizer](https://platform.openai.com/tokenizer)
 - [Tiktoken Documentation](https://github.com/openai/tiktoken)

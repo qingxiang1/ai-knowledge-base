@@ -2,12 +2,26 @@
   文件描述: 流式输出详解，涵盖 SSE 协议、多平台实现、前端渲染和性能优化
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # 流式输出详解
 
 > 流式输出（Streaming）让AI响应像打字一样逐字呈现，显著提升用户体验和感知速度，是现代AI应用的核心交互模式
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解流式输出的技术本质——模型逐 Token 生成 |
+| [Token机制](../02-AI基础知识/Token机制.md) | 流式输出是逐 Token 推送，理解 Token 才能理解流式 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI 的 stream=True 参数是流式输出的入口 |
+| [Claude_API](./Claude_API.md) | Claude 的 messages.stream() 是另一种流式实现 |
+| [FunctionCalling](./FunctionCalling.md) | 流式输出中处理 tool_calls 分片的技巧 |
 
 ---
 
@@ -879,7 +893,21 @@ app.post('/api/chat-v2', async (req, res) => {
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [OpenAI_API](./OpenAI_API.md) | OpenAI stream=True 的参数和响应格式 |
+| [Claude_API](./Claude_API.md) | Claude messages.stream() 和事件类型 |
+| [Gemini_API](./Gemini_API.md) | Gemini 的流式生成实现 |
+| [DeepSeek_API](./DeepSeek_API.md) | R1 推理模型的流式 reasoning_content |
+| [FunctionCalling](./FunctionCalling.md) | 流式输出中累积 tool_calls 分片的技巧 |
+| [Token管理](./Token管理.md) | 流式输出的 Token 计费和首 Token 延迟指标 |
+| [成本优化](./成本优化.md) | 流式输出对成本的影响和优化策略 |
+
+### 外部资源
 
 - [Server-Sent Events MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
 - [OpenAI Streaming Guide](https://platform.openai.com/docs/api-reference/streaming)

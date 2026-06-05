@@ -2,12 +2,27 @@
   文件描述: Tool Calling 工具调用高级模式，涵盖 Agent 架构、MCP、工具编排和复杂工作流
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Tool Calling 高级模式
 
 > Tool Calling 不仅是简单的函数调用，更是构建 AI Agent 的核心基础设施。本章节深入探讨工具编排、Agent 架构和复杂工作流实现。
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [FunctionCalling](./FunctionCalling.md) | 本节是 Function Calling 的高级延伸，需先掌握基础概念 |
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 Agent 自主决策的底层原理——模型概率预测 |
+| [Token机制](../02-AI基础知识/Token机制.md) | 多轮工具调用的 Token 消耗累积，影响成本和上下文 |
+| [StructuredOutput](../03-PromptEngineer/StructuredOutput.md) | 工具参数和返回结果的结构化设计 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI 的 tools 和 tool_calls 是 Tool Calling 的基础接口 |
+| [Claude_API](./Claude_API.md) | Claude 的 Computer Use 是 Tool Calling 的高级形态 |
 
 ---
 
@@ -914,7 +929,21 @@ Tool Calling 产品化要点：
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [FunctionCalling](./FunctionCalling.md) | Tool Calling 的基础概念和多平台实现 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI 的 tools 和 tool_calls 基础接口 |
+| [Claude_API](./Claude_API.md) | Claude 的 Computer Use 是 Tool Calling 的高级形态 |
+| [Token管理](./Token管理.md) | 多轮工具调用的 Token 消耗和上下文管理 |
+| [成本优化](./成本优化.md) | 减少工具调用次数和 Token 消耗的策略 |
+| [Agent架构](../07-Agent系统/Agent架构.md) | 基于 Tool Calling 构建完整 Agent 系统 |
+| [MCP协议](../08-MCP生态/MCP协议.md) | MCP 是 Tool Calling 的标准化协议实现 |
+
+### 外部资源
 
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
 - [LangChain Tools Documentation](https://python.langchain.com/docs/modules/agents/tools/)

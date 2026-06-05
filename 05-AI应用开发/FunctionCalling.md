@@ -2,12 +2,27 @@
   文件描述: Function Calling 函数调用详解，涵盖原理、多平台实现、最佳实践和高级模式
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Function Calling 详解
 
 > Function Calling（函数调用）是大模型与外部世界交互的核心机制，让AI能够调用API、查询数据库、执行计算，从"聊天工具"进化为"智能代理"
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解模型如何"决定"调用哪个函数——本质是概率预测 |
+| [Token机制](../02-AI基础知识/Token机制.md) | 工具定义和返回结果都消耗 Token，影响成本 |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | Function Calling 的参数本质是结构化输出 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI 的 tools 和 tool_calls 参数是 Function Calling 的入口 |
+| [Claude_API](./Claude_API.md) | Claude 的 Tool Use 是 Function Calling 的另一种实现 |
+| [模型选型指南](../04-大模型生态/模型选型指南.md) | 不同模型的 Function Calling 能力差异显著 |
 
 ---
 
@@ -834,7 +849,23 @@ Function Calling 产品化要点：
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [ToolCalling](./ToolCalling.md) | Function Calling 的高级形态——Agent 架构、MCP 协议、工具编排 |
+| [OpenAI_API](./OpenAI_API.md) | OpenAI 的 tools 和 tool_choice 参数详解 |
+| [Claude_API](./Claude_API.md) | Claude Tool Use 的 input_schema 和 tool_result 格式 |
+| [Gemini_API](./Gemini_API.md) | Gemini Function Calling 的 proto 格式定义 |
+| [DeepSeek_API](./DeepSeek_API.md) | DeepSeek V3 支持 Function Calling，R1 暂不支持 |
+| [Streaming](./Streaming.md) | 流式输出中处理 tool_calls 分片的技巧 |
+| [Token管理](./Token管理.md) | 工具定义和返回结果的 Token 消耗计算 |
+| [成本优化](./成本优化.md) | 减少工具调用次数和 Token 消耗的优化策略 |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | Function Calling 参数生成的底层原理 |
+
+### 外部资源
 
 - [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling)
 - [Claude Tool Use Documentation](https://docs.anthropic.com/claude/docs/tool-use)

@@ -2,12 +2,26 @@
   文件描述: OpenAI API 使用指南，涵盖 Chat Completions、Embeddings、Images、Audio 等核心接口
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # OpenAI API 使用指南
 
 > OpenAI API 是目前最成熟、生态最完善的大模型接口服务，掌握其使用是 AI 应用开发的基础
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 API 调用的输入输出本质是 Token 序列的概率预测 |
+| [Token机制](../02-AI基础知识/Token机制.md) | 理解 API 按 Token 计费，上下文窗口受 Token 数限制 |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | messages 参数本质是结构化 Prompt |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | JSON Mode 和 response_format 的设计思路 |
+| [GPT系列](../04-大模型生态/GPT系列.md) | 理解 GPT 模型家族的技术特点和演进历程 |
 
 ---
 
@@ -739,7 +753,22 @@ OpenAI API 产品化要点：
 
 ---
 
-## 十、参考资源
+## 十、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [Claude_API](./Claude_API.md) | 对比 Claude 的 API 设计差异（system prompt 位置、content 数组结构） |
+| [DeepSeek_API](./DeepSeek_API.md) | 兼容 OpenAI SDK 的低成本替代方案 |
+| [FunctionCalling](./FunctionCalling.md) | 深入理解 OpenAI 的 tools 和 tool_calls 机制 |
+| [Streaming](./Streaming.md) | 掌握 stream=True 的流式输出实现 |
+| [Token管理](./Token管理.md) | 深入理解 Token 计费和上下文管理策略 |
+| [成本优化](./成本优化.md) | 基于 OpenAI API 的系统性降本方案 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解 Embeddings API 的底层向量原理 |
+| [GPT系列](../04-大模型生态/GPT系列.md) | 理解 GPT 模型家族的技术演进 |
+
+### 外部资源
 
 - [OpenAI API 官方文档](https://platform.openai.com/docs)
 - [OpenAI Playground](https://platform.openai.com/playground)

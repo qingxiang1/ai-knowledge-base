@@ -2,12 +2,26 @@
   文件描述: Google Gemini API 使用指南，涵盖 Gemini Pro/Flash、Vertex AI、多模态、Grounding 等特性
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Gemini API 使用指南
 
 > Gemini 是 Google DeepMind 推出的多模态大模型系列，原生支持文本、图像、音频、视频理解，与 Google 生态深度集成
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 Gemini 原生多模态架构的设计原理 |
+| [Token机制](../02-AI基础知识/Token机制.md) | Gemini 1M+ 上下文窗口的 Token 计费方式 |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md) | Gemini 的 system_instruction 是模型级配置，不同于 OpenAI/Claude |
+| [Gemini系列](../04-大模型生态/Gemini系列.md) | 理解 Gemini 模型家族的技术特点和 Google 生态整合 |
+| [OpenAI_API](./OpenAI_API.md) | 对比 OpenAI API 的设计差异，便于跨平台开发 |
 
 ---
 
@@ -782,7 +796,21 @@ Gemini API 产品化要点：
 
 ---
 
-## 十、参考资源
+## 十、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [OpenAI_API](./OpenAI_API.md) | 对比 OpenAI 的 API 设计差异（proto 格式 vs JSON 格式） |
+| [Claude_API](./Claude_API.md) | 对比 Claude 的长上下文和 Prompt Caching 方案 |
+| [FunctionCalling](./FunctionCalling.md) | Gemini Function Calling 的 proto 格式定义和调用方式 |
+| [Streaming](./Streaming.md) | Gemini 流式输出的实现方式 |
+| [Token管理](./Token管理.md) | Gemini 1M+ 上下文窗口的管理策略 |
+| [成本优化](./成本优化.md) | Gemini Flash 的极致性价比和 Grounding 策略 |
+| [Gemini系列](../04-大模型生态/Gemini系列.md) | 理解 Gemini 模型家族的技术演进和 Google 生态 |
+
+### 外部资源
 
 - [Gemini API 官方文档](https://ai.google.dev/docs)
 - [Google AI Studio](https://aistudio.google.com/)
