@@ -1,13 +1,31 @@
 <!--
-  文件描述: Agent系统核心概念详解，涵盖Agent定义、核心组件、与LLM的区别、分类体系及典型应用
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: Agent概念.md
+  文件描述: Agent系统核心概念详解，补充企业级认知框架、适用边界与验收标准
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Agent 概念
 
 > Agent（智能体）是大模型从"对话工具"进化为"自主执行系统"的关键形态，能够感知环境、进行决策并执行动作以达成目标。
+
+---
+
+## 零、前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节                                       | 关联点                                      |
+| ---------------------------------------------- | ------------------------------------------- |
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | Agent 的推理核心通常是大模型                |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md)   | Agent 行为边界依赖系统 Prompt 与任务 Prompt |
+| [ToolCalling](../05-AI应用开发/ToolCalling.md) | Agent 通过工具调用扩展行动能力              |
+| [RAG基础](../06-RAG知识库/RAG基础.md)          | Agent 的长期记忆和知识访问常依赖 RAG        |
+| [能力模型](../00-Roadmap/能力模型.md)          | 对应 AI 产品经理的 Agent 架构能力           |
+
+**能力对标**：本章对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → Agent 架构能力」。掌握 Agent 概念，意味着你能判断一个需求是否需要自主执行系统，而不是把所有复杂 AI 需求都误归类为“做一个 Agent”。
 
 ---
 
@@ -160,7 +178,7 @@ class Observation:
 
 class BaseAgent:
     """Agent 基类"""
-    
+
     def __init__(
         self,
         name: str,
@@ -171,7 +189,7 @@ class BaseAgent:
     ):
         """
         初始化 Agent
-        
+
         Args:
             name: Agent 名称
             llm_client: 大模型客户端
@@ -185,11 +203,11 @@ class BaseAgent:
         self.tools = tools or []
         self.planner = planner
         self.state = AgentState()
-    
+
     def perceive(self, observation: Observation) -> Dict:
         """
         感知环境输入
-        
+
         将原始输入转换为结构化理解
         """
         # 提取意图、实体、情感等
@@ -201,13 +219,13 @@ class BaseAgent:
             "entities": self._extract_entities(observation.content),
             "urgency": self._assess_urgency(observation.content)
         }
-        
+
         # 存入短期记忆
         if self.memory:
             self.memory.add_short_term(perception)
-        
+
         return perception
-    
+
     def _extract_intent(self, content: str) -> str:
         """提取用户意图"""
         # 简化实现，实际使用 LLM 或分类模型
@@ -217,39 +235,39 @@ class BaseAgent:
             "创建": ["创建", "新建", "添加", "生成"],
             "修改": ["修改", "更新", "编辑", "改"]
         }
-        
+
         for intent, keywords in intents.items():
             if any(kw in content for kw in keywords):
                 return intent
-        
+
         return "unknown"
-    
+
     def _extract_entities(self, content: str) -> List[str]:
         """提取实体"""
         # 简化实现
         return []
-    
+
     def _assess_urgency(self, content: str) -> str:
         """评估紧急程度"""
         urgent_keywords = ["紧急", "立刻", "马上", "现在", " ASAP"]
         if any(kw in content for kw in urgent_keywords):
             return "high"
         return "normal"
-    
+
     def plan(self, goal: str, context: Dict) -> List[Action]:
         """
         规划行动序列
-        
+
         将目标分解为可执行的步骤
         """
         if self.planner:
             return self.planner.plan(goal, context, self.tools)
-        
+
         # 默认规划：直接调用 LLM 生成计划
         prompt = f"""
         目标：{goal}
         可用工具：{[t.name for t in self.tools]}
-        
+
         请将目标分解为具体的执行步骤，每个步骤对应一个工具调用。
         返回 JSON 格式的步骤列表：
         [
@@ -257,9 +275,9 @@ class BaseAgent:
             ...
         ]
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             steps = json.loads(response)
             return [
@@ -272,21 +290,21 @@ class BaseAgent:
             ]
         except:
             return []
-    
+
     def execute(self, action: Action) -> Observation:
         """
         执行行动
-        
+
         调用工具或执行代码
         """
         print(f"[{self.name}] 执行: {action.name}")
-        
+
         # 查找对应工具
         tool = next(
             (t for t in self.tools if t.name == action.name),
             None
         )
-        
+
         if tool:
             try:
                 result = tool.run(**action.parameters)
@@ -301,48 +319,48 @@ class BaseAgent:
                     content=str(e),
                     metadata={"tool": action.name, "status": "error"}
                 )
-        
+
         return Observation(
             source="system",
             content=f"未知工具: {action.name}",
             metadata={"status": "error"}
         )
-    
+
     def run(self, goal: str) -> Dict:
         """
         运行 Agent 完成目标
-        
+
         主循环：感知 → 规划 → 执行 → 反馈
         """
         self.state = AgentState(
             current_goal=goal,
             status="running"
         )
-        
+
         # 1. 规划
         actions = self.plan(goal, {})
         self.state.total_steps = len(actions)
-        
+
         results = []
-        
+
         # 2. 执行循环
         for i, action in enumerate(actions):
             self.state.current_step = i + 1
-            
+
             # 执行
             observation = self.execute(action)
             results.append(observation)
-            
+
             # 反馈到状态
             self.state.last_action_result = observation.content
-            
+
             # 如果出错，尝试修正或停止
             if observation.metadata.get("status") == "error":
                 print(f"步骤 {i+1} 失败: {observation.content}")
                 # 可以在这里添加重试或修正逻辑
-        
+
         self.state.status = "completed"
-        
+
         return {
             "goal": goal,
             "steps_executed": len(results),
@@ -470,11 +488,11 @@ Agent 通过交替进行推理和行动来解决问题
 
 class ReActAgent(BaseAgent):
     """ReAct 模式 Agent"""
-    
+
     def __init__(self, llm_client, tools, max_iterations: int = 10):
         """
         初始化 ReAct Agent
-        
+
         Args:
             llm_client: 大模型客户端
             tools: 可用工具列表
@@ -487,15 +505,15 @@ class ReActAgent(BaseAgent):
         )
         self.max_iterations = max_iterations
         self.thought_history = []
-    
+
     def run(self, query: str) -> str:
         """
         执行 ReAct 循环
-        
+
         Thought → Action → Observation → ... → Answer
         """
         self.state = AgentState(current_goal=query, status="running")
-        
+
         prompt_template = """你需要回答以下问题，可以通过使用工具来获取信息。
 
 可用工具：
@@ -517,38 +535,38 @@ Final Answer: 最终答案
 Question: {query}
 {history}
 """
-        
+
         history = ""
-        
+
         for i in range(self.max_iterations):
             # 构建提示
             tools_desc = "\n".join([
                 f"- {t.name}: {t.description}"
                 for t in self.tools
             ])
-            
+
             prompt = prompt_template.format(
                 tools_description=tools_desc,
                 query=query,
                 history=history
             )
-            
+
             # 调用 LLM
             response = self.llm.generate(prompt)
-            
+
             # 解析响应
             if "Final Answer:" in response:
                 answer = response.split("Final Answer:")[1].strip()
                 self.state.status = "completed"
                 return answer
-            
+
             # 提取 Thought 和 Action
             thought = self._extract_thought(response)
             action = self._extract_action(response)
             action_input = self._extract_action_input(response)
-            
+
             self.thought_history.append(thought)
-            
+
             # 执行 Action
             if action:
                 obs = self.execute(Action(
@@ -556,29 +574,29 @@ Question: {query}
                     name=action,
                     parameters={"input": action_input}
                 ))
-                
+
                 # 更新历史
                 history += f"\nThought: {thought}\nAction: {action}\nAction Input: {action_input}\nObservation: {obs.content}\n"
             else:
                 # 没有 Action，直接返回答案
                 self.state.status = "completed"
                 return response
-        
+
         self.state.status = "completed"
         return "达到最大迭代次数，未能完成。"
-    
+
     def _extract_thought(self, response: str) -> str:
         """提取 Thought"""
         if "Thought:" in response:
             return response.split("Thought:")[1].split("Action:")[0].strip()
         return ""
-    
+
     def _extract_action(self, response: str) -> str:
         """提取 Action"""
         if "Action:" in response:
             return response.split("Action:")[1].split("Action Input:")[0].strip()
         return ""
-    
+
     def _extract_action_input(self, response: str) -> str:
         """提取 Action Input"""
         if "Action Input:" in response:
@@ -607,18 +625,18 @@ Plan-and-Execute 模式
 
 class PlanAndExecuteAgent(BaseAgent):
     """Plan-and-Execute 模式 Agent"""
-    
+
     def __init__(self, llm_client, tools):
         super().__init__(
             name="PlanExecuteAgent",
             llm_client=llm_client,
             tools=tools
         )
-    
+
     def run(self, goal: str) -> Dict:
         """
         执行 Plan-and-Execute
-        
+
         1. 制定计划
         2. 执行计划
         3. 根据反馈调整
@@ -626,51 +644,51 @@ class PlanAndExecuteAgent(BaseAgent):
         # 第一步：制定计划
         plan = self._create_plan(goal)
         print(f"计划：{plan}")
-        
+
         # 第二步：执行计划
         results = []
         for step in plan:
             print(f"\n执行步骤: {step['description']}")
-            
+
             # 执行
             action = Action(
                 action_type="tool_call",
                 name=step["tool"],
                 parameters=step["parameters"]
             )
-            
+
             observation = self.execute(action)
             results.append({
                 "step": step,
                 "result": observation.content,
                 "status": observation.metadata.get("status", "unknown")
             })
-            
+
             # 如果失败，重新规划
             if observation.metadata.get("status") == "error":
                 print("步骤失败，重新规划...")
                 plan = self._replan(goal, results)
-        
+
         # 第三步：总结结果
         summary = self._summarize_results(goal, results)
-        
+
         return {
             "goal": goal,
             "plan": plan,
             "results": results,
             "summary": summary
         }
-    
+
     def _create_plan(self, goal: str) -> List[Dict]:
         """创建执行计划"""
         prompt = f"""
         请为以下目标制定详细的执行计划：
-        
+
         目标：{goal}
-        
+
         可用工具：
         {chr(10).join([f"- {t.name}: {t.description}" for t in self.tools])}
-        
+
         请返回 JSON 格式的步骤列表：
         [
             {{
@@ -681,44 +699,44 @@ class PlanAndExecuteAgent(BaseAgent):
             }}
         ]
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             return json.loads(response)
         except:
             return []
-    
+
     def _replan(self, goal: str, previous_results: List[Dict]) -> List[Dict]:
         """根据执行结果重新规划"""
         prompt = f"""
         原目标：{goal}
-        
+
         已执行步骤及结果：
         {json.dumps(previous_results, ensure_ascii=False, indent=2)}
-        
+
         部分步骤失败，请重新制定剩余计划。
         返回 JSON 格式的步骤列表。
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             return json.loads(response)
         except:
             return []
-    
+
     def _summarize_results(self, goal: str, results: List[Dict]) -> str:
         """总结执行结果"""
         prompt = f"""
         目标：{goal}
-        
+
         执行结果：
         {json.dumps(results, ensure_ascii=False, indent=2)}
-        
+
         请总结最终结果，回答原始目标。
         """
-        
+
         return self.llm.generate(prompt)
 
 # 使用示例
@@ -735,7 +753,7 @@ print(result["summary"])
 
 ---
 
-## 五、AI 产品经理关注点
+## 五、企业级产品经理关注点
 
 ```
 Agent 产品化要点：
@@ -808,7 +826,25 @@ Agent 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、企业级验收标准
+
+### 6.1 学完本章后至少应做到
+
+- [ ] 能解释 Agent 与普通 LLM 对话、Chatbot、RAG、工作流之间的差异
+- [ ] 能从自主性、状态管理、工具调用、反馈闭环 4 个维度判断一个系统是否属于 Agent
+- [ ] 能识别哪些业务场景适合 Agent，哪些只需要普通自动化或工具调用
+- [ ] 能说明 Agent 产品化中最常见的风险：循环、越权、成本失控、不可解释和失败不可控
+- [ ] 能为一个 Agent 需求写出初步的适用边界、风险清单和核心指标
+
+### 6.2 企业级交付物建议
+
+- **Agent 适用性判断表**：说明目标场景是否需要 Agent，以及为什么不是普通问答或固定工作流
+- **自主性分级说明**：定义人工确认、半自动执行、全自动执行分别适合哪些操作
+- **风险控制清单**：列出工具权限、成本上限、审计日志、人工接管、失败回滚等控制项
+
+---
+
+## 七、参考资源
 
 - [ReAct Paper](https://arxiv.org/abs/2210.03629) - ReAct: Synergizing Reasoning and Acting in Language Models
 - [AutoGPT](https://github.com/Significant-Gravitas/AutoGPT) - 自主运行型 Agent

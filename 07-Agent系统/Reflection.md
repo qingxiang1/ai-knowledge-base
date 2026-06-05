@@ -1,13 +1,44 @@
 <!--
-  文件描述: Agent反思模块详解，涵盖反思机制、自我修正、错误分析、学习优化及AI产品经理关注点
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: Reflection.md
+  文件描述: Agent反思模块详解，补充反思机制、自我修正、效果评估、产品化治理与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Reflection（反思）
 
 > 反思是 Agent 实现自我改进的核心能力。通过审视自身的思考过程和执行结果，Agent 能够发现错误、总结经验、优化策略，从而不断提升任务完成质量。
+
+---
+
+## 零、前置知识
+
+阅读本节前，建议先掌握以下内容：
+
+| 前置章节                        | 关联点                                       |
+| ------------------------------- | -------------------------------------------- |
+| [Agent概念](./Agent概念.md)     | 理解 Agent 的自主性与错误不可避免性          |
+| [Agent架构](./Agent架构.md)     | 理解 Reflection 在 Agent 闭环架构中的位置    |
+| [Planning](./Planning.md)       | 反思结果常用于修正计划或触发重规划           |
+| [Memory](./Memory.md)           | 反思结论需要沉淀为经验记忆，避免重复犯错     |
+| [ToolCalling](./ToolCalling.md) | 工具失败、参数错误和结果异常是反思常见触发点 |
+| [Agent评测](./Agent评测.md)     | 反思质量需要通过指标和测试集持续评估         |
+
+**能力对标**：Reflection 对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → Agent 可靠性设计」和「产品判断力 → 质量治理能力」。掌握 Reflection，意味着你能设计 Agent 的自我检查、错误修正和持续优化闭环。
+
+---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 区分行动层反思、策略层反思和元认知层反思的适用场景
+- 设计反思触发条件，包括失败、低质量、超时、用户反馈和周期性检查
+- 将反思结论转化为可执行动作，例如重试、重规划、改写 Prompt、更新记忆或转人工
+- 控制反思频率、深度和成本，避免过度反思导致效率下降
+- 定义 Reflection 的质量指标，包括反思触发率、有效率、质量改进率和重复问题减少率
 
 ---
 
@@ -132,13 +163,13 @@ class ReflectionRecord:
 
 class ReflectionTriggerDetector:
     """反思触发检测器"""
-    
+
     def __init__(self):
         """初始化触发检测器"""
         self.quality_threshold = 0.7
         self.periodic_interval = 10  # 每 10 次交互反思一次
         self.interaction_count = 0
-    
+
     def should_reflect(
         self,
         result: ExecutionResult,
@@ -146,36 +177,36 @@ class ReflectionTriggerDetector:
     ) -> tuple[bool, ReflectionTrigger]:
         """
         判断是否需要反思
-        
+
         Args:
             result: 执行结果
             context: 上下文信息
-        
+
         Returns:
             (是否需要反思, 触发条件)
         """
         # 1. 执行失败
         if result.status == "failure":
             return True, ReflectionTrigger.ON_FAILURE
-        
+
         # 2. 执行出错
         if result.status == "partial" or result.error_message:
             return True, ReflectionTrigger.ON_ERROR
-        
+
         # 3. 质量评分低
         if result.quality_score < self.quality_threshold:
             return True, ReflectionTrigger.ON_LOW_QUALITY
-        
+
         # 4. 周期性反思
         self.interaction_count += 1
         if self.interaction_count >= self.periodic_interval:
             self.interaction_count = 0
             return True, ReflectionTrigger.PERIODIC
-        
+
         # 5. 用户请求
         if context and context.get("user_requested_reflection"):
             return True, ReflectionTrigger.USER_REQUEST
-        
+
         return False, None
 
 # 使用示例
@@ -206,17 +237,17 @@ print(f"需要反思: {should_reflect}, 触发条件: {trigger}")
 
 class ReflectionEngine:
     """反思引擎"""
-    
+
     def __init__(self, llm_client):
         """
         初始化反思引擎
-        
+
         Args:
             llm_client: 大模型客户端
         """
         self.llm = llm_client
         self.reflection_history: List[ReflectionRecord] = []
-    
+
     def reflect(
         self,
         result: ExecutionResult,
@@ -225,27 +256,27 @@ class ReflectionEngine:
     ) -> ReflectionRecord:
         """
         执行反思
-        
+
         Args:
             result: 执行结果
             trigger: 触发条件
             context: 上下文信息
-        
+
         Returns:
             反思记录
         """
         # 1. 观察（Observation）
         observation = self._observe(result, context)
-        
+
         # 2. 分析（Analysis）
         analysis = self._analyze(observation, result)
-        
+
         # 3. 结论（Conclusion）
         conclusion = self._conclude(analysis, result)
-        
+
         # 4. 行动项（Action Items）
         action_items = self._generate_actions(conclusion)
-        
+
         # 创建反思记录
         record = ReflectionRecord(
             id=f"reflect_{result.task_id}_{datetime.now().timestamp()}",
@@ -256,12 +287,12 @@ class ReflectionEngine:
             conclusion=conclusion,
             action_items=action_items
         )
-        
+
         # 保存历史
         self.reflection_history.append(record)
-        
+
         return record
-    
+
     def _observe(self, result: ExecutionResult, context: Dict) -> str:
         """观察：描述发生了什么"""
         prompt = f"""
@@ -278,9 +309,9 @@ class ReflectionEngine:
 
         请用 2-3 句话客观描述发生了什么，不做判断。
         """
-        
+
         return self.llm.generate(prompt)
-    
+
     def _analyze(self, observation: str, result: ExecutionResult) -> str:
         """分析：找出原因"""
         prompt = f"""
@@ -297,9 +328,9 @@ class ReflectionEngine:
 
         分析：
         """
-        
+
         return self.llm.generate(prompt)
-    
+
     def _conclude(self, analysis: str, result: ExecutionResult) -> str:
         """结论：总结经验"""
         prompt = f"""
@@ -315,9 +346,9 @@ class ReflectionEngine:
 
         结论：
         """
-        
+
         return self.llm.generate(prompt)
-    
+
     def _generate_actions(self, conclusion: str) -> List[str]:
         """生成行动项"""
         prompt = f"""
@@ -329,14 +360,14 @@ class ReflectionEngine:
 
         行动项：
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         # 解析行动项
         actions = [line.strip("- ") for line in response.split("\n") if line.strip().startswith("-")]
-        
+
         return actions[:5]
-    
+
     def get_reflection_history(
         self,
         task_id: str = None,
@@ -344,19 +375,19 @@ class ReflectionEngine:
     ) -> List[ReflectionRecord]:
         """
         获取反思历史
-        
+
         Args:
             task_id: 任务 ID 过滤
             limit: 数量限制
-        
+
         Returns:
             反思记录列表
         """
         records = self.reflection_history
-        
+
         if task_id:
             records = [r for r in records if r.id.startswith(f"reflect_{task_id}")]
-        
+
         return records[-limit:]
 
 # 使用示例
@@ -407,18 +438,18 @@ class CorrectionStrategy:
 
 class SelfCorrection:
     """自我修正系统"""
-    
+
     def __init__(self, reflection_engine: ReflectionEngine):
         """
         初始化自我修正系统
-        
+
         Args:
             reflection_engine: 反思引擎
         """
         self.reflection = reflection_engine
         self.strategies: List[CorrectionStrategy] = []
         self._register_default_strategies()
-    
+
     def _register_default_strategies(self):
         """注册默认修正策略"""
         # 策略 1：超时重试
@@ -428,7 +459,7 @@ class SelfCorrection:
             condition=lambda r: "timeout" in (r.error_message or "").lower(),
             action=self._timeout_retry
         ))
-        
+
         # 策略 2：参数修正
         self.strategies.append(CorrectionStrategy(
             name="parameter_fix",
@@ -437,7 +468,7 @@ class SelfCorrection:
                               "invalid" in (r.error_message or "").lower(),
             action=self._parameter_fix
         ))
-        
+
         # 策略 3：质量优化
         self.strategies.append(CorrectionStrategy(
             name="quality_improvement",
@@ -445,7 +476,7 @@ class SelfCorrection:
             condition=lambda r: r.quality_score < 0.7 and r.status == "success",
             action=self._quality_improvement
         ))
-    
+
     def correct(
         self,
         result: ExecutionResult,
@@ -453,11 +484,11 @@ class SelfCorrection:
     ) -> Dict:
         """
         执行修正
-        
+
         Args:
             result: 执行结果
             reflection: 反思记录
-        
+
         Returns:
             修正方案
         """
@@ -470,7 +501,7 @@ class SelfCorrection:
                     "correction": strategy.action(result, reflection),
                     "confidence": 0.8
                 }
-        
+
         # 无匹配策略，返回通用修正建议
         return {
             "strategy": "generic",
@@ -481,7 +512,7 @@ class SelfCorrection:
             },
             "confidence": 0.5
         }
-    
+
     def _timeout_retry(self, result: ExecutionResult, reflection: ReflectionRecord) -> Dict:
         """超时重试策略"""
         return {
@@ -492,7 +523,7 @@ class SelfCorrection:
             },
             "reason": "API 调用超时，增加超时时间"
         }
-    
+
     def _parameter_fix(self, result: ExecutionResult, reflection: ReflectionRecord) -> Dict:
         """参数修正策略"""
         return {
@@ -503,7 +534,7 @@ class SelfCorrection:
             },
             "reason": "参数错误，需要修正"
         }
-    
+
     def _quality_improvement(self, result: ExecutionResult, reflection: ReflectionRecord) -> Dict:
         """质量优化策略"""
         return {
@@ -547,16 +578,16 @@ print(f"修正方案: {correction_plan['correction']}")
 
 class ExperienceLibrary:
     """经验库"""
-    
+
     def __init__(self):
         """初始化经验库"""
         self.experiences: List[Dict] = []
         self.patterns: Dict[str, List[str]] = {}
-    
+
     def add_experience(self, reflection: ReflectionRecord, result: ExecutionResult):
         """
         添加经验
-        
+
         Args:
             reflection: 反思记录
             result: 执行结果
@@ -571,16 +602,16 @@ class ExperienceLibrary:
             "action_items": reflection.action_items,
             "effectiveness": reflection.effectiveness
         }
-        
+
         self.experiences.append(experience)
-        
+
         # 提取错误模式
         if result.error_message:
             pattern = self._extract_pattern(result.error_message)
             if pattern not in self.patterns:
                 self.patterns[pattern] = []
             self.patterns[pattern].append(experience["id"])
-    
+
     def find_similar_experiences(
         self,
         error_message: str,
@@ -588,36 +619,36 @@ class ExperienceLibrary:
     ) -> List[Dict]:
         """
         查找相似经验
-        
+
         Args:
             error_message: 错误信息
             limit: 数量限制
-        
+
         Returns:
             相似经验列表
         """
         pattern = self._extract_pattern(error_message)
-        
+
         # 查找相同模式的经验
         exp_ids = self.patterns.get(pattern, [])
-        
+
         experiences = [
             exp for exp in self.experiences
             if exp["id"] in exp_ids
         ]
-        
+
         # 按有效性排序
         experiences.sort(key=lambda x: x["effectiveness"], reverse=True)
-        
+
         return experiences[:limit]
-    
+
     def get_best_practices(self, task_type: str = None) -> List[str]:
         """
         获取最佳实践
-        
+
         Args:
             task_type: 任务类型过滤
-        
+
         Returns:
             最佳实践列表
         """
@@ -626,25 +657,25 @@ class ExperienceLibrary:
             exp for exp in self.experiences
             if exp["effectiveness"] > 0.8
         ]
-        
+
         # 提取行动项
         practices = []
         for exp in best:
             practices.extend(exp["action_items"])
-        
+
         # 去重
         return list(set(practices))
-    
+
     def _extract_pattern(self, error_message: str) -> str:
         """提取错误模式"""
         # 简化实现：提取关键词
         keywords = ["timeout", "error", "invalid", "failed", "exception"]
-        
+
         error_lower = error_message.lower()
         for keyword in keywords:
             if keyword in error_lower:
                 return keyword
-        
+
         return "unknown"
 
 # 使用示例
@@ -680,11 +711,11 @@ print(f"最佳实践: {practices}")
 
 class ReflectionEvaluator:
     """反思评估器"""
-    
+
     def __init__(self):
         """初始化评估器"""
         self.metrics_history: List[Dict] = []
-    
+
     def evaluate_reflection(
         self,
         reflection: ReflectionRecord,
@@ -693,12 +724,12 @@ class ReflectionEvaluator:
     ) -> Dict:
         """
         评估反思效果
-        
+
         Args:
             reflection: 反思记录
             before_result: 反思前结果
             after_result: 反思后结果
-        
+
         Returns:
             评估指标
         """
@@ -706,24 +737,24 @@ class ReflectionEvaluator:
         quality_improvement = (
             after_result.quality_score - before_result.quality_score
         )
-        
+
         # 2. 状态改进
         status_improved = self._status_rank(after_result.status) > \
                          self._status_rank(before_result.status)
-        
+
         # 3. 效率评估
         time_increase = after_result.execution_time - before_result.execution_time
-        
+
         # 4. 综合有效性
         effectiveness = self._calculate_effectiveness(
             quality_improvement,
             status_improved,
             time_increase
         )
-        
+
         # 更新反思记录的有效性
         reflection.effectiveness = effectiveness
-        
+
         metrics = {
             "reflection_id": reflection.id,
             "quality_improvement": quality_improvement,
@@ -732,11 +763,11 @@ class ReflectionEvaluator:
             "effectiveness": effectiveness,
             "is_valuable": effectiveness > 0.5
         }
-        
+
         self.metrics_history.append(metrics)
-        
+
         return metrics
-    
+
     def _status_rank(self, status: str) -> int:
         """状态等级"""
         ranks = {
@@ -745,7 +776,7 @@ class ReflectionEvaluator:
             "success": 2
         }
         return ranks.get(status, 0)
-    
+
     def _calculate_effectiveness(
         self,
         quality_improvement: float,
@@ -755,23 +786,23 @@ class ReflectionEvaluator:
         """计算有效性"""
         # 质量改进权重 50%
         quality_score = max(0, quality_improvement) * 0.5
-        
+
         # 状态改进权重 30%
         status_score = 0.3 if status_improved else 0
-        
+
         # 时间效率权重 20%（时间增加越少越好）
         time_score = max(0, 0.2 - time_increase * 0.01)
-        
+
         return min(1.0, quality_score + status_score + time_score)
-    
+
     def get_statistics(self) -> Dict:
         """获取反思统计"""
         if not self.metrics_history:
             return {}
-        
+
         total = len(self.metrics_history)
         valuable = sum(1 for m in self.metrics_history if m["is_valuable"])
-        
+
         return {
             "total_reflections": total,
             "valuable_reflections": valuable,
@@ -894,7 +925,69 @@ Reflection 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、产品设计模板
+
+### 6.1 反思机制 PRD 检查表
+
+| 设计项   | 关键问题                                     | 输出物         |
+| -------- | -------------------------------------------- | -------------- |
+| 触发条件 | 哪些失败、低质量、超时或用户反馈会触发反思？ | 触发规则表     |
+| 反思层级 | 是行动层、策略层还是元认知层反思？           | 分层反思策略   |
+| 行动转化 | 反思后执行重试、重规划、更新记忆还是转人工？ | Action Mapping |
+| 成本控制 | 最大反思次数、频率、Token 和耗时如何限制？   | 成本约束配置   |
+| 经验沉淀 | 哪些反思结论进入长期记忆或经验库？           | 经验写入规则   |
+| 用户可见 | 用户是否能看到反思原因、过程和修正动作？     | 反思交互方案   |
+| 效果评估 | 如何判断反思是否真的改善了结果？             | 效果评估指标   |
+
+### 6.2 反思记录字段建议
+
+```json
+{
+  "reflection_id": "reflect_001",
+  "task_id": "task_001",
+  "trigger": "on_failure",
+  "level": "strategy",
+  "observation": "工具调用连续两次超时",
+  "root_cause": "外部 API 响应不稳定，缺少备用数据源",
+  "action_items": ["切换备用工具", "降低请求结果数量", "记录工具稳定性"],
+  "follow_up_action": "replan",
+  "effectiveness_score": 0.82,
+  "created_at": "2026-06-05T10:00:00Z"
+}
+```
+
+---
+
+## 七、常见误区
+
+| 误区               | 问题                       | 正确做法                           |
+| ------------------ | -------------------------- | ---------------------------------- |
+| 每一步都反思       | 成本高、延迟长、用户体验差 | 只在关键节点、失败或低质量时触发   |
+| 反思只生成文字总结 | 无法改善后续执行           | 将反思结论映射为具体动作和规则更新 |
+| 只让 Agent 自评    | 容易自我合理化             | 引入外部评测、用户反馈和规则校验   |
+| 反思结论不沉淀     | 同类错误反复出现           | 将有效经验写入记忆或策略库         |
+| 反思无限重试       | 任务失控、成本失控         | 设置最大反思次数和人工接管条件     |
+
+---
+
+## 八、阶段验收标准
+
+- [ ] 能设计反思触发条件，并区分错误、失败、低质量和用户反馈触发
+- [ ] 能说明行动层、策略层、元认知层反思的差异和适用场景
+- [ ] 能把反思结论转化为重试、重规划、工具替换、Prompt 调整或转人工动作
+- [ ] 能设计反思经验沉淀机制，避免重复犯错
+- [ ] 能定义反思有效率、质量改进率、重复问题减少率和反思成本指标
+
+---
+
+## 九、版本记录
+
+- **2026-06-05** 补充前置知识、能力对标、学习目标、产品设计模板、常见误区和阶段验收标准
+- **2026-06-03** 初版完成，涵盖反思机制、自我修正、错误分析、学习优化与产品关注点
+
+---
+
+## 十、参考资源
 
 - [Self-Refine](https://arxiv.org/abs/2303.17651) - 迭代自我完善
 - [Reflexion](https://arxiv.org/abs/2303.11366) - 语言 Agent 的强化自我反思

@@ -1,8 +1,10 @@
 <!--
-  文件描述: Weaviate向量数据库详解，涵盖产品特性、核心功能、云部署与性能优化
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: Weaviate.md
+  文件描述: Weaviate向量数据库详解，补充企业级适用场景、治理重点与验收标准
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Weaviate
@@ -11,16 +13,18 @@
 
 ---
 
-## 前置知识
+## 零、前置知识
 
 阅读本节前，建议先了解以下内容：
 
-| 前置章节 | 关联点 |
-|---------|-------|
-| [向量数据库](./向量数据库.md) | 理解向量数据库的基本概念和索引算法 |
-| [Embedding](./Embedding.md) | Weaviate 支持多种 Embedding 模型的集成 |
-| [RAG基础](./RAG基础.md) | Weaviate 是 RAG 系统的生产级存储方案 |
+| 前置章节                          | 关联点                                          |
+| --------------------------------- | ----------------------------------------------- |
+| [向量数据库](./向量数据库.md)     | 理解向量数据库的基本概念和索引算法              |
+| [Embedding](./Embedding.md)       | Weaviate 支持多种 Embedding 模型的集成          |
+| [RAG基础](./RAG基础.md)           | Weaviate 是 RAG 系统的生产级存储方案            |
 | [HybridSearch](./HybridSearch.md) | Weaviate 原生支持混合搜索，是混合检索的理想选择 |
+
+**能力对标**：本章对应 [能力模型](../00-Roadmap/能力模型.md) 中「系统设计力 → 技术方案判断」与「AI应用构建力 → 检索链路设计」。掌握 Weaviate，意味着你能理解什么时候应该优先选择“原生混合搜索与多模态能力”而不是单纯追求更大的向量规模。
 
 ---
 
@@ -78,6 +82,17 @@ Weaviate 架构特点：
 └── 引用关系：Cross-References（图关系）
 ```
 
+### 1.3 企业级场景下 Weaviate 的核心优势
+
+Weaviate 在企业场景里最有价值的地方，不只是“也是一个向量库”，而是它把以下能力做了较强的一体化整合：
+
+1. **混合搜索能力**：向量检索与 BM25 融合更自然，适合企业复杂查询
+2. **多模态能力**：文本、图片等多种对象可以在同一体系下管理
+3. **模块化能力**：向量化模块、查询方式、多租户配置都相对统一
+4. **产品化友好性**：对语义搜索、知识库和内容检索类应用更容易快速落地
+
+如果业务重点是“搜索体验和检索产品化能力”，而不是单纯追求极致的大规模分布式吞吐，Weaviate 往往是很值得优先评估的方案。
+
 ---
 
 ## 二、快速开始
@@ -125,7 +140,7 @@ import weaviate
 
 class WeaviateSetup:
     """Weaviate 初始化设置"""
-    
+
     def __init__(
         self,
         url: str = "http://localhost:8080",
@@ -133,7 +148,7 @@ class WeaviateSetup:
     ):
         """
         连接 Weaviate
-        
+
         Args:
             url: Weaviate 服务地址
             api_key: API Key（使用云服务时需要）
@@ -141,22 +156,22 @@ class WeaviateSetup:
         auth_config = None
         if api_key:
             auth_config = weaviate.AuthApiKey(api_key=api_key)
-        
+
         self.client = weaviate.Client(
             url=url,
             auth_client_secret=auth_config
         )
-        
+
         print(f"已连接到 Weaviate: {url}")
-    
+
     def is_ready(self) -> bool:
         """检查服务状态"""
         return self.client.is_ready()
-    
+
     def create_schema(self, class_obj: dict):
         """
         创建数据类（Collection）
-        
+
         Args:
             class_obj: 类的定义字典
         """
@@ -202,11 +217,11 @@ import weaviate
 
 class WeaviateCRUD:
     """Weaviate CRUD 操作"""
-    
+
     def __init__(self, class_name: str):
         self.client = weaviate.Client("http://localhost:8080")
         self.class_name = class_name
-    
+
     def insert(
         self,
         data_objects: list,
@@ -214,7 +229,7 @@ class WeaviateCRUD:
     ):
         """
         插入数据
-        
+
         Args:
             data_objects: 数据对象列表，每个对象包含 properties
             vectors: 向量列表（可选，不提供则自动生成）
@@ -225,7 +240,7 @@ class WeaviateCRUD:
             vector_list=vectors
         )
         print(f"成功插入 {len(data_objects)} 条记录")
-    
+
     def insert_single(
         self,
         properties: dict,
@@ -234,7 +249,7 @@ class WeaviateCRUD:
     ):
         """
         插入单条数据
-        
+
         Returns:
             生成的 UUID
         """
@@ -244,7 +259,7 @@ class WeaviateCRUD:
             vector=vector
         )
         return uuid
-    
+
     def search(
         self,
         query: str,
@@ -254,13 +269,13 @@ class WeaviateCRUD:
     ) -> list:
         """
         向量语义搜索
-        
+
         Args:
             query: 查询文本
             limit: 返回数量
             properties: 返回属性
             filters: 过滤条件
-        
+
         Returns:
             搜索结果列表
         """
@@ -270,14 +285,14 @@ class WeaviateCRUD:
             .with_near_text({"concepts": [query]})
             .with_limit(limit)
         )
-        
+
         if filters:
             response = response.with_where(filters)
-        
+
         result = response.do()
-        
+
         return result.get("data", {}).get("Get", {}).get(self.class_name, [])
-    
+
     def bm25_search(
         self,
         query: str,
@@ -286,7 +301,7 @@ class WeaviateCRUD:
     ) -> list:
         """
         BM25 关键词搜索
-        
+
         基于传统 TF-IDF 的相关性排序
         """
         response = (
@@ -299,9 +314,9 @@ class WeaviateCRUD:
             .with_limit(limit)
             .do()
         )
-        
+
         return response.get("data", {}).get("Get", {}).get(self.class_name, [])
-    
+
     def hybrid_search(
         self,
         query: str,
@@ -311,7 +326,7 @@ class WeaviateCRUD:
     ) -> list:
         """
         混合搜索（向量 + BM25）
-        
+
         Args:
             query: 查询文本
             alpha: 权重，1.0=纯向量，0.0=纯BM25
@@ -327,9 +342,9 @@ class WeaviateCRUD:
             .with_limit(limit)
             .do()
         )
-        
+
         return response.get("data", {}).get("Get", {}).get(self.class_name, [])
-    
+
     def near_vector_search(
         self,
         vector: list,
@@ -345,9 +360,9 @@ class WeaviateCRUD:
             .with_limit(limit)
             .do()
         )
-        
+
         return response.get("data", {}).get("Get", {}).get(self.class_name, [])
-    
+
     def update(self, uuid: str, properties: dict):
         """
         更新数据
@@ -358,7 +373,7 @@ class WeaviateCRUD:
             data_object=properties
         )
         print(f"已更新 {uuid}")
-    
+
     def delete(self, uuid: str):
         """
         删除数据
@@ -408,14 +423,14 @@ Weaviate 提供强大的 GraphQL 接口，支持复杂查询
 
 class WeaviateGraphQL:
     """Weaviate GraphQL 高级查询"""
-    
+
     def __init__(self):
         self.client = weaviate.Client("http://localhost:8080")
-    
+
     def grouped_query(self, queries: list, limit_per_group: int = 3):
         """
         分组查询（Grouped Query）
-        
+
         对多个查询词进行语义聚合
         """
         response = (
@@ -430,9 +445,9 @@ class WeaviateGraphQL:
             .with_limit(10)
             .do()
         )
-        
+
         return response
-    
+
     def aggregate_query(
         self,
         group_by: str = None,
@@ -440,7 +455,7 @@ class WeaviateGraphQL:
     ):
         """
         聚合查询
-        
+
         类似于 SQL 的 GROUP BY + COUNT
         """
         response = (
@@ -449,17 +464,17 @@ class WeaviateGraphQL:
             .with_fields("category count")
             .with_group_by_filter([group_by])
         )
-        
+
         if filters:
             response = response.with_where(filters)
-        
+
         result = response.do()
         return result
-    
+
     def cross_reference_query(self, source_uuid: str, ref_name: str):
         """
         交叉引用查询
-        
+
         查询引用其他类的对象
         """
         response = (
@@ -468,13 +483,13 @@ class WeaviateGraphQL:
             .with_get(ref_name, {"id": source_uuid})
             .do()
         )
-        
+
         return response
-    
+
     def near_object_query(self, source_uuid: str, limit: int = 5):
         """
         NearObject 查询
-        
+
         查找与指定对象最相似的其他对象
         """
         response = (
@@ -484,20 +499,20 @@ class WeaviateGraphQL:
             .with_limit(limit)
             .do()
         )
-        
+
         return response
-    
+
     def near_image_query(self, image_path: str, limit: int = 5):
         """
         NearImage 查询（多模态）
-        
+
         使用图像进行相似搜索
         """
         # 读取图像文件并转为 base64
         import base64
         with open(image_path, "rb") as f:
             image_b64 = base64.b64encode(f.read()).decode("utf-8")
-        
+
         response = (
             self.client.query
             .get("Image", ["image_url", "_distance"])
@@ -505,7 +520,7 @@ class WeaviateGraphQL:
             .with_limit(limit)
             .do()
         )
-        
+
         return response
 
 # 使用示例
@@ -534,10 +549,10 @@ Weaviate 多租户支持
 
 class WeaviateMultiTenant:
     """Weaviate 多租户管理"""
-    
+
     def __init__(self):
         self.client = weaviate.Client("http://localhost:8080")
-    
+
     def create_tenant_collection(
         self,
         class_name: str,
@@ -545,7 +560,7 @@ class WeaviateMultiTenant:
     ):
         """
         创建支持多租户的集合
-        
+
         启用 multi-tenancy 后，数据自动隔离
         """
         class_obj = {
@@ -558,15 +573,15 @@ class WeaviateMultiTenant:
                 {"name": "content", "dataType": ["text"]}
             ]
         }
-        
+
         self.client.schema.create_class(class_obj)
-        
+
         # 创建租户
         tenants = [{"name": name} for name in tenant_names]
         self.client.schema.create_tenants(class_name, tenants)
-        
+
         print(f"已创建 {len(tenant_names)} 个租户")
-    
+
     def insert_for_tenant(
         self,
         class_name: str,
@@ -583,7 +598,7 @@ class WeaviateMultiTenant:
             vector=vector,
             tenant=tenant_name
         )
-    
+
     def search_in_tenant(
         self,
         class_name: str,
@@ -602,7 +617,7 @@ class WeaviateMultiTenant:
             .with_tenant(tenant_name)
             .do()
         )
-        
+
         return response
 
 # 使用示例
@@ -647,19 +662,19 @@ VECTORIZER_MODULES = {
         "modelVersion": "002",
         "type": "OpenAI"
     },
-    
+
     # Cohere
     "text2vec-cohere": {
         "model": "embed-multilingual-v3.0",
         "truncate": "RIGHT"
     },
-    
+
     # HuggingFace 本地模型
     "text2vec-transformers": {
         "model": "sentence-transformers/all-MiniLM-L6-v2",
         "poolingStrategy": "masked_mean"
     },
-    
+
     # 图像向量化
     "img2vec-neural": {
         "model": "ResNet50"
@@ -668,10 +683,10 @@ VECTORIZER_MODULES = {
 
 class WeaviateVectorizer:
     """Weaviate 向量化配置"""
-    
+
     def __init__(self):
         self.client = weaviate.Client("http://localhost:8080")
-    
+
     def create_with_openai_vectorizer(
         self,
         class_name: str,
@@ -698,10 +713,10 @@ class WeaviateVectorizer:
                 "distance": "cosine"
             }
         }
-        
+
         self.client.schema.create_class(class_obj)
         print(f"已创建类 '{class_name}'，使用 OpenAI 向量化")
-    
+
     def create_with_local_vectorizer(
         self,
         class_name: str,
@@ -724,10 +739,10 @@ class WeaviateVectorizer:
                 {"name": "text", "dataType": ["text"]}
             ]
         }
-        
+
         self.client.schema.create_class(class_obj)
         print(f"已创建类 '{class_name}'，使用本地模型: {model_name}")
-    
+
     def batch_vectorize(
         self,
         class_name: str,
@@ -743,17 +758,17 @@ class WeaviateVectorizer:
                 "class": class_name,
                 "properties": {"text": text}
             })
-        
+
         # 批量导入（自动向量化）
         self.client.batch.configure_batch_size(
             batch_size=100,
             dynamic=True
         )
-        
+
         with self.client.batch as batch:
             for item in batch_data:
                 batch.add_data_object(item)
-        
+
         return [f"uuid-{i}" for i in range(len(texts))]
 
 # 使用示例
@@ -788,24 +803,24 @@ vectorizer.create_with_local_vectorizer(
 image:
   repository: semitechnologies/weaviate
   tag: latest
-  
+
 replicaCount: 3
 
 env:
   # 认证
-  AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'false'
-  AUTHENTICATION_APIKEY_ENABLED: 'true'
-  
+  AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+  AUTHENTICATION_APIKEY_ENABLED: "true"
+
   # 限制
   QUERY_DEFAULTS_LIMIT: 25
-  AUTHENTICATION_APIKEY_ALLOWED_KEYS: 'your-api-key'
-  
+  AUTHENTICATION_APIKEY_ALLOWED_KEYS: "your-api-key"
+
   # 向量化模块
-  ENABLE_MODULES: 'text2vec-openai,text2vec-transformers'
-  
+  ENABLE_MODULES: "text2vec-openai,text2vec-transformers"
+
   # 集群配置
-  CLUSTER_HOSTNAME: 'node1'
-  PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+  CLUSTER_HOSTNAME: "node1"
+  PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
 
 # 资源配额
 resources:
@@ -882,7 +897,7 @@ Weaviate 性能优化指南：
 
 ---
 
-## 五、AI产品经理关注点
+## 五、企业级产品化关注点
 
 ```
 Weaviate 产品化要点：
@@ -928,21 +943,79 @@ Weaviate 产品化要点：
     └── Weaviate：向量检索为主
 ```
 
+### 5.1 企业级 Weaviate 选型框架
+
+#### 5.1.1 决定是否优先考虑 Weaviate 前先回答 5 个问题
+
+| 问题                                       | 说明                                  |
+| ------------------------------------------ | ------------------------------------- |
+| 业务是否非常依赖混合搜索                   | 如果是，Weaviate 的原生能力会更有优势 |
+| 是否存在多模态或对象关系建模需求           | 这类场景更适合 Weaviate               |
+| 团队是否希望用统一接口管理检索与向量化模块 | Weaviate 的模块化体验较好             |
+| 数据规模是否已经进入超大规模分布式区间     | 若更重规模极限，要对比 Milvus         |
+| 是否需要多租户隔离与产品化能力并重         | Weaviate 很适合此类场景评估           |
+
+#### 5.1.2 常见选型建议
+
+| 场景                      | 建议                       |
+| ------------------------- | -------------------------- |
+| 企业知识搜索与问答        | 可优先评估 Weaviate        |
+| 语义搜索 + 关键词搜索并重 | Weaviate 优势明显          |
+| 多模态检索或内容平台      | 适合重点考虑               |
+| 只做本地轻量原型          | Chroma 往往更省事          |
+| 追求极致大规模分布式检索  | 需要与 Milvus 做更细致比较 |
+
+### 5.2 核心指标
+
+企业级 Weaviate 通常至少跟踪以下指标：
+
+1. **效果指标**：Hybrid Search 命中率、BM25 与向量融合收益、Recall@K
+2. **性能指标**：P95/P99 查询延迟、批量写入吞吐、模块调用耗时
+3. **稳定性指标**：节点可用率、多租户隔离稳定性、模块异常率
+4. **成本指标**：节点资源成本、向量化调用成本、缓存与存储成本
+
+### 5.3 治理重点
+
+1. **模块治理**：明确使用哪些向量化模块，避免环境配置混乱
+2. **Schema 治理**：类、属性、引用关系、多租户配置要标准化
+3. **搜索治理**：Hybrid Search 的 `alpha`、BM25 参数和返回字段要基于评测调优
+4. **权限治理**：认证、租户隔离、访问边界要在上线前做穿透验证
+5. **运维治理**：节点扩容、索引参数、持久化路径和备份策略要明确
+6. **成本治理**：若依赖 OpenAI/Cohere 等模块，要单独核算调用成本
+
+### 5.4 常见失败模式
+
+1. **以为原生混合搜索就不需要调参**：默认参数未必适合真实业务
+2. **Schema 设计过于随意**：后续查询、过滤和租户治理会越来越混乱
+3. **模块启用过多**：增加系统复杂度与资源消耗，但未必带来实际收益
+4. **忽略多租户隔离验证**：测试正常不代表生产隔离一定安全
+5. **把 Weaviate 当作“自动一体化解决方案”**：上线后仍然需要评测、监控和治理
+
+## 六、企业级验收标准
+
+### 6.1 学完本章后至少应做到
+
+- [ ] 能解释 Weaviate 在混合搜索、多模态和多租户上的独特优势
+- [ ] 能根据业务特点判断 Weaviate、Milvus、Chroma 的适用边界
+- [ ] 能理解 GraphQL、模块化向量化与 Hybrid Search 的产品价值
+- [ ] 能识别 Schema、模块、认证和租户治理中的主要风险
+- [ ] 能从效果、性能、治理和成本四个维度评估 Weaviate 是否适合上线
+
 ---
 
-## 六、延伸阅读与参考资源
+## 七、延伸阅读与参考资源
 
 ### 相关章节
 
-| 章节 | 关联说明 |
-|------|---------|
-| [向量数据库](./向量数据库.md) | 向量数据库的通用原理和选型对比 |
-| [Chroma](./Chroma.md) | 对比轻量级向量库，适合快速原型 |
-| [Milvus](./Milvus.md) | 对比分布式向量库，适合超大规模场景 |
-| [HybridSearch](./HybridSearch.md) | Weaviate 原生混合搜索的实现细节 |
-| [Recall](./Recall.md) | Weaviate 的检索接口是召回策略的实现 |
-| [企业知识库设计](./企业知识库设计.md) | Weaviate 的多租户和企业级部署 |
-| [RAG基础](./RAG基础.md) | Weaviate 在 RAG 全链路中的位置 |
+| 章节                                  | 关联说明                            |
+| ------------------------------------- | ----------------------------------- |
+| [向量数据库](./向量数据库.md)         | 向量数据库的通用原理和选型对比      |
+| [Chroma](./Chroma.md)                 | 对比轻量级向量库，适合快速原型      |
+| [Milvus](./Milvus.md)                 | 对比分布式向量库，适合超大规模场景  |
+| [HybridSearch](./HybridSearch.md)     | Weaviate 原生混合搜索的实现细节     |
+| [Recall](./Recall.md)                 | Weaviate 的检索接口是召回策略的实现 |
+| [企业知识库设计](./企业知识库设计.md) | Weaviate 的多租户和企业级部署       |
+| [RAG基础](./RAG基础.md)               | Weaviate 在 RAG 全链路中的位置      |
 
 ### 外部资源
 

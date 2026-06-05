@@ -1,13 +1,44 @@
 <!--
-  文件描述: Agent规划模块详解，涵盖任务分解、规划策略、计划执行、动态重规划及AI产品经理关注点
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: Planning.md
+  文件描述: Agent规划模块详解，补充任务分解、规划策略、动态重规划、产品化治理与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Planning（规划）
 
 > 规划是 Agent 的核心能力之一，决定了 Agent 如何将复杂目标分解为可执行的步骤，并在执行过程中动态调整计划以应对变化。
+
+---
+
+## 零、前置知识
+
+阅读本节前，建议先掌握以下内容：
+
+| 前置章节                                                 | 关联点                                             |
+| -------------------------------------------------------- | -------------------------------------------------- |
+| [Agent概念](./Agent概念.md)                              | 理解 Agent 为什么需要自主规划，而不是单轮问答      |
+| [Agent架构](./Agent架构.md)                              | 理解 Planning 在 Agent 四大组件中的位置            |
+| [ChainOfThought](../03-Prompt工程/ChainOfThought.md)     | Planning 的基础推理能力来源                        |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 计划需要以结构化步骤、依赖、状态和验收标准输出     |
+| [ToolCalling](./ToolCalling.md)                          | 计划最终需要映射到工具调用、人工确认或模型生成动作 |
+| [Reflection](./Reflection.md)                            | 规划失败后需要通过反思触发重规划和策略修正         |
+
+**能力对标**：Planning 对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → Agent 架构能力」的任务分解与执行编排能力。掌握 Planning，意味着你能把模糊目标拆成可执行、可观测、可回滚的任务链路。
+
+---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 判断一个任务适合使用 ReAct、Plan-and-Execute、ToT 还是固定工作流
+- 将用户目标拆解为带依赖、工具、验收标准和风险等级的计划
+- 设计计划执行过程中的进度反馈、用户确认、失败重试和动态重规划机制
+- 定义 Planning 的质量指标，包括计划可执行率、步骤遗漏率、重规划成功率和执行成本
+- 输出一份可用于产品评审或研发实现的 Agent 规划模块方案
 
 ---
 
@@ -106,16 +137,16 @@ class SubTask:
 
 class TaskDecomposer:
     """任务分解器"""
-    
+
     def __init__(self, llm_client):
         """
         初始化任务分解器
-        
+
         Args:
             llm_client: 大模型客户端
         """
         self.llm = llm_client
-    
+
     def decompose(
         self,
         goal: str,
@@ -124,12 +155,12 @@ class TaskDecomposer:
     ) -> List[SubTask]:
         """
         分解任务
-        
+
         Args:
             goal: 目标描述
             strategy: 分解策略
             context: 上下文信息
-        
+
         Returns:
             子任务列表
         """
@@ -141,24 +172,24 @@ class TaskDecomposer:
             return self._parallel_decompose(goal, context)
         else:
             return self._iterative_decompose(goal, context)
-    
+
     def _sequential_decompose(self, goal: str, context: Dict) -> List[SubTask]:
         """
         顺序分解
-        
+
         将任务分解为线性执行的步骤
         """
         prompt = f"""
         请将以下目标分解为顺序执行的步骤：
-        
+
         目标：{goal}
         上下文：{json.dumps(context, ensure_ascii=False) if context else '无'}
-        
+
         要求：
         1. 每个步骤应该是原子操作（不可再分）
         2. 步骤之间有明确的先后顺序
         3. 每个步骤包含：描述、所需工具、验收标准
-        
+
         返回 JSON 格式：
         [
             {{
@@ -169,16 +200,16 @@ class TaskDecomposer:
             }}
         ]
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             steps_data = json.loads(response)
             subtasks = []
-            
+
             for i, step in enumerate(steps_data):
                 dependencies = [f"step_{i}"] if i > 0 else []
-                
+
                 subtasks.append(SubTask(
                     id=step.get("id", f"step_{i+1}"),
                     description=step["description"],
@@ -186,26 +217,26 @@ class TaskDecomposer:
                     required_tools=step.get("required_tools", []),
                     acceptance_criteria=step.get("acceptance_criteria", [])
                 ))
-            
+
             return subtasks
-            
+
         except json.JSONDecodeError:
             # 解析失败，返回单步任务
             return [SubTask(id="step_1", description=goal)]
-    
+
     def _hierarchical_decompose(self, goal: str, context: Dict) -> List[SubTask]:
         """
         层次分解
-        
+
         将任务分解为层级结构，高层任务包含子任务
         """
         prompt = f"""
         请将以下目标进行层次化分解：
-        
+
         目标：{goal}
-        
+
         分解为 2-3 个主要阶段，每个阶段包含 2-4 个具体步骤。
-        
+
         返回 JSON 格式：
         [
             {{
@@ -221,13 +252,13 @@ class TaskDecomposer:
             }}
         ]
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             phases = json.loads(response)
             subtasks = []
-            
+
             for phase in phases:
                 for step in phase.get("subtasks", []):
                     subtasks.append(SubTask(
@@ -235,28 +266,28 @@ class TaskDecomposer:
                         description=f"[{phase['description']}] {step['description']}",
                         dependencies=step.get("dependencies", [])
                     ))
-            
+
             return subtasks
-            
+
         except json.JSONDecodeError:
             return [SubTask(id="step_1", description=goal)]
-    
+
     def _parallel_decompose(self, goal: str, context: Dict) -> List[SubTask]:
         """
         并行分解
-        
+
         识别可并行执行的子任务
         """
         prompt = f"""
         请将以下目标分解，识别可并行执行的子任务：
-        
+
         目标：{goal}
-        
+
         要求：
         1. 识别相互独立的子任务
         2. 识别需要串行的依赖关系
         3. 最大化并行度
-        
+
         返回 JSON 格式：
         {{
             "parallel_groups": [
@@ -272,13 +303,13 @@ class TaskDecomposer:
             ]
         }}
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             data = json.loads(response)
             subtasks = []
-            
+
             for group in data.get("parallel_groups", []):
                 for task in group.get("tasks", []):
                     # 查找依赖
@@ -286,22 +317,22 @@ class TaskDecomposer:
                         d["from"] for d in data.get("dependencies", [])
                         if d["to"] == task["id"]
                     ]
-                    
+
                     subtasks.append(SubTask(
                         id=task["id"],
                         description=task["description"],
                         dependencies=deps
                     ))
-            
+
             return subtasks
-            
+
         except json.JSONDecodeError:
             return [SubTask(id="step_1", description=goal)]
-    
+
     def _iterative_decompose(self, goal: str, context: Dict) -> List[SubTask]:
         """
         迭代分解
-        
+
         先粗粒度分解，执行过程中再细化
         """
         # 初始粗粒度分解
@@ -310,7 +341,7 @@ class TaskDecomposer:
             SubTask(id="iteration_2", description="基于初步结果细化执行"),
             SubTask(id="iteration_3", description="完善和验证结果")
         ]
-        
+
         return initial_tasks
 
 # 使用示例
@@ -351,83 +382,83 @@ from collections import defaultdict, deque
 
 class DependencyManager:
     """依赖管理器"""
-    
+
     def __init__(self):
         """初始化依赖管理器"""
         self.dependencies: Dict[str, Set[str]] = defaultdict(set)
         self.dependents: Dict[str, Set[str]] = defaultdict(set)
-    
+
     def add_dependency(self, task_id: str, depends_on: str):
         """
         添加依赖关系
-        
+
         task_id 依赖于 depends_on（depends_on 必须先完成）
         """
         self.dependencies[task_id].add(depends_on)
         self.dependents[depends_on].add(task_id)
-    
+
     def get_ready_tasks(self, completed_tasks: Set[str]) -> List[str]:
         """
         获取可执行的任务
-        
+
         所有依赖都已完成的任务
         """
         ready = []
-        
+
         for task_id, deps in self.dependencies.items():
             if task_id not in completed_tasks and deps.issubset(completed_tasks):
                 ready.append(task_id)
-        
+
         # 也包含没有依赖的任务
         all_tasks = set(self.dependencies.keys()) | set(self.dependents.keys())
         for task_id in all_tasks:
             if task_id not in completed_tasks and task_id not in self.dependencies:
                 ready.append(task_id)
-        
+
         return list(set(ready))
-    
+
     def topological_sort(self) -> List[str]:
         """
         拓扑排序
-        
+
         返回满足依赖顺序的任务列表
         """
         # 计算入度
         in_degree = defaultdict(int)
         all_tasks = set(self.dependencies.keys()) | set(self.dependents.keys())
-        
+
         for task in all_tasks:
             in_degree[task] = len(self.dependencies.get(task, set()))
-        
+
         # Kahn 算法
         queue = deque([t for t in all_tasks if in_degree[t] == 0])
         result = []
-        
+
         while queue:
             task = queue.popleft()
             result.append(task)
-            
+
             for dependent in self.dependents.get(task, set()):
                 in_degree[dependent] -= 1
                 if in_degree[dependent] == 0:
                     queue.append(dependent)
-        
+
         if len(result) != len(all_tasks):
             raise ValueError("存在循环依赖")
-        
+
         return result
-    
+
     def detect_cycles(self) -> List[List[str]]:
         """检测循环依赖"""
         cycles = []
         visited = set()
         rec_stack = set()
-        
+
         def dfs(node, path):
             visited.add(node)
             rec_stack.add(node)
             path.append(node)
-            
+
             for dependent in self.dependents.get(node, set()):
                 if dependent not in visited:
                     dfs(dependent, path)
@@ -435,25 +466,25 @@ class DependencyManager:
                     # 发现循环
                     cycle_start = path.index(dependent)
                     cycles.append(path[cycle_start:] + [dependent])
-            
+
             path.pop()
             rec_stack.remove(node)
-        
+
         all_tasks = set(self.dependencies.keys()) | set(self.dependents.keys())
         for task in all_tasks:
             if task not in visited:
                 dfs(task, [])
-        
+
         return cycles
-    
+
     def get_critical_path(self, task_durations: Dict[str, int]) -> List[str]:
         """
         获取关键路径
-        
+
         影响总工期的最长路径
         """
         sorted_tasks = self.topological_sort()
-        
+
         # 计算最早开始时间
         earliest_start = {t: 0 for t in sorted_tasks}
         for task in sorted_tasks:
@@ -462,13 +493,13 @@ class DependencyManager:
                     earliest_start[dependent],
                     earliest_start[task] + task_durations.get(task, 0)
                 )
-        
+
         # 计算最晚开始时间
         total_duration = max(
             earliest_start[t] + task_durations.get(t, 0)
             for t in sorted_tasks
         )
-        
+
         latest_start = {t: total_duration for t in sorted_tasks}
         for task in reversed(sorted_tasks):
             for dep in self.dependencies.get(task, set()):
@@ -476,13 +507,13 @@ class DependencyManager:
                     latest_start[dep],
                     latest_start[task] - task_durations.get(dep, 0)
                 )
-        
+
         # 关键路径：最早开始时间 = 最晚开始时间
         critical_path = [
             t for t in sorted_tasks
             if earliest_start[t] == latest_start[t]
         ]
-        
+
         return critical_path
 
 # 使用示例
@@ -539,16 +570,16 @@ class Plan:
 
 class PlanningStrategy(ABC):
     """规划策略抽象基类"""
-    
+
     def __init__(self, llm_client):
         """
         初始化规划策略
-        
+
         Args:
             llm_client: 大模型客户端
         """
         self.llm = llm_client
-    
+
     @abstractmethod
     def plan(self, goal: str, context: Dict) -> Plan:
         """生成计划"""
@@ -557,23 +588,23 @@ class PlanningStrategy(ABC):
 class ReActPlanning(PlanningStrategy):
     """
     ReAct 规划策略
-    
+
     交替进行推理和行动，边执行边规划
     """
-    
+
     def plan(self, goal: str, context: Dict) -> Plan:
         """
         ReAct 规划
-        
+
         不生成完整计划，而是生成第一步
         """
         prompt = f"""
         目标：{goal}
-        
+
         请思考第一步应该做什么：
         1. 分析当前状态
         2. 确定下一步行动
-        
+
         返回 JSON：
         {{
             "thought": "推理过程",
@@ -581,9 +612,9 @@ class ReActPlanning(PlanningStrategy):
             "tool": "使用的工具（如有）"
         }}
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             data = json.loads(response)
             return Plan(steps=[data])
@@ -593,10 +624,10 @@ class ReActPlanning(PlanningStrategy):
 class PlanAndSolvePlanning(PlanningStrategy):
     """
     Plan-and-Solve 规划策略
-    
+
     先制定完整计划，再执行
     """
-    
+
     def plan(self, goal: str, context: Dict) -> Plan:
         """
         制定完整计划
@@ -604,13 +635,13 @@ class PlanAndSolvePlanning(PlanningStrategy):
         prompt = f"""
         目标：{goal}
         上下文：{json.dumps(context, ensure_ascii=False) if context else '无'}
-        
+
         请制定详细的执行计划：
         1. 将目标分解为具体步骤
         2. 每个步骤包含：描述、输入、预期输出
         3. 识别步骤间的依赖关系
         4. 预估每个步骤的难度和风险
-        
+
         返回 JSON：
         {{
             "steps": [
@@ -627,9 +658,9 @@ class PlanAndSolvePlanning(PlanningStrategy):
             "estimated_time": 30
         }}
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             data = json.loads(response)
             return Plan(
@@ -643,35 +674,35 @@ class PlanAndSolvePlanning(PlanningStrategy):
 class TreeOfThoughtsPlanning(PlanningStrategy):
     """
     Tree of Thoughts 规划策略
-    
+
     维护多个候选计划，评估后选择最优
     """
-    
+
     def __init__(self, llm_client, num_candidates: int = 3):
         """
         初始化 ToT 规划器
-        
+
         Args:
             llm_client: 大模型客户端
             num_candidates: 候选计划数量
         """
         super().__init__(llm_client)
         self.num_candidates = num_candidates
-    
+
     def plan(self, goal: str, context: Dict) -> Plan:
         """
         生成多个候选计划并选择最优
         """
         # 生成候选计划
         candidates = []
-        
+
         for i in range(self.num_candidates):
             prompt = f"""
             目标：{goal}
-            
+
             请生成一个执行计划（方案 {i+1}）：
             尝试不同的思路和方法。
-            
+
             返回 JSON：
             {{
                 "steps": [...],
@@ -680,68 +711,68 @@ class TreeOfThoughtsPlanning(PlanningStrategy):
                 "cons": ["缺点"]
             }}
             """
-            
+
             response = self.llm.generate(prompt)
-            
+
             try:
                 plan_data = json.loads(response)
                 candidates.append(plan_data)
             except:
                 continue
-        
+
         # 评估候选计划
         best_plan = self._evaluate_candidates(candidates, goal)
-        
+
         return Plan(
             steps=best_plan.get("steps", []),
             confidence=best_plan.get("confidence", 0.8)
         )
-    
+
     def _evaluate_candidates(self, candidates: List[Dict], goal: str) -> Dict:
         """评估并选择最优计划"""
         if not candidates:
             return {"steps": []}
-        
+
         # 使用 LLM 评估
         prompt = f"""
         目标：{goal}
-        
+
         候选方案：
         {json.dumps(candidates, ensure_ascii=False, indent=2)}
-        
+
         请评估每个方案的：
         1. 可行性（1-10）
         2. 效率（1-10）
         3. 风险（1-10）
         4. 综合得分
-        
+
         返回最优方案的编号和理由。
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         # 简化：返回第一个候选
         return candidates[0]
 
 class LeastToMostPlanning(PlanningStrategy):
     """
     Least-to-Most 规划策略
-    
+
     从简单子问题开始，逐步解决复杂问题
     """
-    
+
     def plan(self, goal: str, context: Dict) -> Plan:
         """
         从简单到复杂规划
         """
         prompt = f"""
         目标：{goal}
-        
+
         请按从简单到复杂的顺序规划：
         1. 识别最简单的子问题
         2. 逐步增加复杂度
         3. 每个步骤建立在前一步的基础上
-        
+
         返回 JSON：
         {{
             "steps": [
@@ -754,9 +785,9 @@ class LeastToMostPlanning(PlanningStrategy):
             ]
         }}
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             data = json.loads(response)
             return Plan(steps=data.get("steps", []))
@@ -808,11 +839,11 @@ class ExecutionResult:
 
 class DynamicReplanner:
     """动态重规划器"""
-    
+
     def __init__(self, llm_client, original_plan: Plan):
         """
         初始化重规划器
-        
+
         Args:
             llm_client: 大模型客户端
             original_plan: 原始计划
@@ -821,11 +852,11 @@ class DynamicReplanner:
         self.original_plan = original_plan
         self.current_plan = original_plan
         self.execution_history: List[ExecutionResult] = []
-    
+
     def should_replan(self, last_result: ExecutionResult) -> bool:
         """
         判断是否需要重规划
-        
+
         触发条件：
         1. 步骤执行失败
         2. 执行结果与预期不符
@@ -835,42 +866,42 @@ class DynamicReplanner:
         # 失败触发
         if not last_result.success:
             return True
-        
+
         # 执行时间过长
         if last_result.execution_time > 60:  # 超过 60 秒
             return True
-        
+
         # 结果异常
         if last_result.error:
             return True
-        
+
         return False
-    
+
     def replan(self, goal: str, remaining_steps: List[Dict]) -> Plan:
         """
         重新规划
-        
+
         基于执行历史和剩余目标生成新计划
         """
         # 构建重规划提示
         history_summary = self._summarize_history()
-        
+
         prompt = f"""
         原始目标：{goal}
-        
+
         执行历史：
         {history_summary}
-        
+
         剩余步骤：
         {json.dumps(remaining_steps, ensure_ascii=False, indent=2)}
-        
+
         问题：上一步执行失败/结果异常，需要调整计划。
-        
+
         请：
         1. 分析失败原因
         2. 提出替代方案
         3. 生成新的执行计划
-        
+
         返回 JSON：
         {{
             "failure_analysis": "失败原因分析",
@@ -880,9 +911,9 @@ class DynamicReplanner:
             }}
         }}
         """
-        
+
         response = self.llm.generate(prompt)
-        
+
         try:
             data = json.loads(response)
             new_plan = Plan(steps=data["new_plan"]["steps"])
@@ -891,22 +922,22 @@ class DynamicReplanner:
         except:
             # 重规划失败，返回剩余步骤
             return Plan(steps=remaining_steps)
-    
+
     def _summarize_history(self) -> str:
         """总结执行历史"""
         summaries = []
-        
+
         for result in self.execution_history:
             status = "成功" if result.success else "失败"
             summary = f"- 步骤 {result.step_id}: {status}"
-            
+
             if result.error:
                 summary += f"，错误: {result.error}"
-            
+
             summaries.append(summary)
-        
+
         return "\n".join(summaries)
-    
+
     def add_execution_result(self, result: ExecutionResult):
         """添加执行结果"""
         self.execution_history.append(result)
@@ -920,7 +951,7 @@ replanner = DynamicReplanner(llm, original_plan)
 for step in plan.steps:
     result = execute_step(step)
     replanner.add_execution_result(result)
-    
+
     if replanner.should_replan(result):
         print("触发重规划...")
         new_plan = replanner.replan(goal, plan.steps[plan.steps.index(step)+1:])
@@ -958,18 +989,18 @@ class ExecutionContext:
 
 class PlanExecutor:
     """计划执行器"""
-    
+
     def __init__(self, tool_registry: Dict[str, Callable]):
         """
         初始化执行器
-        
+
         Args:
             tool_registry: 工具注册表
         """
         self.tools = tool_registry
         self.executor = ThreadPoolExecutor(max_workers=5)
         self.execution_log: List[Dict] = []
-    
+
     async def execute_plan(
         self,
         plan: Plan,
@@ -977,27 +1008,27 @@ class PlanExecutor:
     ) -> Dict:
         """
         执行计划
-        
+
         支持串行和并行执行
         """
         results = {}
         completed = set()
-        
+
         # 构建依赖图
         dep_manager = DependencyManager()
         for step in plan.steps:
             step_id = step.get("id", f"step_{plan.steps.index(step)}")
             for dep in step.get("dependencies", []):
                 dep_manager.add_dependency(step_id, dep)
-        
+
         # 执行循环
         while len(completed) < len(plan.steps):
             # 获取可执行的任务
             ready_tasks = dep_manager.get_ready_tasks(completed)
-            
+
             if not ready_tasks:
                 break
-            
+
             # 并行执行就绪任务
             tasks = []
             for task_id in ready_tasks:
@@ -1007,10 +1038,10 @@ class PlanExecutor:
                 )
                 if step:
                     tasks.append(self._execute_step(step, context))
-            
+
             # 等待所有任务完成
             step_results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             # 处理结果
             for task_id, result in zip(ready_tasks, step_results):
                 if isinstance(result, Exception):
@@ -1021,14 +1052,14 @@ class PlanExecutor:
                 else:
                     results[task_id] = result
                     completed.add(task_id)
-        
+
         return {
             "status": "completed" if len(completed) == len(plan.steps) else "partial",
             "completed_steps": len(completed),
             "total_steps": len(plan.steps),
             "results": results
         }
-    
+
     async def _execute_step(
         self,
         step: Dict,
@@ -1036,25 +1067,25 @@ class PlanExecutor:
     ) -> Dict:
         """
         执行单步
-        
+
         包含重试逻辑
         """
         step_id = step.get("id", "unknown")
         tool_name = step.get("tool")
         parameters = step.get("parameters", {})
-        
+
         # 重试循环
         for attempt in range(context.max_retries):
             try:
                 # 查找工具
                 tool = self.tools.get(tool_name)
-                
+
                 if not tool:
                     return {
                         "success": False,
                         "error": f"工具 {tool_name} 不存在"
                     }
-                
+
                 # 执行工具
                 if asyncio.iscoroutinefunction(tool):
                     result = await tool(**parameters)
@@ -1064,7 +1095,7 @@ class PlanExecutor:
                         self.executor,
                         lambda: tool(**parameters)
                     )
-                
+
                 # 记录日志
                 self.execution_log.append({
                     "step_id": step_id,
@@ -1072,12 +1103,12 @@ class PlanExecutor:
                     "status": "success",
                     "result": result
                 })
-                
+
                 return {
                     "success": True,
                     "result": result
                 }
-                
+
             except Exception as e:
                 if attempt < context.max_retries - 1:
                     await asyncio.sleep(context.retry_delay)
@@ -1089,13 +1120,13 @@ class PlanExecutor:
                         "status": "failed",
                         "error": str(e)
                     })
-                    
+
                     return {
                         "success": False,
                         "error": str(e),
                         "retries": attempt + 1
                     }
-    
+
     def get_execution_log(self) -> List[Dict]:
         """获取执行日志"""
         return self.execution_log
@@ -1203,7 +1234,80 @@ Planning 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、产品设计模板
+
+### 6.1 规划模块 PRD 检查表
+
+| 设计项   | 关键问题                                          | 输出物           |
+| -------- | ------------------------------------------------- | ---------------- |
+| 任务边界 | 哪些任务允许 Agent 自主规划，哪些必须走固定流程？ | 任务类型清单     |
+| 规划深度 | 最多允许拆几层、几步、几轮重规划？                | 规划约束配置     |
+| 用户确认 | 哪些计划执行前必须让用户确认？                    | 确认规则表       |
+| 工具映射 | 每个计划步骤是否能映射到明确工具或人工动作？      | Step-Tool 映射表 |
+| 失败处理 | 步骤失败后是重试、跳过、重规划还是转人工？        | 异常处理矩阵     |
+| 状态展示 | 用户能否看到当前步骤、剩余步骤和失败原因？        | 进度反馈方案     |
+| 审计追踪 | 每一步推理、执行和结果是否可追踪？                | 执行日志规范     |
+
+### 6.2 计划输出字段建议
+
+```json
+{
+  "goal": "用户原始目标",
+  "plan_id": "plan_001",
+  "strategy": "plan_and_execute",
+  "steps": [
+    {
+      "id": "step_1",
+      "description": "收集竞品价格数据",
+      "type": "tool_call",
+      "tool": "web_search",
+      "dependencies": [],
+      "expected_output": "竞品价格列表",
+      "acceptance_criteria": ["至少覆盖 5 个竞品", "数据来源可追溯"],
+      "risk_level": "medium",
+      "requires_confirmation": false
+    }
+  ],
+  "constraints": {
+    "max_steps": 20,
+    "max_tool_calls": 50,
+    "timeout_seconds": 600
+  }
+}
+```
+
+---
+
+## 七、常见误区
+
+| 误区                            | 问题                        | 正确做法                                                  |
+| ------------------------------- | --------------------------- | --------------------------------------------------------- |
+| 把所有任务都交给 Agent 自由规划 | 成本高、不可控、稳定性差    | 高频标准任务优先使用固定工作流，复杂开放任务再用 Planning |
+| 只展示最终结果，不展示计划      | 用户无法判断 Agent 是否走偏 | 对复杂任务展示计划、进度和关键决策点                      |
+| 计划没有验收标准                | 无法判断步骤是否完成        | 每个步骤配置 expected_output 和 acceptance_criteria       |
+| 重规划无限循环                  | 任务卡死、成本失控          | 设置最大重规划次数、最大步骤数和人工接管条件              |
+| 忽略工具可用性                  | 计划看似合理但无法执行      | 规划前注入可用工具、权限、成本和实时状态                  |
+
+---
+
+## 八、阶段验收标准
+
+- [ ] 能说明 ReAct、Plan-and-Execute、Tree of Thoughts、Least-to-Most 的适用场景
+- [ ] 能为一个复杂业务目标输出结构化计划，包含步骤、依赖、工具、验收标准和风险等级
+- [ ] 能设计计划执行过程中的进度反馈、用户确认和暂停/恢复机制
+- [ ] 能定义动态重规划触发条件和退出条件
+- [ ] 能设计规划模块的核心指标看板，包括计划成功率、重规划率、成本和用户满意度
+
+---
+
+## 九、版本记录
+
+- **2026-06-05** 补充前置知识、能力对标、学习目标、产品设计模板、常见误区和阶段验收标准
+- **2026-06-03** 初版完成，涵盖任务分解、规划策略、动态重规划、计划执行与产品关注点
+
+---
+
+## 十、参考资源
 
 - [ReAct Paper](https://arxiv.org/abs/2210.03629) - ReAct: Synergizing Reasoning and Acting
 - [Plan-and-Solve](https://arxiv.org/abs/2305.04091) - Plan-and-Solve Prompting
