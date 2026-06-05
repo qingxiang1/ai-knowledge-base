@@ -118,3 +118,62 @@
 | RAG知识库 | `06-RAG知识库` | Embedding和Token是RAG的核心技术基础 |
 | Agent系统 | `07-Agent系统` | LLM工作原理是Agent设计的核心 |
 | AI产品设计 | `10-AI产品设计` | 本模块所有知识在产品设计中的综合应用 |
+
+---
+
+## 学习路径
+
+### 按角色推荐
+
+| 角色 | 必读章节 | 选读章节 | 学习目标 |
+|------|---------|---------|---------|
+| **AI产品经理** | AI发展史 → Transformer → Token机制 → LLM工作原理 → Embedding原理 | MachineLearning、DeepLearning、NLP基础、Attention机制、大模型术语表 | 理解大模型核心技术原理，能与算法团队深度对话 |
+| **技术转型者** | AI发展史(速览) → MachineLearning → DeepLearning → Transformer → Token机制 → LLM工作原理 | NLP基础、Attention机制、Embedding原理、大模型术语表 | 从技术视角理解AI产品，掌握技术边界和可行性评估 |
+| **运营转型者** | AI发展史 → Transformer(精读) → Token机制(精读) → LLM工作原理(精读) → 大模型术语表 | MachineLearning、DeepLearning、NLP基础、Attention机制、Embedding原理 | 理解AI技术基础，掌握成本计算和技术约束 |
+| **零基础入门** | AI发展史(精读) → 大模型术语表 → MachineLearning(精读) → Transformer(精读) → Token机制(精读) → LLM工作原理(精读) | 其他章节 | 建立AI技术认知，理解核心概念和原理 |
+
+---
+
+## 核心能力矩阵
+
+| 能力维度 | 涉及文档 | 能力要求 |
+|---------|---------|---------|
+| **AI全局认知** | AI发展史 | 理解AI发展历程、技术演进脉络、关键里程碑 |
+| **机器学习基础** | MachineLearning、DeepLearning | 理解ML/DL基本概念、算法原理、应用场景 |
+| **NLP基础** | NLP基础 | 理解自然语言处理核心任务、技术方法 |
+| **大模型架构** | Transformer、Attention机制 | 理解Transformer架构、注意力机制原理 |
+| **Token与成本** | Token机制 | 理解Token化原理、分词机制、成本计算 |
+| **向量嵌入** | Embedding原理 | 理解文本向量化原理、应用场景 |
+| **LLM工作原理** | LLM工作原理 | 理解大语言模型工作机制、生成原理 |
+| **术语认知** | 大模型术语表 | 掌握AI领域核心术语，随时查阅 |
+
+---
+
+## 关键术语速查
+
+| 术语 | 说明 |
+|------|------|
+| **AI** | Artificial Intelligence，人工智能 |
+| **ML** | Machine Learning，机器学习，从数据中学习规律 |
+| **DL** | Deep Learning，深度学习，多层神经网络学习 |
+| **NLP** | Natural Language Processing，自然语言处理 |
+| **Transformer** | 大模型核心架构，基于注意力机制的序列模型 |
+| **Attention** | 注意力机制，让模型关注输入的重要部分 |
+| **Token** | 文本最小处理单位，直接影响成本和上下文长度 |
+| **Embedding** | 嵌入/向量化，将文本映射到高维向量空间 |
+| **LLM** | Large Language Model，大语言模型 |
+| **Context Window** | 上下文窗口，模型一次能处理的最大Token数 |
+| **Parameters** | 模型参数量，衡量模型规模的核心指标 |
+| **Pre-training** | 预训练，在大规模数据上学习通用知识 |
+| **Fine-tuning** | 微调，在特定任务数据上调整模型 |
+| **RLHF** | Reinforcement Learning from Human Feedback，人类反馈强化学习 |
+
+> 完整术语表请查阅 [大模型术语表](./大模型术语表.md)
+
+---
+
+## 版本记录
+
+- **2026-06-05** 完善目录页：增加学习路径（按角色推荐）、核心能力矩阵、关键术语速查、版本记录
+- **2026-06-04** 更新与 01-产品经理基础的衔接图
+- **2026-06-03** 初版完成，涵盖 10 个核心子章节
