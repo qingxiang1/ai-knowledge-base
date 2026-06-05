@@ -2,12 +2,26 @@
   文件描述: Embedding模型详解，涵盖原理、主流模型对比、多语言支持与微调
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Embedding 模型
 
 > Embedding（嵌入）是将文本映射到高维稠密向量的技术，是 RAG 系统的核心组件，直接决定检索质量
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解向量空间、余弦相似度等数学基础 |
+| [RAG基础](./RAG基础.md) | 理解 Embedding 在 RAG 全链路中的位置——检索阶段 |
+| [Chunk策略](./Chunk策略.md) | 分块后的文本需要 Embedding 向量化 |
+| [OpenAI_API](../05-AI应用开发/OpenAI_API.md) | OpenAI Embeddings API 的调用方式 |
+| [成本优化](../05-AI应用开发/成本优化.md) | Embedding 调用的成本计算和优化策略 |
 
 ---
 
@@ -703,7 +717,22 @@ Embedding 模型产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [RAG基础](./RAG基础.md) | Embedding 是 RAG 检索的核心组件 |
+| [Chunk策略](./Chunk策略.md) | 分块大小影响 Embedding 的语义完整性 |
+| [向量数据库](./向量数据库.md) | Embedding 向量的存储和索引 |
+| [Recall](./Recall.md) | Embedding 质量直接影响向量召回效果 |
+| [HybridSearch](./HybridSearch.md) | 稠密向量（Embedding）与稀疏向量的融合检索 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 向量化和相似度计算的数学基础 |
+| [OpenAI_API](../05-AI应用开发/OpenAI_API.md) | OpenAI Embeddings API 的调用方式 |
+| [成本优化](../05-AI应用开发/成本优化.md) | Embedding 调用的成本优化策略 |
+
+### 外部资源
 
 - [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard) - Embedding 模型排行榜
 - [BGE GitHub](https://github.com/FlagOpen/FlagEmbedding) - BGE 模型官方仓库

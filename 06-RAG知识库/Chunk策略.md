@@ -2,12 +2,25 @@
   文件描述: 文档分块策略详解，涵盖分块方法、粒度选择、边界处理与优化实践
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # Chunk 策略
 
 > Chunk（分块）是将长文档切分为适合 Embedding 模型处理的文本单元的过程，直接影响检索精度和回答质量
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [RAG基础](./RAG基础.md) | 理解分块在 RAG 全链路中的位置——数据准备阶段 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 分块粒度受 Embedding 模型的最大输入长度限制 |
+| [Token机制](../02-AI基础知识/Token机制.md) | 分块大小影响 Token 消耗和上下文窗口利用率 |
+| [Embedding](./Embedding.md) | 分块后需要 Embedding 向量化，两者紧密关联 |
 
 ---
 
@@ -1067,7 +1080,21 @@ Chunk 策略产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [RAG基础](./RAG基础.md) | 分块是 RAG 全链路的第一步 |
+| [Embedding](./Embedding.md) | 分块后需要 Embedding 向量化 |
+| [向量数据库](./向量数据库.md) | 分块的元数据设计影响向量库的过滤查询 |
+| [Recall](./Recall.md) | 分块质量直接影响召回效果 |
+| [企业知识库设计](./企业知识库设计.md) | 企业级分块策略和数据管道设计 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解分块粒度与向量表示的关系 |
+| [Token管理](../05-AI应用开发/Token管理.md) | 分块大小的 Token 计算和成本控制 |
+
+### 外部资源
 
 - [LangChain Text Splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/)
 - [Chunking Strategies for LLM Applications](https://www.pinecone.io/learn/chunking-strategies/)

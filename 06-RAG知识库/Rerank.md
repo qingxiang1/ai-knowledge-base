@@ -2,12 +2,26 @@
   文件描述: RAG重排序策略详解，涵盖重排序原理、主流模型、实现方法与性能优化
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # 重排序（Rerank）
 
 > 重排序是 RAG 系统的精排环节，通过更精细的语义理解对召回结果进行二次排序，显著提升最终答案的相关性和准确性。
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [Recall](./Recall.md) | Rerank 是召回后的精排环节，需先理解召回策略 |
+| [RAG基础](./RAG基础.md) | 理解 Rerank 在 RAG 全链路中的位置——检索优化阶段 |
+| [Embedding](./Embedding.md) | Rerank 的交叉编码器与 Embedding 的双编码器是互补关系 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解双编码器与交叉编码器的架构差异 |
+| [HybridSearch](./HybridSearch.md) | 混合检索的最终融合通常需要 Rerank 精排 |
 
 ---
 
@@ -980,7 +994,21 @@ results = optimizer.early_stopping_rerank(
 
 ---
 
-## 七、参考资源
+## 七、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [Recall](./Recall.md) | Rerank 是召回后的精排环节 |
+| [HybridSearch](./HybridSearch.md) | 混合检索的最终融合通常需要 Rerank 精排 |
+| [Embedding](./Embedding.md) | Rerank 交叉编码器与 Embedding 双编码器的对比 |
+| [企业知识库设计](./企业知识库设计.md) | 企业级 Rerank 的延迟和成本优化 |
+| [RAG基础](./RAG基础.md) | Rerank 在 RAG 全链路中的位置 |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 双编码器与交叉编码器的架构差异 |
+| [成本优化](../05-AI应用开发/成本优化.md) | Rerank API 调用的成本控制 |
+
+### 外部资源
 
 - [BGE Reranker](https://github.com/FlagOpen/FlagEmbedding) - BGE 重排序模型
 - [Cohere Rerank](https://cohere.com/rerank) - Cohere 重排序 API

@@ -2,12 +2,27 @@
   文件描述: RAG混合搜索详解，涵盖稠密+稀疏向量融合、多路召回融合、查询改写与重排序的完整链路
   作者: AI-PM-Knowledge
   创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  最后修改日期: 2026-06-05
 -->
 
 # 混合搜索（Hybrid Search）
 
 > 混合搜索是 RAG 系统的核心检索范式，通过融合多种检索策略（稠密向量、稀疏向量、关键词、知识图谱等），在召回率和精确率之间取得最佳平衡。
+
+---
+
+## 前置知识
+
+阅读本节前，建议先了解以下内容：
+
+| 前置章节 | 关联点 |
+|---------|-------|
+| [Recall](./Recall.md) | 混合搜索是多路召回策略的融合实现 |
+| [Rerank](./Rerank.md) | 混合检索的最终融合通常需要 Rerank 精排 |
+| [Embedding](./Embedding.md) | 稠密向量检索依赖 Embedding 模型 |
+| [向量数据库](./向量数据库.md) | 混合检索需要向量数据库支持多种索引 |
+| [RAG基础](./RAG基础.md) | 混合搜索是 Advanced RAG 的核心特征 |
+| [Weaviate](./Weaviate.md) | Weaviate 原生支持混合搜索 |
 
 ---
 
@@ -1277,7 +1292,22 @@ best_weights = tuner.tune_weights(eval_data)
 
 ---
 
-## 八、参考资源
+## 八、延伸阅读与参考资源
+
+### 相关章节
+
+| 章节 | 关联说明 |
+|------|---------|
+| [Recall](./Recall.md) | 混合搜索是多路召回策略的融合实现 |
+| [Rerank](./Rerank.md) | 混合检索的最终融合通常需要 Rerank 精排 |
+| [Embedding](./Embedding.md) | 稠密向量检索的 Embedding 模型选型 |
+| [Weaviate](./Weaviate.md) | 原生支持混合搜索的向量数据库 |
+| [Milvus](./Milvus.md) | 支持标量+向量混合查询的分布式向量库 |
+| [企业知识库设计](./企业知识库设计.md) | 企业级混合检索的架构设计 |
+| [RAG基础](./RAG基础.md) | 混合搜索在 RAG 全链路中的位置 |
+| [成本优化](../05-AI应用开发/成本优化.md) | 混合检索的成本和延迟优化 |
+
+### 外部资源
 
 - [Reciprocal Rank Fusion](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf) - RRF 论文
 - [SPLADE](https://arxiv.org/abs/2109.10086) - 学习型稀疏检索模型
