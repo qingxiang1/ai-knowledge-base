@@ -29,7 +29,10 @@
 
 本知识库已部署在 Gitee Pages：
 
-**访问地址**: `https://weibo-3880270936.gitee.io/ai-knowledge-base/`
+**访问地址**: 
+
+GitHub Pages: `https://qingxiang1.github.io/ai-knowledge-base/`
+Gitee Pages: `https://weibo-3880270936.gitee.io/ai-knowledge-base/`
 
 ---
 
