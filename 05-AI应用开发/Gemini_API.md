@@ -1,8 +1,10 @@
 <!--
-  文件描述: Google Gemini API 使用指南，涵盖 Gemini Pro/Flash、Vertex AI、多模态、Grounding 等特性
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: Gemini_API.md
+  文件描述: Google Gemini API 使用指南，补充企业接入、多模态治理与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Gemini API 使用指南
@@ -11,7 +13,7 @@
 
 ---
 
-## 前置知识
+## 零、前置知识
 
 阅读本节前，建议先了解以下内容：
 
@@ -24,6 +26,16 @@
 | [OpenAI_API](./OpenAI_API.md) | 对比 OpenAI API 的设计差异，便于跨平台开发 |
 
 ---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 理解 Gemini API 在多模态、长上下文和 Grounding 场景中的优势
+- 区分 AI Studio、Gemini API 与 Vertex AI 的接入边界
+- 设计多模态输入、函数调用、结构化输出和安全过滤方案
+- 评估 Gemini 在成本、延迟、生态整合和可观测性上的取舍
+- 输出一份适用于 Google 生态或多模态场景的 Gemini 接入方案
 
 ## 一、API 概述
 
@@ -796,7 +808,64 @@ Gemini API 产品化要点：
 
 ---
 
-## 十、延伸阅读与参考资源
+## 十、企业级接入模板
+
+### 10.1 Gemini API 接入检查表
+
+| 设计项 | 关键问题 | 输出物 |
+| ------ | -------- | ------ |
+| 场景适配 | 是否需要多模态、Grounding 或超长上下文？ | 场景适配说明 |
+| 平台选择 | 走 AI Studio、Gemini API 还是 Vertex AI？ | 平台接入方案 |
+| 多模态治理 | 图像、音频、视频输入如何限额和审计？ | 多模态规则 |
+| 成本控制 | 1M+ 上下文与多模态输入下预算是否可控？ | 成本模型 |
+| 安全策略 | Safety Settings、内容过滤和权限如何配置？ | 安全配置清单 |
+
+### 10.2 企业接入字段建议
+
+```json
+{
+  "provider": "google_gemini",
+  "primary_model": "gemini-1.5-pro",
+  "fallback_model": "gemini-1.5-flash",
+  "deployment_mode": "vertex_ai",
+  "enabled_features": ["grounding", "multimodal_input", "function_calling"],
+  "max_context_tokens": 1000000,
+  "timeout_ms": 15000,
+  "safety_settings": ["block_harmful_content", "log_high_risk_requests"]
+}
+```
+
+---
+
+## 十一、常见误区补充
+
+| 误区 | 问题 | 正确做法 |
+| ---- | ---- | -------- |
+| 因为支持 1M 上下文就默认全部使用 | 成本和响应时间迅速升高 | 只有长文档核心场景才启用超长上下文 |
+| 直接把多模态能力全开 | 治理复杂、成本不可控 | 按业务场景白名单开放 |
+| 忽略 Vertex AI 与直连 API 差异 | 企业治理与权限设计不完整 | 提前明确平台边界 |
+| 只看能力不看生态耦合 | 后期迁移困难 | 评估对 Google 生态的依赖程度 |
+| 不做 Grounding 效果验证 | 实时检索未必等于高质量答案 | 用业务查询集单独评测 |
+
+---
+
+## 十二、阶段验收标准
+
+- [ ] 能完成 Gemini API 的基础文本与多模态接入
+- [ ] 能说明 Grounding、Function Calling、JSON 输出的适用边界
+- [ ] 能设计 AI Studio / Vertex AI 的企业接入方案
+- [ ] 能输出一份 Gemini 的预算、治理与回退方案
+
+---
+
+## 十三、版本记录
+
+- **2026-06-05** 补充文件头、学习目标、企业级接入模板、常见误区补充与阶段验收标准
+- **2026-06-03** 初版完成，涵盖 Gemini API、多模态、Grounding、函数调用与最佳实践
+
+---
+
+## 十四、参考资源
 
 ### 相关章节
 

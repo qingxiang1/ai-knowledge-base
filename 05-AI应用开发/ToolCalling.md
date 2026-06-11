@@ -1,8 +1,10 @@
 <!--
-  文件描述: Tool Calling 工具调用高级模式，涵盖 Agent 架构、MCP、工具编排和复杂工作流
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: ToolCalling.md
+  文件描述: Tool Calling 工具调用高级模式，补充企业级编排、权限治理与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Tool Calling 高级模式
@@ -11,7 +13,7 @@
 
 ---
 
-## 前置知识
+## 零、前置知识
 
 阅读本节前，建议先了解以下内容：
 
@@ -20,11 +22,21 @@
 | [FunctionCalling](./FunctionCalling.md) | 本节是 Function Calling 的高级延伸，需先掌握基础概念 |
 | [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解 Agent 自主决策的底层原理——模型概率预测 |
 | [Token机制](../02-AI基础知识/Token机制.md) | 多轮工具调用的 Token 消耗累积，影响成本和上下文 |
-| [StructuredOutput](../03-PromptEngineer/StructuredOutput.md) | 工具参数和返回结果的结构化设计 |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 工具参数和返回结果的结构化设计 |
 | [OpenAI_API](./OpenAI_API.md) | OpenAI 的 tools 和 tool_calls 是 Tool Calling 的基础接口 |
 | [Claude_API](./Claude_API.md) | Claude 的 Computer Use 是 Tool Calling 的高级形态 |
 
 ---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 解释 Tool Calling 相对 Function Calling 的升级点，包括状态、编排、权限和恢复能力
+- 设计 Tool Registry、Tool Router、Executor、State Manager 和 Error Handler
+- 评估 MCP、Agent 架构和工作流引擎在工具编排中的角色边界
+- 为企业场景设计工具权限、审批、审计、回滚与成本控制机制
+- 输出一份可用于 Agent 或工作流系统的工具编排方案
 
 ## 一、从 Function Calling 到 Tool Calling
 
@@ -929,7 +941,70 @@ Tool Calling 产品化要点：
 
 ---
 
-## 七、延伸阅读与参考资源
+## 七、企业级设计模板
+
+### 7.1 Tool Calling 架构检查表
+
+| 设计项 | 关键问题 | 输出物 |
+| ------ | -------- | ------ |
+| 工具注册 | 工具如何注册、版本化、下线与发现？ | Registry 设计 |
+| 权限治理 | 哪些工具可自动执行，哪些必须确认？ | 权限矩阵 |
+| 状态管理 | 多轮调用中的上下文、结果和任务状态如何保存？ | 状态流转图 |
+| 错误恢复 | 工具失败后如何重试、降级、回滚或转人工？ | 恢复策略 |
+| 审计追踪 | 调用人、工具、参数、结果和耗时是否可追踪？ | 审计规范 |
+| 成本控制 | 如何限制高成本工具和无效循环调用？ | 成本守护策略 |
+
+### 7.2 企业工具编排字段建议
+
+```json
+{
+  "workflow_name": "customer_service_tool_orchestration",
+  "tools": ["knowledge_search", "order_query", "refund_policy_checker"],
+  "approval_rules": {
+    "refund_apply": "requires_human_confirmation"
+  },
+  "guardrails": {
+    "max_tool_calls": 8,
+    "max_retry_per_tool": 2,
+    "timeout_seconds": 30
+  },
+  "audit_fields": ["user_id", "session_id", "tool_name", "arguments", "status", "latency_ms"]
+}
+```
+
+---
+
+## 八、常见误区补充
+
+| 误区 | 问题 | 正确做法 |
+| ---- | ---- | -------- |
+| 把 Tool Calling 等同于多函数调用 | 忽略状态、恢复和权限设计 | 用系统视角设计编排与治理 |
+| 工具全部开放给模型 | 造成越权和高风险操作 | 按风险分级授权与审批 |
+| 不限制调用次数 | 容易进入循环或成本爆炸 | 设置最大工具调用数和超时 |
+| 失败只返回报错文本 | 无法自动恢复 | 返回结构化错误并定义补救动作 |
+| 只做编排不做审计 | 上线后难定位问题 | 记录调用链和关键事件日志 |
+
+---
+
+## 九、阶段验收标准
+
+- [ ] 能设计 Tool Registry、Router、Executor 的基础架构
+- [ ] 能说明 Function Calling、Tool Calling、MCP、Agent 编排之间的关系
+- [ ] 能设计工具权限、审批、审计和回滚机制
+- [ ] 能控制多工具调用的成本、延迟和失败恢复
+- [ ] 能输出一份企业级工具编排方案
+
+---
+
+## 十、版本记录
+
+- **2026-06-05** 补充文件头、学习目标、企业级设计模板、常见误区补充与阶段验收标准
+- **2026-06-05** 修正 StructuredOutput 关联路径
+- **2026-06-03** 初版完成，涵盖工具编排、Agent 架构、MCP 与复杂工作流实现
+
+---
+
+## 十一、参考资源
 
 ### 相关章节
 

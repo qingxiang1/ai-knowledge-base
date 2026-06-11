@@ -1,8 +1,10 @@
 <!--
-  文件描述: OpenAI API 使用指南，涵盖 Chat Completions、Embeddings、Images、Audio 等核心接口
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: OpenAI_API.md
+  文件描述: OpenAI API 使用指南，补充企业接入、稳定性治理、成本与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # OpenAI API 使用指南
@@ -11,7 +13,7 @@
 
 ---
 
-## 前置知识
+## 零、前置知识
 
 阅读本节前，建议先了解以下内容：
 
@@ -22,6 +24,20 @@
 | [Prompt基础](../03-Prompt工程/Prompt基础.md) | messages 参数本质是结构化 Prompt |
 | [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | JSON Mode 和 response_format 的设计思路 |
 | [GPT系列](../04-大模型生态/GPT系列.md) | 理解 GPT 模型家族的技术特点和演进历程 |
+
+**能力对标**：本章对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → 模型 API 接入能力」和「技术理解力 → 平台能力评估」。掌握 OpenAI API，意味着你能从 Playground 试玩走向生产级接入、监控和成本治理。
+
+---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 区分 Chat、Embeddings、Images、Audio、Assistants 等核心接口的适用场景
+- 为企业系统设计 OpenAI API 接入链路，包括鉴权、重试、限流、监控和审计
+- 处理多轮对话、结构化输出、工具调用和多模态输入等核心能力
+- 识别 OpenAI API 在成本、延迟、合规和供应商依赖上的风险
+- 输出一份可用于研发评审的 OpenAI 接入方案
 
 ---
 
@@ -753,7 +769,70 @@ OpenAI API 产品化要点：
 
 ---
 
-## 十、延伸阅读与参考资源
+## 十、企业级接入模板
+
+### 10.1 OpenAI API 接入检查表
+
+| 设计项 | 关键问题 | 输出物 |
+| ------ | -------- | ------ |
+| 模型选择 | 用 `gpt-4o`、`gpt-4o-mini` 还是推理模型？ | 模型路由表 |
+| 调用路径 | 直连 OpenAI、代理层还是 Azure OpenAI？ | 接入架构图 |
+| 稳定性 | 超时、限流、重试和熔断如何设计？ | 容错策略 |
+| 安全合规 | 敏感数据如何脱敏、审计和隔离？ | 合规说明 |
+| 成本控制 | 如何控制单请求成本、月预算和异常峰值？ | 成本测算表 |
+| 可观测性 | 记录哪些日志、指标和告警？ | 监控指标清单 |
+
+### 10.2 企业接入字段建议
+
+```json
+{
+  "provider": "openai",
+  "primary_model": "gpt-4o",
+  "fallback_model": "gpt-4o-mini",
+  "deployment_mode": "azure_openai",
+  "rate_limit_policy": "per_user_and_per_app",
+  "timeout_ms": 15000,
+  "retry_policy": "exponential_backoff_3_times",
+  "safety_controls": ["moderation", "pii_masking", "audit_log"],
+  "cost_guardrail": {
+    "max_cost_per_request": "USD 0.02",
+    "monthly_budget": "USD 5000"
+  }
+}
+```
+
+---
+
+## 十一、常见误区补充
+
+| 误区 | 问题 | 正确做法 |
+| ---- | ---- | -------- |
+| 只会在 Playground 调参 | 无法支撑生产接入 | 建立代码化配置、日志、重试和监控体系 |
+| 默认所有请求都用大模型 | 成本快速失控 | 用分层模型和场景路由控制成本 |
+| 不记录 usage 数据 | 无法复盘成本与性能 | 全量记录 `usage`、延迟和失败原因 |
+| 忽略 Azure/OpenAI 差异 | 企业接入方案不完整 | 同时评估公有 API 与 Azure 企业接入模式 |
+| 没有回退模型 | 限流或故障时业务中断 | 设计主模型、备份模型和兜底响应 |
+
+---
+
+## 十二、阶段验收标准
+
+- [ ] 能完成 OpenAI API 的基础接入与多轮对话管理
+- [ ] 能设计企业级的鉴权、重试、限流、审计和监控方案
+- [ ] 能说明 Chat、Embeddings、Images、Audio、Assistants 的适用边界
+- [ ] 能完成基本成本测算并提出降本策略
+- [ ] 能输出一份可上线评审的 OpenAI API 接入方案
+
+---
+
+## 十三、版本记录
+
+- **2026-06-05** 补充文件头、能力对标、学习目标、企业级接入模板、常见误区补充与阶段验收标准
+- **2026-06-03** 初版完成，涵盖 OpenAI API 核心接口、错误处理与产品关注点
+
+---
+
+## 十四、参考资源
 
 ### 相关章节
 

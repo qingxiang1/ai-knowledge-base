@@ -1,1155 +1,722 @@
 <!--
-  文件描述: 飞书MCP集成案例，涵盖消息推送、文档管理、日程同步及多维表格操作
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: 飞书_MCP.md
+  文件描述: 飞书 MCP 集成案例，面向新手和技术转型者系统讲解办公协同场景、消息与审批边界、用户体验治理与企业接入方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-05
 -->
 
 # 飞书 MCP
 
-> 通过 MCP 协议与飞书集成，实现消息推送、文档管理、日程同步、多维表格操作等功能的 AI 化操作。
+> 飞书 MCP 是企业办公协同中最常见的接入场景之一，也是最容易“看起来很好做，实际上很容易出问题”的场景之一。因为协同系统不像数据库那样一眼就是高风险，也不像代码仓库那样一眼就带工程属性，它往往以“发个消息、查个文档、看个审批”这种看似轻量的动作出现。但真正做起来你会发现：消息打扰、越权访问、误发通知、错误提交审批、批量修改文档，这些问题都会迅速从小体验问题升级为组织级问题。本章的目标，就是帮你把飞书场景真正看懂。
 
 ---
 
-## 一、飞书 MCP 概述
+## 零、前置知识
 
-### 1.1 什么是飞书 MCP
+建议先阅读以下内容：
 
-```
-飞书 MCP 定义：
+- [MCP基础](./MCP基础.md)
+- [MCP最佳实践](./MCP最佳实践.md)
+- [Agent产品设计](../07-Agent系统/Agent产品设计.md)
+- [需求文档_PRD_模板](../10-AI产品设计/需求文档_PRD_模板.md)
 
-飞书 MCP Server
-├── 本质：MCP 协议封装的飞书开放 API 服务
-├── 功能：将飞书能力暴露为 MCP 工具
-├── 价值：让 AI 直接操作飞书
-└── 场景：
-    ├── 消息智能推送
-    ├── 文档自动管理
-    ├── 日程智能同步
-    ├── 多维表格操作
-    └── 审批流程自动化
+如果你对飞书生态不够熟悉，建议先知道这些能力类型：
 
-核心能力映射
-├── 消息管理
-│   ├── 发送/接收消息
-│   ├── 群聊管理
-│   └── 消息模板
-├── 文档管理
-│   ├── 创建/编辑文档
-│   ├── 文档权限管理
-│   └── 文档内容提取
-├── 日程管理
-│   ├── 创建/查询日程
-│   ├── 会议室预定
-│   └── 日程提醒
-├── 多维表格
-│   ├── 创建/查询表格
-│   ├── 记录增删改查
-│   └── 数据视图管理
-└── 审批流程
-    ├── 发起审批
-    ├── 审批状态查询
-    └── 审批结果通知
-```
+- 群聊与消息
+- 文档
+- 多维表格
+- 日历
+- 审批
 
-### 1.2 核心价值
-
-```python
-"""
-飞书 MCP 核心价值分析
-
-从 AI 产品经理视角理解飞书 MCP 的价值
-"""
-
-from typing import Dict, List
-from dataclasses import dataclass
-
-@dataclass
-class EfficiencyGain:
-    """效率提升"""
-    task: str
-    manual_time: int  # 分钟
-    automated_time: int  # 分钟
-    accuracy_improvement: float  # 准确率提升百分比
-
-class FeishuMCPValue:
-    """飞书 MCP 价值分析"""
-    
-    def __init__(self):
-        """初始化价值分析"""
-        self.gains = [
-            EfficiencyGain(
-                task="消息推送",
-                manual_time=30,
-                automated_time=2,
-                accuracy_improvement=0.25
-            ),
-            EfficiencyGain(
-                task="文档管理",
-                manual_time=90,
-                automated_time=5,
-                accuracy_improvement=0.30
-            ),
-            EfficiencyGain(
-                task="日程同步",
-                manual_time=45,
-                automated_time=3,
-                accuracy_improvement=0.20
-            ),
-            EfficiencyGain(
-                task="多维表格操作",
-                manual_time=120,
-                automated_time=8,
-                accuracy_improvement=0.35
-            )
-        ]
-    
-    def analyze(self) -> Dict:
-        """
-        分析效率提升
-        
-        Returns:
-            分析结果
-        """
-        return {
-            gain.task: {
-                "手动耗时": f"{gain.manual_time} 分钟",
-                "自动化耗时": f"{gain.automated_time} 分钟",
-                "效率提升": f"{gain.manual_time / gain.automated_time:.1f}x",
-                "准确率提升": f"{gain.accuracy_improvement:.0%}"
-            }
-            for gain in self.gains
-        }
-
-# 使用示例
-"""
-value = FeishuMCPValue()
-result = value.analyze()
-
-for task, metrics in result.items():
-    print(f"\n{task}:")
-    for key, value in metrics.items():
-        print(f"  {key}: {value}")
-"""
-```
+因为这些对象在风险等级、使用场景和开放顺序上差异很大。
 
 ---
 
-## 二、环境配置
+## 本章学习目标
 
-### 2.1 获取飞书应用凭证
+完成本节后，你应该能够：
 
-```bash
-# 1. 登录飞书开放平台 https://open.feishu.cn/
-# 2. 创建企业自建应用
-# 3. 获取 App ID 和 App Secret
-# 4. 配置应用权限（如消息、文档、日历等）
-
-# 5. 设置环境变量
-export FEISHU_APP_ID="cli_xxxxxxxxxxxxxxxx"
-export FEISHU_APP_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-# 6. 获取 Tenant Access Token
-curl -X POST https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal \
-  -H "Content-Type: application/json" \
-  -d "{\"app_id\":\"$FEISHU_APP_ID\",\"app_secret\":\"$FEISHU_APP_SECRET\"}"
-```
-
-### 2.2 安装飞书 MCP Server
-
-```bash
-# 方式一：使用 npx（推荐）
-npx -y @anthropic-ai/mcp-feishu-server
-
-# 方式二：使用 Docker
-docker pull mcp/feishu-server
-
-# 方式三：源码安装
-git clone https://github.com/anthropics/mcp-feishu-server.git
-cd mcp-feishu-server
-npm install
-npm run build
-```
+- 理解飞书场景为什么适合通过 MCP 标准化接入
+- 拆分消息、文档、多维表格、审批、日程等能力边界
+- 设计通知、写入、审批类动作的风险控制策略
+- 从 AI 产品经理视角评估办公协同场景中的打扰成本与组织风险
+- 输出一份飞书 MCP 企业接入方案
 
 ---
 
-## 三、核心功能实现
+## 一、为什么飞书 MCP 是高频又高风险的企业场景
 
-### 3.1 消息推送
+### 1. 因为飞书天然在组织协作链路中心
 
-```python
-"""
-飞书 MCP 消息推送
+在很多企业里，飞书并不只是一个聊天工具，它往往还是：
 
-通过 MCP 协议向飞书发送消息
-"""
+- 文档中心
+- 协同工作台
+- 审批入口
+- 日历入口
+- 项目沟通渠道
+- 通知基础设施
 
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List, Optional
-import requests
-import os
+这意味着一旦接入 MCP，飞书就不仅仅是“多一个工具”，而是把 AI 接进了企业协作主干。
 
-mcp = FastMCP("feishu-message-manager")
+### 2. 因为“协同动作”的副作用常被低估
 
-# 飞书 API 配置
-FEISHU_API = "https://open.feishu.cn/open-apis"
-FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
-FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET")
+很多人会觉得：
 
+- 查个消息没什么
+- 发个提醒也没什么
+- 建个文档问题不大
 
-def get_tenant_access_token() -> str:
-    """
-    获取 Tenant Access Token
-    
-    Returns:
-        Token 字符串
-    """
-    response = requests.post(
-        f"{FEISHU_API}/auth/v3/tenant_access_token/internal",
-        json={
-            "app_id": FEISHU_APP_ID,
-            "app_secret": FEISHU_APP_SECRET
-        }
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("tenant_access_token", "")
-    return ""
+但在组织环境里，这些动作可能造成：
 
+- 群内骚扰
+- 错误通知
+- 错误审批提交
+- 文档误写
+- 跨部门越权读取
 
-HEADERS = {
-    "Authorization": f"Bearer {get_tenant_access_token()}",
-    "Content-Type": "application/json"
+也就是说，飞书场景最典型的风险并不总是“技术失败”，而是“组织打扰和协同误动作”。
+
+### 3. 这非常适合训练 AI 产品经理的“协同产品判断力”
+
+在飞书 MCP 场景里，产品经理最关键的问题不是：
+
+- “能不能发消息”
+
+而是：
+
+- 应不应该自动发
+- 发给谁
+- 多频繁
+- 什么场景必须人工确认
+- 哪些文档能写，哪些只能读
+
+这比纯技术接入更考验 AI 产品经理的产品边界感。
+
+---
+
+## 二、飞书 MCP 的典型业务价值
+
+### 1. 统一协同入口
+
+飞书 MCP 最直接的价值是：
+
+- 让 AI 能在受控范围内读取协同信息
+- 把消息、文档、审批、表格能力以标准化方式接入
+
+这会显著降低企业内部多个助手、多个 Agent 重复对接协同系统的成本。
+
+### 2. 减少人工流转
+
+典型场景包括：
+
+- 自动整理会议纪要
+- 汇总项目群消息
+- 生成日报和待办
+- 同步审批状态
+- 从文档中提取行动项
+
+这些能力非常符合办公协同的高频需求。
+
+### 3. 打通工作流
+
+飞书 MCP 的更大价值在于，它不是孤立使用，而是可作为工作流节点：
+
+- 先查文档
+- 再汇总信息
+- 再写入纪要草稿
+- 再通知责任人
+- 再查询审批状态
+
+这意味着飞书 MCP 经常会和：
+
+- MCP
+- 工作流平台
+- RAG
+- Agent
+
+组合出现。
+
+### 4. 多场景复用
+
+一套飞书能力常常可以被多个场景共享：
+
+- 内部知识助手
+- 审批状态助手
+- 项目管理 Agent
+- 运营日报助手
+- 会议纪要助手
+
+这正是平台化价值所在。
+
+---
+
+## 三、飞书 MCP 适合什么，不适合什么
+
+### 1. 适合优先接入的场景
+
+建议优先从低风险高价值场景开始：
+
+- 查询审批状态
+- 搜索文档
+- 读取会议纪要
+- 查询多维表格记录
+- 汇总项目群历史消息
+
+这些场景的特点是：
+
+- 读取为主
+- 价值高
+- 风险可控
+- 容易建立组织信任
+
+### 2. 适合第二阶段推进的场景
+
+在试点稳定后，可以谨慎扩展到：
+
+- 创建文档草稿
+- 追加会议纪要块
+- 发送提醒类消息
+- 创建日历草稿
+
+这类能力虽然开始有写操作，但仍然可以在确认机制下控制风险。
+
+### 3. 不建议默认开放的场景
+
+以下能力通常不适合在第一阶段直接开放：
+
+- 自动发群消息
+- 批量发送通知
+- 自动提交审批
+- 修改关键制度文档
+- 跨部门批量读取敏感表格
+
+这些能力的共同特点是：
+
+- 副作用强
+- 组织影响大
+- 容易引发投诉和不信任
+
+---
+
+## 四、从飞书能力到 MCP 工具的拆分方法
+
+### 1. 消息相关能力
+
+适合拆成：
+
+- `get_chat_messages`
+- `list_mentions`
+- `send_message`
+- `send_rich_card`
+
+这里要特别注意：
+
+- 读取消息和发送消息不是一类风险
+- 群发消息和单聊消息也不是一类风险
+
+### 2. 文档相关能力
+
+适合拆成：
+
+- `search_docs`
+- `get_doc_content`
+- `create_doc`
+- `append_doc_block`
+
+建议：
+
+- 先开放搜索和读取
+- 写入优先采用“草稿区 + 审核”模式
+
+### 3. 多维表格相关能力
+
+适合拆成：
+
+- `query_bitable_records`
+- `get_bitable_schema`
+- `create_bitable_record`
+- `update_bitable_record`
+
+多维表格看似轻量，但实际上经常承载：
+
+- 项目数据
+- 任务数据
+- 运营数据
+- 敏感业务协同数据
+
+因此权限不能低估。
+
+### 4. 审批相关能力
+
+适合拆成：
+
+- `get_approval_status`
+- `list_pending_approvals`
+- `submit_approval`
+
+其中：
+
+- 查询状态通常可控
+- 代表用户发起正式审批通常风险很高
+
+### 5. 日历相关能力
+
+适合拆成：
+
+- `list_calendar_events`
+- `create_event`
+- `update_event`
+
+日历虽然不像审批那么敏感，但错误创建会议或错误改时间也会直接影响组织节奏。
+
+---
+
+## 五、为什么“自动发消息”经常比你想的更危险
+
+### 1. 办公协同场景里的第一大风险是“高频打扰”
+
+很多项目做飞书集成时，第一反应是：
+
+- 让 AI 自动通知用户不就行了吗
+
+但企业里用户最常抱怨的问题之一恰恰就是：
+
+- 通知太多
+- 通知不准
+- 通知时机不对
+- 群里噪音太多
+
+### 2. 自动发消息的典型问题
+
+例如：
+
+- 发给错误群
+- 发给不该接收的人
+- 内容太长太模糊
+- 一次事件触发多次消息
+- 深夜或非工作时段骚扰
+
+### 3. 更好的产品策略
+
+建议把消息分为：
+
+- 提醒类
+- 建议类
+- 正式通知类
+
+并且分别设计策略：
+
+- 提醒类：可适度自动化
+- 建议类：更适合由用户主动触发查看
+- 正式通知类：通常应更严格审核
+
+### 4. 为什么这是 AI 产品经理最该介入的部分
+
+因为这是典型的产品体验治理问题，而不只是接口问题。  
+你要定义的是：
+
+- 频率
+- 对象
+- 触发条件
+- 文案风格
+- 升级和静默策略
+
+---
+
+## 六、为什么“审批”是飞书 MCP 最危险的能力之一
+
+### 1. 审批不是普通写操作
+
+审批动作意味着：
+
+- 进入正式组织流程
+- 带来责任归属
+- 可能触发后续财务、人事、采购、运维动作
+
+所以它的风险等级通常比“发消息”还高。
+
+### 2. 审批能力的推荐开放方式
+
+建议优先顺序为：
+
+1. 查询审批状态
+2. 汇总待审批信息
+3. 生成审批建议草稿
+4. 人工确认后提交审批
+
+而不是一开始就：
+
+- 自动代表用户提交正式审批
+
+### 3. 产品经理为什么必须前置设计审批边界
+
+因为审批不仅有系统风险，还有组织风险：
+
+- 谁来承担责任
+- 审批意见是谁生成的
+- 用户是否知情
+- 出错后如何追责
+
+这些都不是纯技术问题。
+
+---
+
+## 七、文档与多维表格场景的治理重点
+
+### 1. 文档读取比文档改写容易很多
+
+读取文档的问题一般是：
+
+- 查不准
+- 查不全
+- 权限不对
+
+改写文档的问题则会升级为：
+
+- 写到错误位置
+- 覆盖已有正文
+- 生成低质量内容
+- 污染正式制度文档
+
+### 2. 多维表格的常见风险
+
+多维表格常常看起来像轻量数据表，但实际可能承载：
+
+- 项目排期
+- 客户名单
+- 运营排班
+- 敏感业务数据
+
+所以风险点包括：
+
+- 批量写入错误
+- 越权读取
+- 误改关键字段
+
+### 3. 推荐策略
+
+- 先读后写
+- 先草稿区后正式区
+- 写入前加确认
+- 批量操作默认禁用或强审批
+
+---
+
+## 八、权限与安全治理
+
+### 1. 权限维度建议
+
+建议至少按以下维度控制：
+
+- 个人空间
+- 群空间
+- 部门空间
+- 文档空间
+- 表格空间
+- 审批类型
+
+### 2. 典型安全问题
+
+飞书场景常见问题不是技术黑客，而是：
+
+- 跨群误发
+- 跨部门越权读文档
+- 代表用户错误执行动作
+- 批量消息或批量写入造成组织干扰
+
+### 3. 推荐治理手段
+
+- 白名单群和白名单空间
+- 消息发送频控
+- 审批动作二次确认
+- 文档和表格写入权限单独授权
+- 高风险动作环境隔离
+
+### 4. AI 产品经理需要做的事
+
+你要在需求阶段就说清楚：
+
+- 哪些群可发消息
+- 哪些文档空间可写入
+- 哪些表格只读
+- 哪些审批仅支持查询，不支持提交
+
+---
+
+## 九、用户体验与组织体验
+
+### 1. 飞书场景里，“组织体验”比单用户体验更重要
+
+很多 AI 产品会优先考虑单个用户是不是觉得方便。  
+但飞书场景里，动作往往影响的是：
+
+- 一个群
+- 一个部门
+- 一个项目协作链路
+
+所以要同时考虑：
+
+- 使用者体验
+- 被通知者体验
+- 协作群体体验
+
+### 2. 典型体验问题
+
+- 通知过多
+- 通知不准确
+- 审批建议不可信
+- 写入的纪要格式混乱
+- 任务提醒没有优先级
+
+### 3. 推荐的产品设计原则
+
+- 能汇总就别拆成多条通知
+- 能草稿就别直接正式写入
+- 能提醒用户确认就不要静默执行
+- 能按角色展示就别一刀切
+
+---
+
+## 十、一个完整案例：会议纪要与待办提醒助手
+
+### 1. 目标场景
+
+目标是让 AI 助手完成：
+
+- 会后整理纪要
+- 提取行动项
+- 写入纪要草稿文档
+- 给责任人发送提醒
+
+### 2. 推荐能力拆分
+
+可以拆成：
+
+- `get_chat_messages`
+- `get_doc_content`
+- `create_doc`
+- `append_doc_block`
+- `send_message`
+
+### 3. 推荐执行流程
+
+第一步：
+
+- 读取会议记录或群消息
+
+第二步：
+
+- 生成纪要摘要和行动项
+
+第三步：
+
+- 写入草稿文档
+
+第四步：
+
+- 由组织者确认行动项和责任人
+
+第五步：
+
+- 确认后再发送提醒消息
+
+### 4. 为什么不建议直接全自动执行
+
+因为会议内容常常存在：
+
+- 未确认结论
+- 责任人不明确
+- 时间节点不完整
+
+如果直接发提醒，很容易造成组织误解或额外沟通成本。
+
+这正好说明：
+
+飞书 MCP 最适合的是“辅助协同”，而不是“不加确认地替代协同”。
+
+---
+
+## 十一、企业接入飞书 MCP 的推荐路径
+
+### 第一阶段：只读查询能力
+
+先做：
+
+- 搜索文档
+- 读取会议纪要
+- 查询审批状态
+- 查询多维表格记录
+
+目标是建立信任和真实价值。
+
+### 第二阶段：草稿与提醒类能力
+
+再做：
+
+- 创建文档草稿
+- 追加纪要内容
+- 发送低风险提醒
+
+### 第三阶段：受控写入与确认
+
+谨慎开放：
+
+- 消息发送
+- 表格写入
+- 日历创建
+
+要求：
+
+- 人工确认
+- 白名单范围
+- 审计记录
+
+### 第四阶段：审批与高风险动作试点
+
+仅在组织成熟后试点：
+
+- 提交审批
+- 批量消息通知
+- 关键文档更新
+
+这一步必须严格分角色、分场景、分环境。
+
+---
+
+## 十二、企业级接入模板
+
+```json
+{
+  "provider": "feishu",
+  "server_name": "feishu-mcp-server",
+  "business_goal": "为企业知识助手、会议纪要助手和审批助手提供标准化飞书能力",
+  "enabled_capabilities": [
+    "search_docs",
+    "get_doc_content",
+    "query_bitable_records",
+    "get_approval_status",
+    "get_chat_messages"
+  ],
+  "restricted_capabilities": [
+    "send_message",
+    "append_doc_block",
+    "create_bitable_record",
+    "submit_approval",
+    "bulk_send_message"
+  ],
+  "governance": {
+    "chat_allowlist": ["项目组试点群", "AI 平台内部群"],
+    "document_space_allowlist": ["项目草稿空间", "知识助手试点空间"],
+    "approval_required_for": [
+      "submit_approval",
+      "bulk_send_message"
+    ],
+    "notification_rate_limit": "per user per hour",
+    "audit_enabled": true
+  },
+  "release_strategy": {
+    "phase_1": "readonly_queries",
+    "phase_2": "draft_and_reminder",
+    "phase_3": "approved_write_actions"
+  }
 }
-
-
-@mcp.tool()
-def send_text_message(receive_id: str, content: str, receive_id_type: str = "open_id") -> str:
-    """
-    发送文本消息
-    
-    Args:
-        receive_id: 接收者 ID
-        content: 消息内容
-        receive_id_type: ID 类型（open_id/user_id/union_id/email/chat_id）
-    
-    Returns:
-        发送结果
-    """
-    try:
-        payload = {
-            "receive_id": receive_id,
-            "msg_type": "text",
-            "content": json.dumps({"text": content})
-        }
-        
-        response = requests.post(
-            f"{FEISHU_API}/im/v1/messages?receive_id_type={receive_id_type}",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"消息发送成功: {data['data']['message_id']}"
-            else:
-                return f"发送失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def send_rich_text_message(receive_id: str, title: str, content: str, receive_id_type: str = "open_id") -> str:
-    """
-    发送富文本消息
-    
-    Args:
-        receive_id: 接收者 ID
-        title: 消息标题
-        content: 消息内容
-        receive_id_type: ID 类型
-    
-    Returns:
-        发送结果
-    """
-    try:
-        payload = {
-            "receive_id": receive_id,
-            "msg_type": "post",
-            "content": json.dumps({
-                "zh_cn": {
-                    "title": title,
-                    "content": [
-                        [{"tag": "text", "text": content}]
-                    ]
-                }
-            })
-        }
-        
-        response = requests.post(
-            f"{FEISHU_API}/im/v1/messages?receive_id_type={receive_id_type}",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"富文本消息发送成功: {data['data']['message_id']}"
-            else:
-                return f"发送失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def send_interactive_message(receive_id: str, card_content: Dict, receive_id_type: str = "open_id") -> str:
-    """
-    发送交互式卡片消息
-    
-    Args:
-        receive_id: 接收者 ID
-        card_content: 卡片内容
-        receive_id_type: ID 类型
-    
-    Returns:
-        发送结果
-    """
-    try:
-        payload = {
-            "receive_id": receive_id,
-            "msg_type": "interactive",
-            "content": json.dumps(card_content)
-        }
-        
-        response = requests.post(
-            f"{FEISHU_API}/im/v1/messages?receive_id_type={receive_id_type}",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"交互式消息发送成功: {data['data']['message_id']}"
-            else:
-                return f"发送失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def create_chat_group(name: str, description: str = "", user_ids: List[str] = None) -> str:
-    """
-    创建群聊
-    
-    Args:
-        name: 群聊名称
-        description: 群聊描述
-        user_ids: 初始成员用户 ID 列表
-    
-    Returns:
-        创建结果
-    """
-    try:
-        payload = {
-            "name": name,
-            "description": description
-        }
-        
-        if user_ids:
-            payload["user_id_list"] = user_ids
-        
-        response = requests.post(
-            f"{FEISHU_API}/im/v1/chats",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                chat_id = data['data']['chat_id']
-                return f"群聊创建成功: {chat_id}"
-            else:
-                return f"创建失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
-
-### 3.2 文档管理
-
-```python
-"""
-飞书 MCP 文档管理
-
-通过 MCP 协议管理飞书文档
-"""
-
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List, Optional
-import requests
-import os
-import json
-
-mcp = FastMCP("feishu-document-manager")
-
-FEISHU_API = "https://open.feishu.cn/open-apis"
-FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
-FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET")
-
-
-def get_tenant_access_token() -> str:
-    """
-    获取 Tenant Access Token
-    
-    Returns:
-        Token 字符串
-    """
-    response = requests.post(
-        f"{FEISHU_API}/auth/v3/tenant_access_token/internal",
-        json={
-            "app_id": FEISHU_APP_ID,
-            "app_secret": FEISHU_APP_SECRET
-        }
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("tenant_access_token", "")
-    return ""
-
-
-HEADERS = {
-    "Authorization": f"Bearer {get_tenant_access_token()}",
-    "Content-Type": "application/json"
-}
-
-
-@mcp.tool()
-def create_document(title: str, content: str = "", folder_token: str = "") -> str:
-    """
-    创建飞书文档
-    
-    Args:
-        title: 文档标题
-        content: 文档内容
-        folder_token: 文件夹 Token（可选）
-    
-    Returns:
-        创建结果
-    """
-    try:
-        payload = {
-            "title": title
-        }
-        
-        if folder_token:
-            payload["folder_token"] = folder_token
-        
-        response = requests.post(
-            f"{FEISHU_API}/docx/v1/documents",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                document_id = data['data']['document']['document_id']
-                
-                # 如果提供了内容，写入文档
-                if content:
-                    write_document_content(document_id, content)
-                
-                return f"文档创建成功: {document_id}"
-            else:
-                return f"创建失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-def write_document_content(document_id: str, content: str):
-    """
-    写入文档内容
-    
-    Args:
-        document_id: 文档 ID
-        content: 文档内容
-    """
-    # 获取文档块
-    response = requests.get(
-        f"{FEISHU_API}/docx/v1/documents/{document_id}/blocks",
-        headers=HEADERS
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        if data.get("code") == 0:
-            block_id = data['data']['items'][0]['block_id']
-            
-            # 创建文本块
-            requests.post(
-                f"{FEISHU_API}/docx/v1/documents/{document_id}/blocks/{block_id}/children",
-                headers=HEADERS,
-                json={
-                    "children": [
-                        {
-                            "block_type": 2,
-                            "text": {
-                                "elements": [
-                                    {
-                                        "text_run": {
-                                            "content": content
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            )
-
-
-@mcp.tool()
-def get_document_content(document_id: str) -> str:
-    """
-    获取文档内容
-    
-    Args:
-        document_id: 文档 ID
-    
-    Returns:
-        文档内容
-    """
-    try:
-        response = requests.get(
-            f"{FEISHU_API}/docx/v1/documents/{document_id}/raw_content",
-            headers=HEADERS
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return data['data']['content']
-            else:
-                return f"获取失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def update_document_title(document_id: str, title: str) -> str:
-    """
-    更新文档标题
-    
-    Args:
-        document_id: 文档 ID
-        title: 新标题
-    
-    Returns:
-        更新结果
-    """
-    try:
-        response = requests.patch(
-            f"{FEISHU_API}/docx/v1/documents/{document_id}",
-            headers=HEADERS,
-            json={"title": title}
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"文档标题更新成功"
-            else:
-                return f"更新失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def set_document_permission(document_id: str, user_id: str, perm_type: str = "view") -> str:
-    """
-    设置文档权限
-    
-    Args:
-        document_id: 文档 ID
-        user_id: 用户 ID
-        perm_type: 权限类型（view/edit/full_access）
-    
-    Returns:
-        设置结果
-    """
-    try:
-        response = requests.post(
-            f"{FEISHU_API}/drive/v1/permissions/{document_id}/members",
-            headers=HEADERS,
-            json={
-                "member_type": "user",
-                "member_id": user_id,
-                "perm": perm_type
-            }
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"权限设置成功"
-            else:
-                return f"设置失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
 ```
 
 ---
 
-## 四、高级功能
+## 十三、AI 产品经理如何学习这一章
 
-### 4.1 日程同步
+### 1. 先从“只读协同”开始思考
 
-```python
-"""
-飞书 MCP 日程同步
+先问：
 
-通过 MCP 协议管理飞书日程
-"""
+- 哪些信息值得读
+- 哪些信息不该读
+- 谁需要这些信息
 
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List
-import requests
-import os
-from datetime import datetime, timedelta
+### 2. 再从“协同副作用”开始思考
 
-mcp = FastMCP("feishu-calendar-manager")
+继续问：
 
-FEISHU_API = "https://open.feishu.cn/open-apis"
-FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
-FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET")
+- 发一条消息会影响谁
+- 写一段文档会不会污染正式内容
+- 提交一个审批会不会引发真实责任
 
+### 3. 最后练习“组织体验设计”
 
-def get_tenant_access_token() -> str:
-    """
-    获取 Tenant Access Token
-    
-    Returns:
-        Token 字符串
-    """
-    response = requests.post(
-        f"{FEISHU_API}/auth/v3/tenant_access_token/internal",
-        json={
-            "app_id": FEISHU_APP_ID,
-            "app_secret": FEISHU_APP_SECRET
-        }
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("tenant_access_token", "")
-    return ""
+这是飞书 MCP 最值得学习的地方。  
+你要练习的不只是功能设计，而是：
 
+- 频控
+- 白名单
+- 静默模式
+- 确认链
+- 草稿区与正式区
 
-HEADERS = {
-    "Authorization": f"Bearer {get_tenant_access_token()}",
-    "Content-Type": "application/json"
-}
-
-
-@mcp.tool()
-def create_event(user_id: str, summary: str, start_time: str, end_time: str, 
-                 description: str = "", location: str = "", attendee_ids: List[str] = None) -> str:
-    """
-    创建日程
-    
-    Args:
-        user_id: 用户 ID
-        summary: 日程标题
-        start_time: 开始时间（ISO 8601 格式）
-        end_time: 结束时间（ISO 8601 格式）
-        description: 日程描述
-        location: 地点
-        attendee_ids: 参会人 ID 列表
-    
-    Returns:
-        创建结果
-    """
-    try:
-        payload = {
-            "summary": summary,
-            "start_time": {
-                "timestamp": start_time,
-                "timezone": "Asia/Shanghai"
-            },
-            "end_time": {
-                "timestamp": end_time,
-                "timezone": "Asia/Shanghai"
-            },
-            "description": description,
-            "location": {
-                "name": location
-            } if location else None,
-            "attendees": [
-                {"type": "user", "user_id": uid}
-                for uid in (attendee_ids or [])
-            ]
-        }
-        
-        response = requests.post(
-            f"{FEISHU_API}/calendar/v4/calendars/primary/events",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                event_id = data['data']['event']['event_id']
-                return f"日程创建成功: {event_id}"
-            else:
-                return f"创建失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def get_events(user_id: str, start_date: str, end_date: str) -> str:
-    """
-    获取日程列表
-    
-    Args:
-        user_id: 用户 ID
-        start_date: 开始日期（YYYY-MM-DD）
-        end_date: 结束日期（YYYY-MM-DD）
-    
-    Returns:
-        日程列表
-    """
-    try:
-        response = requests.get(
-            f"{FEISHU_API}/calendar/v4/calendars/primary/events",
-            headers=HEADERS,
-            params={
-                "start_time": f"{start_date}T00:00:00+08:00",
-                "end_time": f"{end_date}T23:59:59+08:00"
-            }
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                events = data['data'].get('items', [])
-                
-                output = f"找到 {len(events)} 个日程:\n\n"
-                
-                for event in events:
-                    output += f"标题: {event.get('summary', '')}\n"
-                    output += f"开始: {event.get('start_time', {}).get('timestamp', '')}\n"
-                    output += f"结束: {event.get('end_time', {}).get('timestamp', '')}\n"
-                    output += f"地点: {event.get('location', {}).get('name', '')}\n"
-                    output += "\n"
-                
-                return output
-            else:
-                return f"获取失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def delete_event(event_id: str) -> str:
-    """
-    删除日程
-    
-    Args:
-        event_id: 日程 ID
-    
-    Returns:
-        删除结果
-    """
-    try:
-        response = requests.delete(
-            f"{FEISHU_API}/calendar/v4/calendars/primary/events/{event_id}",
-            headers=HEADERS
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"日程删除成功"
-            else:
-                return f"删除失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
-
-### 4.2 多维表格操作
-
-```python
-"""
-飞书 MCP 多维表格操作
-
-通过 MCP 协议管理飞书多维表格
-"""
-
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List
-import requests
-import os
-
-mcp = FastMCP("feishu-bitable-manager")
-
-FEISHU_API = "https://open.feishu.cn/open-apis"
-FEISHU_APP_ID = os.getenv("FEISHU_APP_ID")
-FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET")
-
-
-def get_tenant_access_token() -> str:
-    """
-    获取 Tenant Access Token
-    
-    Returns:
-        Token 字符串
-    """
-    response = requests.post(
-        f"{FEISHU_API}/auth/v3/tenant_access_token/internal",
-        json={
-            "app_id": FEISHU_APP_ID,
-            "app_secret": FEISHU_APP_SECRET
-        }
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        return data.get("tenant_access_token", "")
-    return ""
-
-
-HEADERS = {
-    "Authorization": f"Bearer {get_tenant_access_token()}",
-    "Content-Type": "application/json"
-}
-
-
-@mcp.tool()
-def create_bitable(name: str, folder_token: str = "") -> str:
-    """
-    创建多维表格
-    
-    Args:
-        name: 表格名称
-        folder_token: 文件夹 Token（可选）
-    
-    Returns:
-        创建结果
-    """
-    try:
-        payload = {
-            "name": name
-        }
-        
-        if folder_token:
-            payload["folder_token"] = folder_token
-        
-        response = requests.post(
-            f"{FEISHU_API}/bitable/v1/apps",
-            headers=HEADERS,
-            json=payload
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                app_token = data['data']['app']['app_token']
-                return f"多维表格创建成功: {app_token}"
-            else:
-                return f"创建失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def add_table_record(app_token: str, table_id: str, fields: Dict) -> str:
-    """
-    添加表格记录
-    
-    Args:
-        app_token: 多维表格 Token
-        table_id: 表格 ID
-        fields: 字段数据
-    
-    Returns:
-        添加结果
-    """
-    try:
-        response = requests.post(
-            f"{FEISHU_API}/bitable/v1/apps/{app_token}/tables/{table_id}/records",
-            headers=HEADERS,
-            json={"fields": fields}
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                record_id = data['data']['record']['record_id']
-                return f"记录添加成功: {record_id}"
-            else:
-                return f"添加失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def query_table_records(app_token: str, table_id: str, filter_str: str = "", page_size: int = 20) -> str:
-    """
-    查询表格记录
-    
-    Args:
-        app_token: 多维表格 Token
-        table_id: 表格 ID
-        filter_str: 过滤条件
-        page_size: 每页记录数
-    
-    Returns:
-        查询结果
-    """
-    try:
-        params = {"page_size": page_size}
-        if filter_str:
-            params["filter"] = filter_str
-        
-        response = requests.get(
-            f"{FEISHU_API}/bitable/v1/apps/{app_token}/tables/{table_id}/records",
-            headers=HEADERS,
-            params=params
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                records = data['data'].get('items', [])
-                
-                output = f"找到 {len(records)} 条记录:\n\n"
-                
-                for record in records:
-                    record_id = record.get('record_id')
-                    fields = record.get('fields', {})
-                    
-                    output += f"记录 ID: {record_id}\n"
-                    for field_name, field_value in fields.items():
-                        output += f"  {field_name}: {field_value}\n"
-                    output += "\n"
-                
-                return output
-            else:
-                return f"查询失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def update_table_record(app_token: str, table_id: str, record_id: str, fields: Dict) -> str:
-    """
-    更新表格记录
-    
-    Args:
-        app_token: 多维表格 Token
-        table_id: 表格 ID
-        record_id: 记录 ID
-        fields: 更新的字段数据
-    
-    Returns:
-        更新结果
-    """
-    try:
-        response = requests.put(
-            f"{FEISHU_API}/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
-            headers=HEADERS,
-            json={"fields": fields}
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"记录更新成功"
-            else:
-                return f"更新失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-@mcp.tool()
-def delete_table_record(app_token: str, table_id: str, record_id: str) -> str:
-    """
-    删除表格记录
-    
-    Args:
-        app_token: 多维表格 Token
-        table_id: 表格 ID
-        record_id: 记录 ID
-    
-    Returns:
-        删除结果
-    """
-    try:
-        response = requests.delete(
-            f"{FEISHU_API}/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
-            headers=HEADERS
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data.get("code") == 0:
-                return f"记录删除成功"
-            else:
-                return f"删除失败: {data.get('msg', '未知错误')}"
-        else:
-            return f"请求失败: {response.status_code}"
-    
-    except Exception as e:
-        return f"错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
+这正是 AI 产品经理比纯工具 PM 更重要的能力。
 
 ---
 
-## 五、AI 产品经理关注点
+## 十四、常见误区补充
 
-```
-飞书 MCP 产品化要点：
+### 误区 1：飞书 MCP 的核心价值就是自动发消息
 
-场景设计
-├── 办公自动化
-│   ├── 智能消息推送
-│   ├── 文档自动归档
-│   ├── 会议自动记录
-│   └── 任务自动分配
-├── 数据管理
-│   ├── 多维表格智能分析
-│   ├── 数据自动同步
-│   ├── 报表自动生成
-│   └── 数据可视化
-├── 协作效率
-│   ├── 跨部门信息同步
-│   ├── 项目进度跟踪
-│   ├── 审批流程优化
-│   └── 知识库建设
-└── 智能助手
-    ├── 智能问答
-    ├── 日程智能推荐
-    ├── 文档智能摘要
-    └── 会议智能提醒
+错误。真正的价值是把协同信息、文档、审批和提醒整合为标准能力层。
 
-安全考虑
-├── 权限控制
-│   ├── 应用最小权限原则
-│   ├── 用户数据隔离
-│   └── 敏感信息保护
-├── 数据保护
-│   ├── 传输加密
-│   ├── 访问频率限制
-│   └── 异常行为检测
-└── 合规性
-    ├── 企业安全策略
-    ├── 数据保留政策
-    └── 审计要求
+### 误区 2：办公协同场景天然低风险
 
-关键指标
-├── 效率指标
-│   ├── 消息处理效率提升
-│   ├── 文档协作效率提升
-│   ├── 会议安排效率提升
-│   └── 数据处理效率提升
-├── 质量指标
-│   ├── 信息准确率
-│   ├── 任务完成率
-│   ├── 用户满意度
-│   └── 系统稳定性
-└── 体验指标
-│   ├── 响应时间
-│   ├── 功能易用性
-│   └── 界面友好度
+错误。消息骚扰、越权读写、误提审批都会产生真实组织影响。
 
-落地建议
-├── 阶段一：试点
-│   ├── 选择 1-2 个部门
-│   ├── 实现基础功能
-│   └── 收集反馈
-├── 阶段二：推广
-│   ├── 扩展更多部门
-│   ├── 完善功能覆盖
-│   └── 建立最佳实践
-└── 阶段三：优化
-    ├── 性能优化
-    ├── 智能化提升
-    └── 生态建设
-```
+### 误区 3：审批能力只要技术能做，就应该自动化
+
+错误。审批本质上是组织责任链的一部分，必须谨慎引入自动化。
+
+### 误区 4：产品经理只需要关心“能不能打通飞书 API”
+
+错误。真正更重要的是定义：
+
+- 开放顺序
+- 打扰边界
+- 组织风险
+- 人工确认机制
 
 ---
 
-## 六、参考资源
+## 十五、本章小结
 
-- [飞书开放平台](https://open.feishu.cn/) - 飞书开放平台官网
-- [飞书 API 文档](https://open.feishu.cn/document/home/index) - 飞书 API 官方文档
-- [飞书机器人开发指南](https://open.feishu.cn/document/home/develop-a-bot-in-5-minutes/index) - 飞书机器人开发入门
-- [MCP 协议规范](https://spec.modelcontextprotocol.io/) - MCP 协议文档
+如果用一句话总结：
+
+**飞书 MCP 的关键，不是“把办公工具接给 AI”，而是“把协同动作以可控、低打扰、可审计的方式纳入 AI 工作流”。**
+
+对 AI 产品经理来说，这一章最重要的收获是：
+
+- 学会识别协同场景中的隐性风险
+- 学会为消息、文档、审批设计不同治理强度
+- 学会把“自动化便利”与“组织体验”放在一起衡量
+
+---
+
+## 十六、阶段验收标准
+
+完成本节后，至少应满足以下要求：
+
+- 能拆分飞书中的消息、文档、表格、审批、日程能力边界
+- 能说明为什么自动发消息和自动审批属于高风险动作
+- 能设计一个“草稿优先 + 人工确认”的协同流程
+- 能输出一份飞书 MCP 企业接入模板
+
+---
+
+## 十七、版本记录
+
+- **2026-06-05** 扩写为教程版内容，补充业务价值、协同风险、能力拆分、消息与审批治理、会议纪要案例与企业接入路径
+- **2026-06-05** 补充办公协同场景、消息治理、审批边界与企业接入模板
+- **2026-06-03** 初版完成，介绍飞书 MCP 集成思路
+
+## 参考资源
+
+- [飞书开放平台](https://open.feishu.cn/)
+- [MCP 官方文档](https://modelcontextprotocol.io/)

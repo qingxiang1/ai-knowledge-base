@@ -1,8 +1,10 @@
 <!--
-  文件描述: 05-AI应用开发章节目录页，汇总所有子章节入口，提供前置知识、学习路径与章节关联
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: index.md
+  文件描述: 05-AI应用开发模块目录页，补充企业级学习路径、能力矩阵与阶段验收要求
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # 05 - AI 应用开发
@@ -11,22 +13,55 @@
 
 ---
 
-## 前置知识
+## 本章定位
+
+`05-AI应用开发` 解决的不是“会不会发一个大模型请求”，而是以下 4 个更关键的问题：
+
+1. **如何把模型能力接入成稳定、可扩展、可监控的生产级 API 能力**
+2. **如何在流式交互、工具调用、上下文管理与成本控制之间做系统设计**
+3. **如何让 AI 应用具备企业级的安全、降级、审计、限流与可观测性**
+4. **如何把 API 接入从 Demo 阶段推进到可上线、可持续优化的业务系统**
+
+## 企业级学习原则
+
+1. **先跑通调用闭环，再优化复杂能力**：先完成鉴权、请求、返回、日志、告警，再引入 Agent 和工作流
+2. **先定义 SLA，再谈体验优化**：延迟、成功率、成本、可用性要先明确
+3. **先准备降级策略，再扩大调用规模**：模型波动、限流、供应商问题都必须可兜底
+4. **始终用系统视角看 API**：模型只是能力源，真正上线的是网关、路由、缓存、权限和监控体系
+
+## 零、前置知识
 
 学习本模块前，建议先掌握以下内容：
 
-| 前置章节 | 为什么需要 | 关联点 |
-|---------|----------|-------|
-| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解大模型工作机制 | API 调用的输入输出本质是 Token 序列的概率预测 |
-| [Token机制](../02-AI基础知识/Token机制.md) | 理解 Token 和成本 | API 按 Token 计费，上下文窗口受 Token 数限制 |
-| [Transformer](../02-AI基础知识/Transformer.md) | 理解模型架构 | 不同模型架构差异影响 API 参数和调用策略 |
-| [大模型术语表](../02-AI基础知识/大模型术语表.md) | 理解专业术语 | API 文档中的 context window、temperature 等概念 |
-| [Prompt基础](../03-Prompt工程/Prompt基础.md) | 掌握 Prompt 设计 | API 调用的 messages 参数本质是结构化 Prompt |
-| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 掌握结构化输出 | JSON Mode 和 response_format 是 API 的核心能力 |
-| [模型选型指南](../04-大模型生态/模型选型指南.md) | 掌握模型选型方法 | 不同场景选择不同模型的 API，直接影响成本和效果 |
-| [能力模型](../00-Roadmap/能力模型.md) | 了解 AI 产品能力维度 | API 开发对应「AI应用构建力 → 模型应用能力」核心能力 |
+| 前置章节                                                 | 为什么需要           | 关联点                                              |
+| -------------------------------------------------------- | -------------------- | --------------------------------------------------- |
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md)           | 理解大模型工作机制   | API 调用的输入输出本质是 Token 序列的概率预测       |
+| [Token机制](../02-AI基础知识/Token机制.md)               | 理解 Token 和成本    | API 按 Token 计费，上下文窗口受 Token 数限制        |
+| [Transformer](../02-AI基础知识/Transformer.md)           | 理解模型架构         | 不同模型架构差异影响 API 参数和调用策略             |
+| [大模型术语表](../02-AI基础知识/大模型术语表.md)         | 理解专业术语         | API 文档中的 context window、temperature 等概念     |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md)             | 掌握 Prompt 设计     | API 调用的 messages 参数本质是结构化 Prompt         |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 掌握结构化输出       | JSON Mode 和 response_format 是 API 的核心能力      |
+| [模型选型指南](../04-大模型生态/模型选型指南.md)         | 掌握模型选型方法     | 不同场景选择不同模型的 API，直接影响成本和效果      |
+| [能力模型](../00-Roadmap/能力模型.md)                    | 了解 AI 产品能力维度 | API 开发对应「AI应用构建力 → 模型应用能力」核心能力 |
 
 **能力对标**：本模块对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → 模型应用能力」核心能力，是 AI 产品经理的**必备硬技能**（掌握程度⭐⭐⭐⭐⭐）。掌握 AI 应用开发可帮助你从 L1（知道有 API 这回事）提升至 L3（能设计企业级 AI 应用的技术架构和成本方案）。
+
+---
+
+## 阶段验收标准
+
+- [ ] 能清楚解释模型 API 调用、流式输出、函数调用、工具编排和 Token 管理之间的关系
+- [ ] 能为一个 AI 应用设计基础接入架构，包括鉴权、路由、重试、限流和监控
+- [ ] 能设计至少一种工具调用链路，并说明失败处理与回退方案
+- [ ] 能完成基本的成本测算，并提出缓存、分层模型、上下文裁剪等优化方案
+
+## 最小作品集
+
+建议学习完本模块后，至少沉淀以下 3 类产出：
+
+1. **一份 AI API 接入方案**：写清模型、参数、鉴权、错误处理和监控方式。
+2. **一份工具调用链路图**：展示从用户请求到模型判断、工具执行、结果返回的完整流程。
+3. **一份成本与性能优化记录**：记录 Token 消耗、延迟、失败率和优化动作。
 
 ---
 
@@ -34,27 +69,27 @@
 
 ### API 接入篇（四大主流平台）
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 1 | [OpenAI_API.md](./OpenAI_API.md) | GPT-4o / GPT-4o-mini / DALL·E / Whisper / Embeddings 接入与最佳实践 | 所有人（闭源标杆必读） |
-| 2 | [Claude_API.md](./Claude_API.md) | Claude 3.5 Sonnet / Messages API / Vision / Tool Use / Computer Use | 关注代码/安全/长文本者 |
-| 3 | [Gemini_API.md](./Gemini_API.md) | Gemini 1.5 Pro / Flash / 多模态 / Grounding / Function Calling | 关注多模态/超长上下文者 |
-| 4 | [DeepSeek_API.md](./DeepSeek_API.md) | DeepSeek-V3 / R1 推理模型 / JSON Mode / 函数调用与成本优势 | 关注性价比/推理能力者 |
+| 序号 | 文档                                 | 核心内容                                                            | 适合谁                  |
+| ---- | ------------------------------------ | ------------------------------------------------------------------- | ----------------------- |
+| 1    | [OpenAI_API.md](./OpenAI_API.md)     | GPT-4o / GPT-4o-mini / DALL·E / Whisper / Embeddings 接入与最佳实践 | 所有人（闭源标杆必读）  |
+| 2    | [Claude_API.md](./Claude_API.md)     | Claude 3.5 Sonnet / Messages API / Vision / Tool Use / Computer Use | 关注代码/安全/长文本者  |
+| 3    | [Gemini_API.md](./Gemini_API.md)     | Gemini 1.5 Pro / Flash / 多模态 / Grounding / Function Calling      | 关注多模态/超长上下文者 |
+| 4    | [DeepSeek_API.md](./DeepSeek_API.md) | DeepSeek-V3 / R1 推理模型 / JSON Mode / 函数调用与成本优势          | 关注性价比/推理能力者   |
 
 ### 核心能力篇（四大关键技术）
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 5 | [FunctionCalling.md](./FunctionCalling.md) | 函数调用核心概念、多平台实现差异、高级模式与最佳实践 | 所有人（让 AI 连接外部世界） |
-| 6 | [ToolCalling.md](./ToolCalling.md) | 工具类型体系、Tool Registry、ReAct / Plan-and-Execute Agent、MCP、工作流引擎 | 需构建复杂 Agent 系统者 |
-| 7 | [Streaming.md](./Streaming.md) | SSE 协议、多平台流式实现、前端渲染、服务端架构与性能优化 | 所有人（现代 AI 应用必备） |
-| 8 | [Token管理.md](./Token管理.md) | Token 分词原理、计算实战、上下文窗口管理、使用监控与告警 | 所有人（成本控制基础） |
+| 序号 | 文档                                       | 核心内容                                                                     | 适合谁                       |
+| ---- | ------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------- |
+| 5    | [FunctionCalling.md](./FunctionCalling.md) | 函数调用核心概念、多平台实现差异、高级模式与最佳实践                         | 所有人（让 AI 连接外部世界） |
+| 6    | [ToolCalling.md](./ToolCalling.md)         | 工具类型体系、Tool Registry、ReAct / Plan-and-Execute Agent、MCP、工作流引擎 | 需构建复杂 Agent 系统者      |
+| 7    | [Streaming.md](./Streaming.md)             | SSE 协议、多平台流式实现、前端渲染、服务端架构与性能优化                     | 所有人（现代 AI 应用必备）   |
+| 8    | [Token管理.md](./Token管理.md)             | Token 分词原理、计算实战、上下文窗口管理、使用监控与告警                     | 所有人（成本控制基础）       |
 
 ### 运营优化篇
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 9 | [成本优化.md](./成本优化.md) | 成本构成分析、分层模型架构、缓存策略、批处理与提示词优化 | 需控制 AI 应用成本者 |
+| 序号 | 文档                         | 核心内容                                                 | 适合谁               |
+| ---- | ---------------------------- | -------------------------------------------------------- | -------------------- |
+| 9    | [成本优化.md](./成本优化.md) | 成本构成分析、分层模型架构、缓存策略、批处理与提示词优化 | 需控制 AI 应用成本者 |
 
 ---
 
@@ -62,13 +97,13 @@
 
 ### 按角色推荐
 
-| 角色 | 必读章节 | 选读章节 | 学习目标 |
-|------|---------|---------|---------|
-| **AI 产品经理** | OpenAI_API → Streaming → FunctionCalling → Token管理 → 成本优化 | DeepSeek_API、ToolCalling | 能评估 API 选型、理解技术约束、控制成本 |
-| **前端工程师** | OpenAI_API → Streaming → FunctionCalling → Token管理 | Claude_API、Gemini_API | 能实现流式渲染、工具调用、前后端对接 |
-| **后端工程师** | 全部 API 文档 → FunctionCalling → ToolCalling → Token管理 → 成本优化 | Streaming（前端部分） | 能设计 API 网关、Agent 架构、成本监控 |
-| **技术转型者** | DeepSeek_API → OpenAI_API → Streaming → FunctionCalling → Token管理 → 成本优化 | Claude_API、Gemini_API | 从零掌握 AI 应用开发全栈 |
-| **运营/业务人员** | Token管理 → 成本优化 → OpenAI_API（基础部分） | DeepSeek_API | 理解成本结构和基本调用逻辑 |
+| 角色              | 必读章节                                                                       | 选读章节                  | 学习目标                                |
+| ----------------- | ------------------------------------------------------------------------------ | ------------------------- | --------------------------------------- |
+| **AI 产品经理**   | OpenAI_API → Streaming → FunctionCalling → Token管理 → 成本优化                | DeepSeek_API、ToolCalling | 能评估 API 选型、理解技术约束、控制成本 |
+| **前端工程师**    | OpenAI_API → Streaming → FunctionCalling → Token管理                           | Claude_API、Gemini_API    | 能实现流式渲染、工具调用、前后端对接    |
+| **后端工程师**    | 全部 API 文档 → FunctionCalling → ToolCalling → Token管理 → 成本优化           | Streaming（前端部分）     | 能设计 API 网关、Agent 架构、成本监控   |
+| **技术转型者**    | DeepSeek_API → OpenAI_API → Streaming → FunctionCalling → Token管理 → 成本优化 | Claude_API、Gemini_API    | 从零掌握 AI 应用开发全栈                |
+| **运营/业务人员** | Token管理 → 成本优化 → OpenAI_API（基础部分）                                  | DeepSeek_API              | 理解成本结构和基本调用逻辑              |
 
 ### 按学习阶段
 
@@ -149,21 +184,21 @@ Agent 与工作流设计    ToolCalling
 
 ## 关键术语速查
 
-| 术语 | 说明 |
-|------|------|
-| **Token** | 模型处理文本的最小单位，直接影响计费与上下文长度 |
-| **Streaming** | 流式输出，逐字返回模型响应，降低用户感知等待 |
-| **Function Calling** | 模型识别需要调用的外部函数并生成参数 |
-| **Tool Use / Tool Calling** | 更广义的工具调用体系，支持多轮、并行、Agent 编排 |
-| **ReAct** | Reasoning + Acting 的 Agent 架构，交替推理与行动 |
-| **MCP** | Model Context Protocol，标准化模型与外部工具的连接协议 |
-| **SSE** | Server-Sent Events，流式输出的底层传输协议 |
-| **TTFB / TTF Token** | 首字节时间 / 首 Token 时间，衡量响应速度的关键指标 |
-| **Context Window** | 上下文窗口，模型一次能处理的最大 Token 数 |
-| **RAG** | Retrieval-Augmented Generation，检索增强生成 |
-| **Prompt Caching** | 提示词缓存，复用已处理的输入 Token 以降低成本和延迟 |
-| **JSON Mode** | 强制模型输出合法 JSON 格式，便于程序解析 |
-| **Grounding** | 搜索增强，让模型基于实时搜索结果回答问题 |
+| 术语                        | 说明                                                   |
+| --------------------------- | ------------------------------------------------------ |
+| **Token**                   | 模型处理文本的最小单位，直接影响计费与上下文长度       |
+| **Streaming**               | 流式输出，逐字返回模型响应，降低用户感知等待           |
+| **Function Calling**        | 模型识别需要调用的外部函数并生成参数                   |
+| **Tool Use / Tool Calling** | 更广义的工具调用体系，支持多轮、并行、Agent 编排       |
+| **ReAct**                   | Reasoning + Acting 的 Agent 架构，交替推理与行动       |
+| **MCP**                     | Model Context Protocol，标准化模型与外部工具的连接协议 |
+| **SSE**                     | Server-Sent Events，流式输出的底层传输协议             |
+| **TTFB / TTF Token**        | 首字节时间 / 首 Token 时间，衡量响应速度的关键指标     |
+| **Context Window**          | 上下文窗口，模型一次能处理的最大 Token 数              |
+| **RAG**                     | Retrieval-Augmented Generation，检索增强生成           |
+| **Prompt Caching**          | 提示词缓存，复用已处理的输入 Token 以降低成本和延迟    |
+| **JSON Mode**               | 强制模型输出合法 JSON 格式，便于程序解析               |
+| **Grounding**               | 搜索增强，让模型基于实时搜索结果回答问题               |
 
 ---
 

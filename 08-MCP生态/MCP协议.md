@@ -1,873 +1,864 @@
 <!--
-  文件描述: MCP协议规范详解，涵盖JSON-RPC通信、工具定义、资源访问、能力协商及错误处理
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: MCP协议.md
+  文件描述: MCP协议规范详解，面向新手和技术转型者系统讲解消息模型、握手流程、能力协商、传输选型和企业治理要求
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-05
 -->
 
 # MCP 协议
 
-> MCP 协议基于 JSON-RPC 2.0 构建，定义了 Host、Client、Server 之间的标准通信规范。
+> 如果说 `MCP基础` 解决的是“为什么会有 MCP”，那本章解决的是“它到底是怎么工作的”。对新手来说，协议这两个字很容易让人退缩；但对 AI 产品经理来说，理解协议并不是为了背规范，而是为了看懂系统边界、判断风险、识别实现成本，并能和研发说同一种语言。
 
 ---
 
-## 一、协议基础
+## 零、前置知识
 
-### 1.1 JSON-RPC 2.0 基础
+建议先阅读以下内容：
 
-```python
-"""
-JSON-RPC 2.0 基础
+- [MCP基础](./MCP基础.md)
+- [StructuredOutput](../03-Prompt工程/StructuredOutput.md)
+- [FunctionCalling](../05-AI应用开发/FunctionCalling.md)
+- [ToolCalling](../05-AI应用开发/ToolCalling.md)
 
-MCP 协议建立在 JSON-RPC 2.0 之上
-"""
+如果你没有协议基础，也没关系。你只要先建立下面两个认知：
 
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
-import json
-
-@dataclass
-class JSONRPCRequest:
-    """JSON-RPC 请求"""
-    jsonrpc: str = "2.0"
-    method: str = ""
-    params: Optional[Dict[str, Any]] = None
-    id: Optional[str] = None
-
-@dataclass
-class JSONRPCResponse:
-    """JSON-RPC 响应"""
-    jsonrpc: str = "2.0"
-    result: Optional[Any] = None
-    error: Optional[Dict[str, Any]] = None
-    id: Optional[str] = None
-
-class JSONRPCProtocol:
-    """JSON-RPC 协议处理"""
-    
-    @staticmethod
-    def create_request(method: str, params: Dict = None, req_id: str = None) -> str:
-        """
-        创建 JSON-RPC 请求
-        
-        Args:
-            method: 方法名
-            params: 参数
-            req_id: 请求ID
-        
-        Returns:
-            JSON 字符串
-        """
-        request = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "id": req_id or f"req_{hash(method) % 10000}"
-        }
-        if params:
-            request["params"] = params
-        
-        return json.dumps(request, ensure_ascii=False)
-    
-    @staticmethod
-    def create_response(result: Any = None, error: Dict = None, req_id: str = None) -> str:
-        """
-        创建 JSON-RPC 响应
-        
-        Args:
-            result: 结果数据
-            error: 错误信息
-            req_id: 请求ID
-        
-        Returns:
-            JSON 字符串
-        """
-        response = {"jsonrpc": "2.0", "id": req_id}
-        
-        if error:
-            response["error"] = error
-        else:
-            response["result"] = result
-        
-        return json.dumps(response, ensure_ascii=False)
-    
-    @staticmethod
-    def parse_message(data: str) -> Dict[str, Any]:
-        """
-        解析 JSON-RPC 消息
-        
-        Args:
-            data: JSON 字符串
-        
-        Returns:
-            解析后的字典
-        """
-        try:
-            message = json.loads(data)
-            
-            # 验证基本结构
-            if message.get("jsonrpc") != "2.0":
-                raise ValueError("不支持的 JSON-RPC 版本")
-            
-            return message
-            
-        except json.JSONDecodeError:
-            raise ValueError("无效的 JSON 格式")
-
-# 使用示例
-"""
-protocol = JSONRPCProtocol()
-
-# 创建请求
-request = protocol.create_request(
-    method="tools/list",
-    params={},
-    req_id="001"
-)
-print(f"请求: {request}")
-
-# 创建响应
-response = protocol.create_response(
-    result={"tools": [{"name": "search"}]},
-    req_id="001"
-)
-print(f"响应: {response}")
-
-# 解析消息
-parsed = protocol.parse_message(request)
-print(f"方法: {parsed['method']}")
-"""
-```
-
-### 1.2 MCP 消息类型
-
-```python
-"""
-MCP 消息类型
-
-MCP 协议定义的标准消息类型
-"""
-
-from typing import Dict, List, Any, Optional
-from enum import Enum
-
-class MCPMethod(Enum):
-    """MCP 标准方法"""
-    # 生命周期
-    INITIALIZE = "initialize"
-    INITIALIZED = "initialized"
-    
-    # 工具
-    TOOLS_LIST = "tools/list"
-    TOOLS_CALL = "tools/call"
-    
-    # 资源
-    RESOURCES_LIST = "resources/list"
-    RESOURCES_READ = "resources/read"
-    
-    # 提示
-    PROMPTS_LIST = "prompts/list"
-    PROMPTS_GET = "prompts/get"
-    
-    # 能力
-    COMPLETION_COMPLETE = "completion/complete"
-
-class MCPMessageType:
-    """MCP 消息类型说明"""
-    
-    def __init__(self):
-        """初始化消息类型说明"""
-        self.messages = {
-            MCPMethod.INITIALIZE: {
-                "方向": "Client → Server",
-                "说明": "初始化连接，协商协议版本和能力",
-                "必需": True,
-                "参数": {
-                    "protocolVersion": "协议版本",
-                    "capabilities": "客户端能力",
-                    "clientInfo": "客户端信息"
-                }
-            },
-            MCPMethod.INITIALIZED: {
-                "方向": "Server → Client",
-                "说明": "确认初始化完成",
-                "必需": True,
-                "参数": {
-                    "protocolVersion": "协议版本",
-                    "capabilities": "服务端能力",
-                    "serverInfo": "服务端信息"
-                }
-            },
-            MCPMethod.TOOLS_LIST: {
-                "方向": "Client → Server",
-                "说明": "获取可用工具列表",
-                "必需": False,
-                "参数": {}
-            },
-            MCPMethod.TOOLS_CALL: {
-                "方向": "Client → Server",
-                "说明": "调用指定工具",
-                "必需": False,
-                "参数": {
-                    "name": "工具名称",
-                    "arguments": "工具参数"
-                }
-            },
-            MCPMethod.RESOURCES_LIST: {
-                "方向": "Client → Server",
-                "说明": "获取可用资源列表",
-                "必需": False,
-                "参数": {}
-            },
-            MCPMethod.RESOURCES_READ: {
-                "方向": "Client → Server",
-                "说明": "读取指定资源",
-                "必需": False,
-                "参数": {
-                    "uri": "资源URI"
-                }
-            }
-        }
-    
-    def describe(self, method: MCPMethod) -> Dict:
-        """
-        获取消息说明
-        
-        Args:
-            method: 方法枚举
-        
-        Returns:
-            说明字典
-        """
-        return self.messages.get(method, {"说明": "未知方法"})
-
-# 使用示例
-"""
-msg_types = MCPMessageType()
-
-for method in MCPMethod:
-    info = msg_types.describe(method)
-    print(f"\n{method.value}")
-    for key, value in info.items():
-        print(f"  {key}: {value}")
-"""
-```
+- 协议不是为了“显得专业”，而是为了让两边都知道该怎么沟通
+- 协议层不只影响技术实现，也影响权限、稳定性、成本和产品体验
 
 ---
 
-## 二、核心协议流程
+## 本章学习目标
 
-### 2.1 初始化握手
+完成本节后，你应该能够：
 
-```python
-"""
-MCP 初始化握手
+- 理解 MCP 消息结构、初始化流程和能力协商的核心逻辑
+- 用“业务视角 + 工程视角”解释请求、响应、通知三类消息
+- 判断本地工具、远程服务、流式场景下的传输选型
+- 识别协议层会带来的版本兼容、错误处理和安全治理问题
+- 输出一份适合企业内部评审的 MCP 协议接入清单
 
-Client 和 Server 建立连接时的协商过程
-"""
+---
 
-from typing import Dict, Any
-import json
+## 一、为什么 AI 产品经理也要理解协议
 
-class MCPHandshake:
-    """MCP 握手处理器"""
-    
-    def __init__(self):
-        """初始化握手处理器"""
-        self.protocol_version = "2024-11-05"
-    
-    def create_initialize_request(self) -> str:
-        """
-        创建初始化请求
-        
-        Returns:
-            JSON-RPC 请求字符串
-        """
-        request = {
-            "jsonrpc": "2.0",
-            "id": 0,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": self.protocol_version,
-                "capabilities": {
-                    "tools": {},
-                    "resources": {
-                        "subscribe": True
-                    }
-                },
-                "clientInfo": {
-                    "name": "ai-pm-client",
-                    "version": "1.0.0"
-                }
-            }
-        }
-        
-        return json.dumps(request, ensure_ascii=False)
-    
-    def create_initialize_response(self, req_id: Any) -> str:
-        """
-        创建初始化响应
-        
-        Args:
-            req_id: 请求ID
-        
-        Returns:
-            JSON-RPC 响应字符串
-        """
-        response = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "protocolVersion": self.protocol_version,
-                "capabilities": {
-                    "tools": {
-                        "listChanged": True
-                    },
-                    "resources": {
-                        "subscribe": True,
-                        "listChanged": True
-                    }
-                },
-                "serverInfo": {
-                    "name": "ai-pm-server",
-                    "version": "1.0.0"
-                }
-            }
-        }
-        
-        return json.dumps(response, ensure_ascii=False)
-    
-    def create_initialized_notification(self) -> str:
-        """
-        创建初始化完成通知
-        
-        Returns:
-            JSON-RPC 通知字符串
-        """
-        notification = {
-            "jsonrpc": "2.0",
-            "method": "notifications/initialized"
-        }
-        
-        return json.dumps(notification, ensure_ascii=False)
-    
-    def validate_version(self, server_version: str) -> bool:
-        """
-        验证协议版本兼容性
-        
-        Args:
-            server_version: 服务端版本
-        
-        Returns:
-            是否兼容
-        """
-        # 简化实现：版本号前缀匹配
-        return server_version.startswith("2024-11")
+### 1. 因为很多产品问题，本质上是协议问题
 
-# 使用示例
-"""
-handshake = MCPHandshake()
+在真实项目里，你经常会遇到这些现象：
 
-# 1. Client 发送初始化请求
-init_request = handshake.create_initialize_request()
-print(f"初始化请求:\n{init_request}\n")
+- 工具调不通
+- 某个能力明明存在，但模型“看不到”
+- 某些高风险工具不该暴露却被客户端发现了
+- 流式返回中途断掉，用户界面卡住
+- 新版本服务上线后，旧客户端突然不能用了
 
-# 2. Server 返回初始化响应
-init_response = handshake.create_initialize_response(req_id=0)
-print(f"初始化响应:\n{init_response}\n")
+这些问题表面上像研发问题，实际上都和协议层设计有关。
 
-# 3. Client 发送初始化完成通知
-init_notification = handshake.create_initialized_notification()
-print(f"初始化通知:\n{init_notification}")
-"""
-```
+如果你完全不了解协议层，就很难判断：
 
-### 2.2 工具调用流程
+- 问题出在工具本身，还是出在连接和消息协商
+- 这是实现 bug，还是设计缺陷
+- 这是短期故障，还是架构层风险
 
-```python
-"""
-MCP 工具调用流程
+### 2. 协议理解能帮助你做更好的产品判断
 
-标准的工具发现和调用过程
-"""
+对 AI 产品经理来说，理解协议的直接收益包括：
 
-from typing import Dict, List, Any, Optional
-from dataclasses import dataclass
-import json
+- 能判断一个能力上线成本是不是被低估了
+- 能理解为什么“看起来只是加个工具”，研发却说还要做权限、握手、版本兼容
+- 能把体验问题和协议机制联系起来，比如超时、重试、流式反馈
+- 能在评审中提出更靠谱的问题，而不是只问“为什么还没接完”
 
-@dataclass
-class MCPTool:
-    """MCP 工具定义"""
-    name: str
-    description: str
-    inputSchema: Dict[str, Any]
+所以本章的目标不是把你训练成协议专家，而是让你具备：
 
-class MCPToolFlow:
-    """MCP 工具调用流程"""
-    
-    def __init__(self):
-        """初始化工具流程"""
-        self.tools: Dict[str, MCPTool] = {}
-    
-    def register_tool(self, tool: MCPTool):
-        """
-        注册工具
-        
-        Args:
-            tool: 工具定义
-        """
-        self.tools[tool.name] = tool
-    
-    def create_tools_list_response(self, req_id: Any) -> str:
-        """
-        创建工具列表响应
-        
-        Args:
-            req_id: 请求ID
-        
-        Returns:
-            JSON-RPC 响应
-        """
-        tools_list = []
-        for tool in self.tools.values():
-            tools_list.append({
-                "name": tool.name,
-                "description": tool.description,
-                "inputSchema": tool.inputSchema
-            })
-        
-        response = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "tools": tools_list
-            }
-        }
-        
-        return json.dumps(response, ensure_ascii=False)
-    
-    def create_tool_call_request(self, tool_name: str, arguments: Dict, req_id: Any) -> str:
-        """
-        创建工具调用请求
-        
-        Args:
-            tool_name: 工具名称
-            arguments: 调用参数
-            req_id: 请求ID
-        
-        Returns:
-            JSON-RPC 请求
-        """
-        request = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "method": "tools/call",
-            "params": {
-                "name": tool_name,
-                "arguments": arguments
-            }
-        }
-        
-        return json.dumps(request, ensure_ascii=False)
-    
-    def create_tool_call_response(self, result: Any, req_id: Any) -> str:
-        """
-        创建工具调用响应
-        
-        Args:
-            result: 调用结果
-            req_id: 请求ID
-        
-        Returns:
-            JSON-RPC 响应
-        """
-        response = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": str(result)
-                    }
-                ],
-                "isError": False
-            }
-        }
-        
-        return json.dumps(response, ensure_ascii=False)
-    
-    def create_tool_call_error(self, error_msg: str, req_id: Any) -> str:
-        """
-        创建工具调用错误响应
-        
-        Args:
-            error_msg: 错误信息
-            req_id: 请求ID
-        
-        Returns:
-            JSON-RPC 错误响应
-        """
-        response = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "result": {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": error_msg
-                    }
-                ],
-                "isError": True
-            }
-        }
-        
-        return json.dumps(response, ensure_ascii=False)
+**看懂协议层对产品、体验和企业治理的影响。**
 
-# 使用示例
-"""
-flow = MCPToolFlow()
+---
 
-# 注册工具
-flow.register_tool(MCPTool(
-    name="search",
-    description="搜索知识库",
-    inputSchema={
-        "type": "object",
-        "properties": {
-            "query": {"type": "string", "description": "搜索关键词"}
-        },
-        "required": ["query"]
+## 二、什么叫协议层
+
+### 1. 先用一个朴素例子来理解
+
+假设你给同事发消息让他帮你买咖啡。
+
+如果没有任何约定，可能会出现这些问题：
+
+- 他不知道你说的是谁
+- 他不知道要不要回复
+- 他不知道你要什么规格
+- 他不知道买完之后怎么回你
+
+于是大家通常会形成一些隐含规则：
+
+- 谁发起请求
+- 请求里要带什么信息
+- 收到后要不要确认
+- 完成后怎么返回结果
+- 出错了怎么说明
+
+这套“沟通规则”，本质上就是协议。
+
+### 2. 放到 MCP 里，协议层负责的是什么
+
+MCP 协议层主要负责下面几件事：
+
+1. **定义消息长什么样**
+2. **定义双方何时开始沟通**
+3. **定义如何告诉对方自己支持哪些能力**
+4. **定义请求、返回、通知分别怎么表示**
+5. **定义错误怎么表达**
+6. **定义升级后如何尽量兼容旧版本**
+
+如果没有这层约定，就不会形成真正可互通的工具生态。
+
+### 3. 为什么 MCP 协议重要
+
+因为 MCP 不只是一个库，而是一个面向多方协作的标准。
+
+参与方可能包括：
+
+- 不同宿主应用
+- 不同 MCP Server 提供方
+- 不同模型供应商
+- 不同平台团队和业务团队
+
+协议的意义就在于：
+
+- 让这些参与方尽量减少彼此的“私有理解”
+- 让沟通方式标准化
+- 让接入、排障、治理都更可控
+
+---
+
+## 三、MCP 的核心消息模型
+
+### 1. 把消息理解为“带格式的对话”
+
+MCP 协议里的消息，并不是随便发一个文本过去，而是要按约定的结构传输。
+
+对初学者来说，最重要的认知不是记字段，而是先理解三类行为：
+
+- 我请求你做一件事
+- 你告诉我这件事的结果
+- 我单向通知你一个状态变化
+
+这三类行为对应协议里最常见的三类消息：
+
+- `Request`
+- `Response`
+- `Notification`
+
+### 2. MCP 常见字段怎么理解
+
+MCP 协议常基于 JSON-RPC 的思想组织消息，因此你经常会看到下面这些字段：
+
+- `jsonrpc`：表明使用的是哪一类消息规范
+- `id`：请求编号，用来匹配返回结果
+- `method`：这次想做什么
+- `params`：做这件事需要的参数
+- `result`：成功时返回的结果
+- `error`：失败时返回的错误信息
+
+如果你是第一次看，会觉得这很像普通接口调用。确实如此，但重点在于：
+
+**MCP 把这些结构变成了跨工具、跨客户端、跨宿主的一套统一约定。**
+
+### 3. 用一个真实风格的请求看结构
+
+比如客户端想调用一个工具 `search_docs`：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_docs",
+    "arguments": {
+      "query": "MCP 权限治理"
     }
-))
+  }
+}
+```
 
-# 1. 获取工具列表
-list_response = flow.create_tools_list_response(req_id=1)
-print(f"工具列表:\n{list_response}\n")
+理解这个请求时，不要只盯着代码，而要看它在表达什么：
 
-# 2. 调用工具
-call_request = flow.create_tool_call_request(
-    tool_name="search",
-    arguments={"query": "MCP协议"},
-    req_id=2
-)
-print(f"调用请求:\n{call_request}\n")
+- 这是一次需要结果的请求
+- 请求编号是 `1`
+- 要执行的动作是 `tools/call`
+- 工具名是 `search_docs`
+- 参数里带了搜索词
 
-# 3. 返回结果
-call_response = flow.create_tool_call_response(
-    result="找到 5 条关于 MCP 协议的记录",
-    req_id=2
-)
-print(f"调用响应:\n{call_response}")
-"""
+如果执行成功，可能返回：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "共找到 4 条结果"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+这里最关键的是：
+
+- `id` 对上了原请求
+- 有明确的 `result`
+- 返回内容具备结构，不是随便一个字符串
+
+### 4. 作为 AI 产品经理，应该从消息模型里看什么
+
+不是看语法细节，而是看下面这些问题：
+
+- 请求是不是可追踪
+- 返回是不是可判错
+- 结果是不是可被上层系统可靠消费
+- 是否方便监控和审计
+- 出错后用户体验能不能兜得住
+
+---
+
+## 四、Request、Response、Notification 三类消息如何理解
+
+### 1. Request：发起正式请求
+
+Request 的特点是：
+
+- 需要对方处理
+- 期待明确结果
+- 有超时和失败风险
+
+在 MCP 里，典型 Request 包括：
+
+- `initialize`
+- `tools/list`
+- `resources/list`
+- `tools/call`
+
+对产品经理来说，Request 通常对应：
+
+- 一次能力发现
+- 一次工具执行
+- 一次资源读取
+
+### 2. Response：对请求结果负责
+
+Response 是对 Request 的回应。
+
+它有两种常见结果：
+
+- 成功：返回 `result`
+- 失败：返回 `error`
+
+你要特别注意一点：
+
+如果系统没有把错误返回设计清楚，产品体验就会非常差。因为你最终在界面上看到的就会是：
+
+- “调用失败”
+- “未知错误”
+- “暂无结果”
+
+这类模糊提示，往往都源于协议层或服务端没有提供足够清晰的错误语义。
+
+### 3. Notification：只通知，不等待结果
+
+Notification 可以理解为：
+
+“我告诉你发生了一件事，但不要求你回我。”
+
+它适合表达：
+
+- 初始化完成
+- 进度变化
+- 某类状态更新
+
+Notification 的产品价值常常被低估。比如：
+
+- 长任务执行时，用户是否能看到进度
+- 工具执行过程中，是否能给前端状态反馈
+
+这些体验问题，很多时候就和通知机制有关。
+
+### 4. 三类消息的产品视角总结
+
+| 消息类型 | 产品视角关注点 |
+|----------|---------------|
+| Request | 会不会超时，是否可追踪，是否有重试策略 |
+| Response | 错误是否清晰，结果是否可展示，是否可审计 |
+| Notification | 是否支持进度反馈，是否支持长任务体验优化 |
+
+---
+
+## 五、初始化和握手为什么重要
+
+### 1. 为什么不是一连上就直接调工具
+
+很多人会以为：
+
+“Client 既然已经连上 Server，直接调用工具不就行了吗？”
+
+但在标准化系统里，这样做风险很大，因为双方还没有确认：
+
+- 协议版本是否兼容
+- 支持哪些能力
+- 能力清单长什么样
+- 后续通信是否按同一规则理解
+
+所以 MCP 在正式调用前，需要先做初始化和能力协商。
+
+### 2. 一个典型初始化流程
+
+你可以把它理解成双方先打招呼、交换名片、确认规则，再开始合作。
+
+```text
+1. Client 建立连接
+2. Client 发送 initialize
+3. Server 返回协议版本、服务端信息、能力清单
+4. Client 发送 initialized 通知
+5. 双方进入正式工作阶段
+```
+
+### 3. 握手阶段到底在确认什么
+
+握手本质上是在确认：
+
+- 我们是不是说同一种协议语言
+- 我有哪些能力
+- 你能不能理解这些能力
+- 这次连接是否安全可信
+
+### 4. 为什么这对企业很重要
+
+在企业环境下，握手阶段往往不只是协议兼容问题，还会涉及：
+
+- 身份校验
+- 白名单能力过滤
+- 环境确认
+- 审计记录
+
+举个例子：
+
+如果某个高风险写工具在握手阶段就被默认暴露给不该访问的客户端，后面就会有严重风险。
+
+这说明握手并不只是“技术细节”，它也是企业治理入口。
+
+---
+
+## 六、能力协商到底在协商什么
+
+### 1. 协商不是谈判，而是“能力对齐”
+
+能力协商可以理解为：
+
+客户端和服务端互相确认“你支持什么、我能用什么”。
+
+它不是谈判价格，而是对齐能力边界。
+
+### 2. 常见协商内容
+
+典型包括：
+
+- 支持哪些资源类型
+- 支持哪些工具
+- 是否支持 Prompts
+- 是否支持 Sampling
+- 是否支持流式、进度通知等扩展机制
+
+### 3. 产品经理要关注的协商问题
+
+你不需要看每个字段，但需要看下面这些管理问题：
+
+- 某个能力是否应该默认暴露
+- 是否需要按角色、租户、环境过滤能力
+- 客户端是否会缓存能力目录
+- 服务端升级后能力变更会不会影响旧宿主
+
+### 4. 一个典型误区
+
+很多团队会把“能力全量暴露”当作方便调试的做法。
+
+这在生产环境里通常是危险的，因为：
+
+- 容易把高风险能力暴露给错误的客户端
+- 容易让模型看到不该看到的工具
+- 容易让产品体验变乱，工具选择变差
+
+更合理的方式是：
+
+- 按环境暴露
+- 按角色暴露
+- 按风险级别暴露
+
+---
+
+## 七、Tools、Resources、Prompts 在协议层如何被访问
+
+### 1. Tools：动作型能力
+
+Tools 是模型最容易“感知到”的一类能力，因为它们通常对应具体行动。
+
+在协议层里，你至少会关心两步：
+
+- 先列出有哪些工具
+- 再调用某个工具
+
+产品经理在这里要关注：
+
+- 工具名称是否让人类和模型都能理解
+- 参数是否足够清晰
+- 读写动作是否混淆
+- 结果结构是否稳定
+
+### 2. Resources：可读上下文
+
+Resources 更像“内容入口”。
+
+它们常被用于：
+
+- 给模型补充上下文
+- 提供标准化只读数据
+- 连接知识条目、业务对象、文件内容
+
+协议层的价值在于：
+
+- 资源读取也被标准化了
+- 客户端不必为每个资源类型单独发明接法
+
+### 3. Prompts：可复用模板
+
+Prompts 是很多人会忽略的一部分。
+
+对产品经理来说，Prompts 的协议化价值体现在：
+
+- 模板不再散落在不同应用里
+- 可以统一版本管理
+- 可以跨宿主复用业务模板
+
+如果你做过内容平台、审批系统、知识系统，就会很容易理解这一点：  
+模板一旦多起来，不治理就会很快失控。
+
+### 4. 为什么三者在协议层要区分清楚
+
+因为这不只是“技术分类”，还关系到：
+
+- 权限怎么配
+- UI 怎么展示
+- 审计怎么记录
+- 模型怎么选择
+
+一个只读 Resource 和一个会发消息的 Tool，治理强度显然不能一样。
+
+---
+
+## 八、传输方式怎么选
+
+### 1. 不同传输方式背后是不同场景
+
+MCP 常见传输方式包括：
+
+- `stdio`
+- `HTTP`
+- `SSE` 或流式 HTTP
+
+初学者容易把传输方式当成纯技术参数，但它实际上会影响：
+
+- 延迟
+- 部署方式
+- 会话管理
+- 监控方式
+- 用户体验
+
+### 2. stdio 适合什么场景
+
+`stdio` 更适合：
+
+- 本地工具
+- 桌面应用
+- 开发调试
+- 本机受控环境
+
+优点：
+
+- 简单
+- 延迟低
+- 本地隔离性较好
+
+局限：
+
+- 不适合远程平台化共享
+- 不适合大规模企业服务治理
+
+### 3. HTTP 适合什么场景
+
+`HTTP` 更适合：
+
+- 远程服务
+- 企业统一平台
+- 需要接入网关、鉴权、限流、日志系统的场景
+
+优点：
+
+- 易于纳入已有后端体系
+- 易于做网关治理
+- 易于扩展和共享
+
+局限：
+
+- 会话和状态处理更复杂
+- 流式和长连接体验需要额外设计
+
+### 4. SSE 或流式 HTTP 适合什么场景
+
+适合：
+
+- 需要实时进度更新
+- 工具执行时间较长
+- 用户希望看到中间状态反馈
+
+例如：
+
+- 大规模代码检索
+- 长时间数据分析
+- 多步骤 Agent 执行
+
+### 5. AI 产品经理如何参与传输选型讨论
+
+你可以不决定底层库，但应该会问这些问题：
+
+- 用户是否需要实时感知进度
+- 这是本地工具还是平台服务
+- 是否需要纳入企业统一网关和审计
+- 连接断了后，产品要怎么表现
+
+---
+
+## 九、错误处理为什么不能只写“失败”
+
+### 1. 错误分类决定了系统可运营性
+
+很多团队做工具接入时，只要能跑通主路径就结束了。结果到了生产环境，错误全都长这样：
+
+- 请求失败
+- 内部错误
+- 服务不可用
+
+这种错误信息对用户没帮助，对运营没帮助，对研发定位问题也帮助有限。
+
+### 2. 一个更实用的错误分类方式
+
+企业里通常至少应该区分：
+
+| 错误类型 | 典型场景 | 产品影响 |
+|----------|----------|----------|
+| 协议错误 | 消息格式错、版本不兼容 | 调不通，需阻断 |
+| 鉴权错误 | Token 失效、权限不足 | 需明确提示和审计 |
+| 参数错误 | 参数缺失、类型不对 | 需引导修正 |
+| 业务错误 | 状态不允许、数据不存在 | 需透出业务语义 |
+| 系统错误 | 下游超时、依赖故障 | 需重试、降级或熔断 |
+
+### 3. 产品经理该如何看错误设计
+
+你应该关注：
+
+- 用户看到的提示是否可理解
+- 是否有利于客服和运营排查
+- 是否方便做指标归类
+- 高风险错误是否会进入告警和审计
+
+### 4. 一个真实思路
+
+比如“合并 PR 失败”这个问题：
+
+- 如果是权限不足，提示应该偏权限语义
+- 如果是 PR 状态不允许合并，提示应该偏业务语义
+- 如果是 GitHub 超时，提示应该偏系统语义并建议稍后重试
+
+这就是为什么错误设计不是后端小事，而是产品体验的一部分。
+
+---
+
+## 十、版本兼容为什么是平台成败的关键点
+
+### 1. 协议一旦进入企业环境，就不可能所有端同时升级
+
+很多新手会默认一种理想状态：
+
+- Server 升级
+- Client 同步升级
+- Host 同步适配
+
+现实通常不是这样。
+
+企业里更常见的是：
+
+- 有多个宿主
+- 有多个版本并存
+- 有不同业务线的接入节奏
+
+所以协议层必须考虑兼容性。
+
+### 2. 为什么兼容性会变成产品问题
+
+因为一旦兼容做不好，产品表现就是：
+
+- 某个旧版本宿主突然不能用了
+- 某个工具名称或字段改了，导致流程失效
+- 某些用户反馈“昨天还能用，今天不行了”
+
+这已经不是单纯的技术问题，而是稳定性和信任问题。
+
+### 3. 一个务实的兼容策略
+
+建议遵循：
+
+1. 先兼容，再升级
+2. 能增量加字段，就尽量不要直接删字段
+3. 能灰度，就不要全量硬切
+4. 废弃能力要给明确过渡周期
+
+这是 AI 产品经理在平台化场景里必须具备的基本治理意识。
+
+---
+
+## 十一、协议层的安全和治理要看什么
+
+### 1. 协议层不是天然安全的
+
+很多人会以为有了统一协议就更安全，其实不然。
+
+协议统一，只说明沟通方式统一，不代表：
+
+- 权限统一
+- 风险可控
+- 审计完善
+- 高风险能力不会误暴露
+
+### 2. 企业里协议层至少要补齐的治理点
+
+#### 身份与鉴权
+
+要能回答：
+
+- 谁在调用
+- 代表谁调用
+- 在哪个环境调用
+- 这个身份能看到哪些能力
+
+#### 能力白名单
+
+要能控制：
+
+- 哪些工具可被发现
+- 哪些工具只在测试环境开放
+- 哪些高风险能力必须隐藏或审批
+
+#### 审计留痕
+
+至少要记：
+
+- 谁调了什么
+- 调用是否成功
+- 是否命中审批
+- 是否越权或被拒绝
+
+#### 超时与重试
+
+协议层若没有统一超时和重试策略，上层体验会非常不稳定。
+
+### 3. 从产品视角看，治理不只是安全部门的事
+
+因为治理会直接影响：
+
+- 哪些能力能上线
+- 哪些能力需要人工确认
+- 某个产品能不能对外开放
+- 某类场景是否适合自动化执行
+
+---
+
+## 十二、一个完整案例：企业知识助手调用审批和工单能力时，协议层会发生什么
+
+为了让你真正“看见协议”，下面把一个例子完整走一遍。
+
+### 场景
+
+用户问：
+
+“我想知道采购审批现在到哪一步了，如果卡住了帮我提一个工单。”
+
+### 背后的协议层过程
+
+```text
+1. Host 收到用户请求
+2. Host 内部的 MCP Client 与审批 Server、工单 Server 建立连接
+3. Client 发起 initialize，请求能力协商
+4. 审批 Server 返回可用工具和资源，如 query_approval_status
+5. 工单 Server 返回 create_ticket 等工具
+6. 模型判断先调用 query_approval_status
+7. Client 发出 tools/call 请求
+8. Server 返回审批状态结果
+9. 模型判断状态异常，需要创建工单
+10. 如果 create_ticket 属于高风险写工具，可能触发审批或确认
+11. Client 再次发起 tools/call
+12. 工单 Server 返回创建结果
+13. Host 将最终信息展示给用户
+```
+
+### 从产品经理视角，要看哪些关键点
+
+- 握手是否成功
+- 能力是否按权限正确暴露
+- 审批状态查询是否稳定
+- 创建工单是否需要人工确认
+- 若工单系统失败，是否有降级路径
+- 全链路是否有审计
+
+当你能用这种方式看问题时，你就不再只是“知道协议名词”，而是真正理解协议层的业务意义。
+
+---
+
+## 十三、企业级协议设计模板
+
+下面这份模板更适合拿去做内部设计评审或学习练习：
+
+```json
+{
+  "scenario": "企业知识助手接入审批与工单能力",
+  "protocol_version": "2024-11-05",
+  "transport": "http",
+  "handshake_policy": {
+    "validate_server_identity": true,
+    "allow_capabilities": ["tools", "resources"],
+    "high_risk_tools_hidden_by_default": true
+  },
+  "timeout_policy": {
+    "connect_ms": 3000,
+    "request_ms": 10000,
+    "stream_idle_ms": 15000
+  },
+  "error_strategy": {
+    "retry_on_timeout": true,
+    "no_retry_on_auth_error": true,
+    "fallback_to_readonly_when_write_unavailable": true
+  },
+  "governance": {
+    "audit_enabled": true,
+    "approval_required_for": ["create_ticket"],
+    "environment_isolation": true
+  },
+  "key_metrics": [
+    "handshake_success_rate",
+    "tool_call_success_rate",
+    "p95_latency_ms",
+    "approval_reject_rate"
+  ]
+}
 ```
 
 ---
 
-## 三、协议规范详解
+## 十四、AI 产品经理学习协议时的建议方法
 
-### 3.1 工具定义规范
+### 1. 不要死记字段，先看流程
 
-```python
-"""
-MCP 工具定义规范
+建议你优先理解：
 
-工具描述必须符合 JSON Schema 标准
-"""
+- 谁先连谁
+- 怎么握手
+- 怎么发现能力
+- 怎么发请求
+- 怎么回结果
+- 失败时怎么处理
 
-from typing import Dict, Any, List
-from dataclasses import dataclass
+### 2. 把协议问题翻译成业务问题
 
-@dataclass
-class ToolParameter:
-    """工具参数"""
-    name: str
-    param_type: str
-    description: str
-    required: bool = True
-    enum: List[str] = None
+比如：
 
-class ToolSchemaBuilder:
-    """工具 Schema 构建器"""
-    
-    def __init__(self):
-        """初始化构建器"""
-        self.schema = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-    
-    def add_parameter(self, param: ToolParameter):
-        """
-        添加参数
-        
-        Args:
-            param: 参数定义
-        """
-        property_def = {
-            "type": param.param_type,
-            "description": param.description
-        }
-        
-        if param.enum:
-            property_def["enum"] = param.enum
-        
-        self.schema["properties"][param.name] = property_def
-        
-        if param.required:
-            self.schema["required"].append(param.name)
-        
-        return self
-    
-    def build(self) -> Dict[str, Any]:
-        """
-        构建 Schema
-        
-        Returns:
-            JSON Schema 字典
-        """
-        return self.schema
-    
-    @staticmethod
-    def create_example_tool() -> Dict[str, Any]:
-        """
-        创建示例工具定义
-        
-        Returns:
-            完整的工具定义
-        """
-        return {
-            "name": "query_database",
-            "description": "查询数据库获取信息",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "table": {
-                        "type": "string",
-                        "description": "要查询的数据表",
-                        "enum": ["users", "orders", "products"]
-                    },
-                    "conditions": {
-                        "type": "string",
-                        "description": "查询条件（SQL WHERE 子句）"
-                    },
-                    "limit": {
-                        "type": "integer",
-                        "description": "返回结果数量限制",
-                        "default": 10
-                    }
-                },
-                "required": ["table"]
-            }
-        }
+- 版本兼容 -> 老用户会不会突然不可用
+- 能力暴露 -> 高风险工具会不会误开放
+- 通知机制 -> 用户能不能看到长任务进度
+- 错误模型 -> 界面上的失败提示是否清晰
 
-# 使用示例
-"""
-builder = ToolSchemaBuilder()
+### 3. 用“新手也能讲清楚”的方式复述
 
-schema = builder\
-    .add_parameter(ToolParameter(
-        name="query",
-        param_type="string",
-        description="搜索关键词",
-        required=True
-    ))\
-    .add_parameter(ToolParameter(
-        name="limit",
-        param_type="integer",
-        description="结果数量",
-        required=False
-    ))\
-    .build()
+如果你能向一个不了解协议的同事说清：
 
-print(json.dumps(schema, ensure_ascii=False, indent=2))
-"""
-```
+- 为什么要握手
+- 为什么要能力协商
+- 为什么错误不能只写“失败”
 
-### 3.2 错误处理规范
-
-```python
-"""
-MCP 错误处理规范
-
-标准化的错误码和错误处理机制
-"""
-
-from typing import Dict, Any
-from enum import Enum
-
-class MCPErrorCode(Enum):
-    """MCP 标准错误码"""
-    # 协议错误
-    PARSE_ERROR = -32700
-    INVALID_REQUEST = -32600
-    METHOD_NOT_FOUND = -32601
-    INVALID_PARAMS = -32602
-    INTERNAL_ERROR = -32603
-    
-    # MCP 特定错误
-    INITIALIZATION_ERROR = -32000
-    TOOL_NOT_FOUND = -32001
-    TOOL_EXECUTION_ERROR = -32002
-    RESOURCE_NOT_FOUND = -32003
-    RESOURCE_ACCESS_DENIED = -32004
-
-class MCPError:
-    """MCP 错误处理"""
-    
-    @staticmethod
-    def create_error(code: MCPErrorCode, message: str, data: Any = None) -> Dict[str, Any]:
-        """
-        创建标准错误响应
-        
-        Args:
-            code: 错误码
-            message: 错误信息
-            data: 附加数据
-        
-        Returns:
-            错误字典
-        """
-        error = {
-            "code": code.value,
-            "message": message
-        }
-        
-        if data:
-            error["data"] = data
-        
-        return error
-    
-    @staticmethod
-    def parse_error(data: str) -> Dict[str, Any]:
-        """
-        解析错误
-        
-        Args:
-            data: 错误数据
-        
-        Returns:
-            解析后的错误信息
-        """
-        return {
-            "type": "parse_error",
-            "suggestion": "检查 JSON 格式是否正确"
-        }
-    
-    @staticmethod
-    def tool_not_found(tool_name: str) -> Dict[str, Any]:
-        """
-        工具未找到错误
-        
-        Args:
-            tool_name: 工具名称
-        
-        Returns:
-            错误字典
-        """
-        return MCPError.create_error(
-            code=MCPErrorCode.TOOL_NOT_FOUND,
-            message=f"工具 '{tool_name}' 不存在",
-            data={"available_tools": []}
-        )
-    
-    @staticmethod
-    def tool_execution_error(tool_name: str, error_msg: str) -> Dict[str, Any]:
-        """
-        工具执行错误
-        
-        Args:
-            tool_name: 工具名称
-            error_msg: 错误信息
-        
-        Returns:
-            错误字典
-        """
-        return MCPError.create_error(
-            code=MCPErrorCode.TOOL_EXECUTION_ERROR,
-            message=f"工具 '{tool_name}' 执行失败: {error_msg}"
-        )
-
-# 使用示例
-"""
-# 创建工具未找到错误
-error = MCPError.tool_not_found("unknown_tool")
-print(f"错误响应: {error}")
-
-# 创建执行错误
-exec_error = MCPError.tool_execution_error("database", "连接超时")
-print(f"执行错误: {exec_error}")
-"""
-```
+那你就真的学会了。
 
 ---
 
-## 四、AI 产品经理关注点
+## 十五、常见误区补充
 
-```
-MCP 协议产品化要点：
+### 误区 1：协议层只影响研发，不影响产品
 
-协议兼容性
-├── 版本管理
-│   ├── 关注协议版本更新
-│   ├── 评估升级影响范围
-│   └── 制定版本兼容策略
-├── 能力协商
-│   ├── 明确必需 vs 可选能力
-│   ├── 优雅降级处理
-│   └── 能力发现机制
-└── 错误处理
-    ├── 用户友好的错误提示
-    ├── 自动重试机制
-    └── 兜底方案设计
+错误。稳定性、权限边界、用户体验和上线风险都深受协议层影响。
 
-安全考虑
-├── 工具权限控制
-│   ├── 敏感工具需确认
-│   ├── 分级权限管理
-│   └── 操作审计日志
-├── 资源访问限制
-│   ├── 防止未授权访问
-│   ├── 数据脱敏处理
-│   └── 访问频率限制
-└── 输入验证
-    ├── 参数类型检查
-    ├── 范围限制
-    └── 防止注入攻击
+### 误区 2：只要工具能调用成功，协议设计就算完成
 
-性能优化
-├── 连接管理
-│   ├── 连接池复用
-│   ├── 心跳检测
-│   └── 超时控制
-├── 调用优化
-│   ├── 批量请求
-│   ├── 缓存策略
-│   └── 异步处理
-└── 监控指标
-    ├── 调用成功率
-    ├── 平均响应时间
-    └── 错误率统计
+错误。真正的协议设计还要看：
 
-关键指标
-├── 协议层面
-│   ├── 握手成功率 > 99%
-│   ├── 工具发现时间 < 100ms
-│   └── 调用响应时间 < 2s
-├── 业务层面
-│   ├── 工具调用成功率 > 95%
-│   ├── 用户满意度 > 4.0/5
-│   └── 功能可用性 > 99.9%
-└── 生态层面
-    ├── MCP Server 接入数量
-    ├── 工具复用率
-    └── 开发者活跃度
-```
+- 能否发现能力
+- 能否处理异常
+- 能否兼容版本
+- 能否支持审计和治理
+
+### 误区 3：能力应该默认全部暴露，方便模型使用
+
+错误。企业环境里，能力暴露必须和角色、环境、风险等级绑定。
+
+### 误区 4：Notification 不重要
+
+错误。很多长流程体验、进度反馈和异步状态更新都依赖通知机制。
 
 ---
 
-## 五、参考资源
+## 十六、本章小结
 
-- [MCP 协议规范](https://spec.modelcontextprotocol.io/) - 官方协议文档
-- [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification) - 底层协议规范
-- [JSON Schema](https://json-schema.org/) - 工具参数定义标准
+如果把 `MCP基础` 看作“理解为什么要有这层协议”，那本章的核心收获应该是：
+
+**协议层本质上是在定义一套标准沟通规则，让模型世界与外部能力世界可以稳定、可控地协作。**
+
+对 AI 产品经理来说，理解 MCP 协议并不是为了手写协议实现，而是为了具备这些判断能力：
+
+- 看懂能力发现和调用链路
+- 看懂超时、错误、通知、兼容会如何影响产品
+- 看懂企业治理为什么不能只停留在工具实现层
+- 看懂平台化接入为什么必须重视协议边界
+
+---
+
+## 十七、阶段验收标准
+
+完成本节后，至少应满足以下要求：
+
+- 能描述 `initialize -> initialized -> list/call` 的基本链路
+- 能解释 Request、Response、Notification 三类消息的差异
+- 能说明 Tools、Resources、Prompts 在协议层的访问方式
+- 能根据本地与远程场景给出传输选型建议
+- 能输出一份企业级协议接入模板
+
+---
+
+## 十八、版本记录
+
+- **2026-06-05** 扩写为教程版内容，补充协议层意义、消息模型详解、握手与能力协商、传输选型、错误与兼容治理、案例推演和学习方法
+- **2026-06-05** 补充协议层设计目标、能力协商、传输选型、错误分类、版本兼容与企业接入模板
+- **2026-06-03** 初版完成，介绍 MCP 协议基础与示例
+
+## 参考资源
+
+- [MCP 协议规范](https://spec.modelcontextprotocol.io/)
+- [JSON-RPC 2.0 规范](https://www.jsonrpc.org/specification)
+- [JSON Schema](https://json-schema.org/)
