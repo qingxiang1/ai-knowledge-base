@@ -1,263 +1,355 @@
-# 14-项目实战
+<!--
+  创建时间: 2026-06-12
+  文件名: README.md
+  文件描述: 项目实战模块总指南，面向新手和技术转型者系统说明项目列表、环境准备、通用运行步骤、学习建议、改造方向与复盘方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v2.0.0
+  最后更新时间: 2026-06-12
+-->
 
-本章节包含多个可直接运行的 AI 项目实战案例，每个项目均包含完整的前后端源码和配置文件。
+# 14-项目实战总指南
 
-## 项目列表
+> 这个目录不是单一教程，而是一组可运行的 AI 项目训练场。你可以把它理解成“项目案例库 + 运行手册 + 作品集素材池”。如果前面的章节帮助你建立了方法论，这里就是把方法论落成项目、把知识变成作品、把概念变成交付经验的地方。
 
-| 项目 | 名称 | 技术栈 | 端口 |
-|------|------|--------|------|
-| Project01 | AI 写作助手 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project02 | AI 翻译助手 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project03 | 企业知识库 | React + TypeScript + Node.js + LangChain + ChromaDB | 前端 5173 / 后端 8000 |
-| Project04 | Agent 系统 | React + TypeScript + Node.js + LangChain | 前端 5173 / 后端 8000 |
-| Project05 | AI 数据分析 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project06 | AI 代码助手 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project07 | AI 客服系统 | React + TypeScript + Node.js + Socket.IO | 前端 5173 / 后端 3000 |
-| Project08 | AI 会议纪要 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project09 | AI 产品经理 Copilot | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project10 | AI 销售助手 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
-| Project11 | AI 招聘助手 | React + TypeScript + Node.js + OpenAI | 前端 5173 / 后端 3000 |
+---
 
-## 快速开始
+## 一、这个目录里有什么
 
-### 前置要求
+当前 `14-项目实战` 主要由四部分组成：
 
-- Node.js >= 18
-- pnpm >= 8
+- [index.md](./index.md)：模块学习导航页，告诉你怎么学、先学什么、每类项目训练什么能力
+- 本文件 `README.md`：总运行说明和实战总指南，告诉你怎么跑、怎么改、怎么复盘
+- [企业级项目落地蓝图.md](./企业级项目落地蓝图.md)：逐个补齐 11 个项目的企业场景、模块、架构、数据、接口与验收标准
+- 各个 `ProjectXX-*` 目录：具体项目代码和项目级 README
 
-### 通用运行步骤
+建议阅读顺序：
 
-每个项目均包含前端和后端，需要分别启动：
+1. 先看 [index.md](./index.md)
+2. 再看本文件 `README.md`
+3. 再看 [企业级项目落地蓝图.md](./企业级项目落地蓝图.md)
+4. 然后按推荐顺序进入具体项目
+
+---
+
+## 二、项目总览
+
+### 入门型项目
+
+| 项目 | 目录 | 核心训练点 | 典型价值 |
+| --- | --- | --- | --- |
+| AI 写作助手 | `Project01-AI写作助手` | Prompt、文本生成、前后端联调 | 理解最基础的 AI 工具产品闭环 |
+| AI 翻译助手 | `Project02-AI翻译助手` | 多语言输入输出、结构化参数设计 | 理解轻量高频 AI 工具产品 |
+| AI 会议纪要 | `Project08-AI会议纪要` | 摘要、行动项提取、办公场景封装 | 理解办公效率类 AI 产品 |
+
+### 工作流与业务型项目
+
+| 项目 | 目录 | 核心训练点 | 典型价值 |
+| --- | --- | --- | --- |
+| AI 客服系统 | `Project07-AI客服系统` | 多轮对话、意图识别、人工转接 | 理解企业服务型 AI 产品 |
+| AI 产品经理 Copilot | `Project09-AI产品经理Copilot` | 结构化输出、角色型辅助、文档生成 | 理解 Copilot 类产品设计 |
+| AI 销售助手 | `Project10-AI销售助手` | 业务建议、客户分析、销售话术 | 理解业务提效型产品 |
+| AI 招聘助手 | `Project11-AI招聘助手` | 匹配评分、结构化评估、岗位分析 | 理解垂直行业 AI 场景 |
+
+### 进阶型项目
+
+| 项目 | 目录 | 核心训练点 | 典型价值 |
+| --- | --- | --- | --- |
+| 企业知识库 | `Project03-企业知识库` | RAG、文档解析、检索问答 | 理解知识型 AI 产品闭环 |
+| Agent 系统 | `Project04-Agent系统` | Agent、工具调用、思考过程展示 | 理解执行式 AI 产品结构 |
+| AI 代码助手 | `Project06-AI代码助手` | 开发者场景、代码生成、解释优化 | 理解开发工具类 AI 产品 |
+| AI 数据分析 | `Project05-AI数据分析` | 数据摘要、趋势分析、可视化输出 | 理解分析型 AI 产品能力层 |
+
+---
+
+## 三、推荐学习顺序
+
+如果你是第一次系统做这些项目，建议按下面顺序推进：
+
+1. `Project01-AI写作助手`
+2. `Project02-AI翻译助手`
+3. `Project08-AI会议纪要`
+4. `Project07-AI客服系统`
+5. `Project03-企业知识库`
+6. `Project04-Agent系统`
+7. `Project09-AI产品经理Copilot`
+8. `Project10-AI销售助手`
+9. `Project11-AI招聘助手`
+10. `Project06-AI代码助手`
+11. `Project05-AI数据分析`
+
+这样安排的原因是：
+
+- 先从轻量项目理解 AI 应用基本结构
+- 再进入办公和业务工作流
+- 然后进入 RAG、Agent 和开发工具等复杂场景
+- 最后回到更适合综合复盘的数据分析型项目
+
+如果你目标是作品集，也可以按下面方式选：
+
+- 工具型代表作：`Project01-AI写作助手`
+- 企业型代表作：`Project07-AI客服系统`
+- 知识型代表作：`Project03-企业知识库`
+- Agent 型代表作：`Project04-Agent系统`
+
+---
+
+## 四、环境准备
+
+### 通用前置要求
+
+- Node.js `>= 18`
+- `pnpm >= 8`
+
+部分项目还可能需要：
+
+- Python 环境
+- OpenAI API Key 或兼容模型接口
+- 本地数据库或 Docker
+
+### 关于 API Key
+
+多数项目可以先用模拟响应或最小配置跑通界面，但如果要体验真实 AI 能力，通常需要在项目后端目录配置：
+
+```env
+OPENAI_API_KEY=your_api_key_here
+PORT=3000
+```
+
+如果项目本身提供 `.env.example`，建议先复制再修改。
+
+---
+
+## 五、通用运行方式
+
+大多数项目采用前后端分离结构，通用运行思路如下：
 
 ```bash
 # 1. 进入项目目录
 cd Project01-AI写作助手
 
-# 2. 安装前端依赖并启动
+# 2. 安装前端依赖
 pnpm install
+
+# 3. 启动前端
 pnpm dev
 
-# 3. 新开终端，进入后端目录并启动
+# 4. 新开终端进入后端目录
 cd server
+
+# 5. 安装后端依赖
 pnpm install
+
+# 6. 启动后端
 pnpm dev
 ```
 
-### 各项目启动命令
+注意：
 
-#### Project01 - AI 写作助手
+- 有些项目后端目录名是 `server`
+- 有些项目 README 中展示的是 `backend` / `frontend` 结构说明
+- 当前仓库真实目录以本地文件结构为准，运行前先看对应项目目录
 
-```bash
-cd Project01-AI写作助手
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
+---
+
+## 六、项目清单与端口参考
+
+| 项目 | 技术栈关键词 | 常见端口 |
+| --- | --- | --- |
+| Project01-AI写作助手 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project02-AI翻译助手 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project03-企业知识库 | React + TypeScript + Node.js | 前端 `5173` / 后端 `8000` |
+| Project04-Agent系统 | React + TypeScript + Node.js | 前端 `5173` / 后端 `8000` |
+| Project05-AI数据分析 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project06-AI代码助手 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project07-AI客服系统 | React + TypeScript + Node.js + Socket.IO | 前端 `5173` / 后端 `3000` |
+| Project08-AI会议纪要 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project09-AI产品经理Copilot | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project10-AI销售助手 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+| Project11-AI招聘助手 | React + TypeScript + Node.js | 前端 `5173` / 后端 `3000` |
+
+说明：
+
+- 这里记录的是当前仓库里最常见的默认端口
+- 如果项目内部配置不同，以项目目录中的实际配置文件为准
+
+---
+
+## 七、怎么看一个项目最有效
+
+建议每个项目都按下面顺序拆：
+
+### 1. 先看它解决什么问题
+
+至少先回答：
+
+- 用户是谁
+- 典型任务是什么
+- 为什么需要 AI
+- 如果不用 AI，要靠什么手工方式完成
+
+### 2. 再看它的输入输出
+
+重点关注：
+
+- 用户输入什么
+- 系统中间做了什么
+- 最终输出什么
+- 输出是否可操作、可交付、可复用
+
+### 3. 再看它的关键能力层
+
+重点判断项目更依赖哪类能力：
+
+- Prompt
+- 检索
+- 多轮对话
+- 工具调用
+- 结构化输出
+- 结果展示
+
+### 4. 再看它的产品闭环
+
+要判断：
+
+- 是单次工具型闭环
+- 还是长期工作流闭环
+- 是个人提效
+- 还是团队协作
+
+### 5. 最后再看代码实现
+
+否则很容易陷入“看了很多代码，但说不清产品逻辑”。
+
+---
+
+## 八、建议你至少做一次小改造
+
+如果只是跑起来，这些项目很难真正变成你的能力。建议每个项目至少做一类改动：
+
+### 1. 交互层改造
+
+例如：
+
+- 增加一个输入参数
+- 增加一个结果展示模块
+- 优化一个错误提示流程
+
+### 2. 能力层改造
+
+例如：
+
+- 改 Prompt 模板
+- 增加一个工具调用
+- 调整一个检索参数
+- 新增一个输出结构
+
+### 3. 业务层改造
+
+例如：
+
+- 换一个行业场景
+- 换一个目标用户
+- 增加一个企业约束条件
+
+这样做的价值是，你会从“运行过项目”变成“真正理解并改过项目”。
+
+---
+
+## 九、每个项目都应该做一次复盘
+
+建议每个项目完成后，至少写一份最小复盘，回答下面六个问题：
+
+1. 这个项目解决什么问题
+2. 为什么这个问题适合用 AI 做
+3. 项目里最关键的能力环节是什么
+4. 当前实现最大的优点是什么
+5. 当前实现最大的风险是什么
+6. 如果继续迭代，下一步最值得做什么
+
+你也可以直接用下面这个模板：
+
+```md
+## 项目复盘
+
+### 1. 项目目标
+- 
+
+### 2. 目标用户
+- 
+
+### 3. 核心能力
+- 
+
+### 4. 当前优点
+- 
+
+### 5. 当前问题
+- 
+
+### 6. 下一步迭代
+- 
 ```
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+---
 
-#### Project02 - AI 翻译助手
+## 十、怎么把项目变成作品集素材
 
-```bash
-cd Project02-AI翻译助手
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+如果你想把这些项目写进作品集或面试材料，建议不要只写“做了一个 AI 项目”，而要能讲清楚：
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+- 背景：为什么做这个项目
+- 选择：为什么选这个方案
+- 实现：最关键的能力是怎么落地的
+- 结果：跑通了什么、验证了什么
+- 反思：还有哪些地方没做好
 
-#### Project03 - 企业知识库
+一个好的项目表达，通常至少包含：
 
-```bash
-cd Project03-企业知识库
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+- 项目简介
+- 目标用户
+- 核心流程
+- 技术与产品取舍
+- 风险与优化方向
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:8000
+---
 
-#### Project04 - Agent 系统
+## 十一、最常见的实战误区
 
-```bash
-cd Project04-Agent系统
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+学习这一模块时，最容易踩的坑包括：
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:8000
+- 只会启动项目，不会解释项目
+- 只看界面，不看能力闭环
+- 只改样式，不改核心价值
+- 只追求项目数量，不做复盘
+- 只从技术角度看，不从产品和业务角度看
 
-#### Project05 - AI 数据分析
+如果你能避免这些问题，项目实战的学习效率会高很多。
 
-```bash
-cd Project05-AI数据分析
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+---
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+## 十二、下一步怎么继续
 
-#### Project06 - AI 代码助手
+如果你打算继续往下深入，推荐有两种方式：
 
-```bash
-cd Project06-AI代码助手
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+### 方式一：按模块顺序学
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+先看 [index.md](./index.md)，再按推荐顺序逐个进入项目。
 
-#### Project07 - AI 客服系统
+### 方式二：按作品集目标学
 
-```bash
-cd Project07-AI客服系统
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+只挑 3 个最有代表性的项目深做：
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+- 一个工具型
+- 一个企业型
+- 一个 Agent 或 RAG 型
 
-#### Project08 - AI 会议纪要
+这种方式更适合准备面试、作品集或内部汇报。
 
-```bash
-cd Project08-AI会议纪要
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
+---
 
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
+## 版本记录
 
-#### Project09 - AI 产品经理 Copilot
+### v1.2.0
 
-```bash
-cd Project09-AI产品经理Copilot
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
-
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
-
-#### Project10 - AI 销售助手
-
-```bash
-cd Project10-AI销售助手
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
-
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
-
-#### Project11 - AI 招聘助手
-
-```bash
-cd Project11-AI招聘助手
-pnpm install && pnpm dev
-cd server && pnpm install && pnpm dev
-```
-
-- 前端: http://localhost:5173
-- 后端: http://localhost:3000
-
-## 环境变量配置
-
-每个项目的后端目录下可创建 `.env` 文件：
-
-```env
-# OpenAI API Key（如需真实 AI 能力）
-OPENAI_API_KEY=your_api_key_here
-
-# 服务端口号（可选，默认见上表）
-PORT=3000
-```
-
-> 当前项目已内置模拟响应，不配置 API Key 也可运行并查看效果。
-
-## 项目结构说明
-
-每个项目均采用前后端分离架构：
-
-```
-ProjectXX-项目名称/
-├── package.json          # 前端依赖与脚本
-├── vite.config.ts        # Vite 构建配置
-├── tailwind.config.js    # Tailwind CSS 配置
-├── tsconfig.json         # TypeScript 配置
-├── index.html            # 入口 HTML
-├── src/
-│   ├── main.tsx          # 前端入口
-│   ├── App.tsx           # 根组件
-│   ├── index.css         # 全局样式
-│   ├── types/            # TypeScript 类型定义
-│   ├── services/         # API 服务层
-│   └── components/       # React 组件
-└── server/
-    ├── package.json      # 后端依赖与脚本
-    ├── index.ts          # 服务端入口
-    └── routes/           # API 路由
-```
-
-## 功能概述
-
-### Project01 - AI 写作助手
-- 支持多种写作风格（正式、轻松、学术、创意、商务）
-- 支持生成、续写、润色、精简、扩展等操作
-- 历史记录管理
-
-### Project02 - AI 翻译助手
-- 支持多语言互译（中、英、日、韩、法、德、西、俄）
-- 支持正式、口语、技术三种翻译风格
-- 语言切换与互换
-
-### Project03 - 企业知识库
-- 文档上传与管理（PDF、DOCX、MD、TXT）
-- 基于 RAG 的智能问答
-- 参考来源展示
-
-### Project04 - Agent 系统
-- ReAct Agent 架构演示
-- 思考过程可视化
-- 工具调用展示
-
-### Project05 - AI 数据分析
-- 支持数据摘要、趋势分析、异常检测、相关性分析
-- 关键洞察提取
-- 图表数据生成
-
-### Project06 - AI 代码助手
-- 支持多种编程语言（JS、TS、Python、Java、Go、Rust、C++、SQL）
-- 代码生成、解释、优化、修复
-- 代码高亮与复制
-
-### Project07 - AI 客服系统
-- 实时客服对话
-- 意图识别与置信度展示
-- Socket.IO 实时通信支持
-
-### Project08 - AI 会议纪要
-- 会议转录文本智能分析
-- 自动生成摘要、关键要点、行动项、决议事项
-- 参会人员与任务分配
-
-### Project09 - AI 产品经理 Copilot
-- PRD 文档自动生成
-- 竞品分析与对比
-- 优化建议与里程碑规划
-
-### Project10 - AI 销售助手
-- 销售话术生成（cold call、演示、跟进、异议处理）
-- 客户画像分析
-- 痛点挖掘与销售策略建议
-
-### Project11 - AI 招聘助手
-- 简历智能评估与匹配度评分
-- 优势与不足分析
-- 技能匹配详情
-- 面试问题自动生成（技术、行为、情境、文化匹配）
+- 重构为教程化企业级项目实战总指南
+- 从旧版运行手册升级为项目总览、学习方法、运行说明、改造建议与复盘指引
+- 与模块首页形成配套，补齐项目实战的学习和作品化视角

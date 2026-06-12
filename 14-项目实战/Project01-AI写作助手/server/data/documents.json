@@ -1,0 +1,36 @@
+{
+  "documents": [
+    {
+      "id": "af80db4b-9be9-4185-817f-aef2a1eda0f2",
+      "title": "Persist test memo",
+      "brief": "Verify local store survives restart.",
+      "templateId": "brand-campaign",
+      "templateName": "品牌公告模板",
+      "channel": "官网公告",
+      "style": "business",
+      "action": "generate",
+      "status": "draft",
+      "authorName": "Felix",
+      "generatedContent": "# Persist test memo\n\n## 摘要\n本草稿基于「品牌公告模板」模板生成，面向 官网公告 渠道发布，目标是围绕以下业务背景完成对外表达：Verify local store survives restart.\n\n## 正文\n各位同事/客户您好：\n\n围绕本次主题，我们完成了新一轮内容升级。本次内容重点聚焦三个方面：\n1. 清晰说明业务变化和核心收益，便于快速理解价值。\n2. 用企业级表达确保信息准确、可审核、可追踪。\n3. 为后续发布和扩展集成预留结构化空间。\n\n结合当前场景，建议在正式发布前重点核查品牌用语、客户收益表达和行动指引的一致性。若进入外部渠道，请额外补充发布日期、适用范围和客服承接方式。\n\n## 审核重点\n- 品牌与合规措辞是否统一\n- 是否明确传达了目标受众、核心收益和下一步动作\n- 是否存在需要业务负责人确认的表述\n\n## 发布建议\n- 先由审核人确认品牌和风险表达\n- 通过后在内部模拟发布，确认展示结构无误\n- 后续可直接接入 CMS、邮件系统或 CRM 触达链路",
+      "createdAt": "2026-06-12T01:51:07.205Z",
+      "updatedAt": "2026-06-12T01:51:07.205Z",
+      "version": 1,
+      "wordCount": 407,
+      "tokensUsed": 280,
+      "model": "mock-enterprise-writer",
+      "auditLogs": [
+        {
+          "id": "314240a8-8c6b-4cb2-86d5-a4f3e104be6c",
+          "action": "创建草稿",
+          "fromStatus": null,
+          "toStatus": "draft",
+          "operatorRole": "author",
+          "operatorName": "Felix",
+          "comment": "作者基于企业模板创建了草稿",
+          "createdAt": "2026-06-12T01:51:07.206Z"
+        }
+      ]
+    }
+  ],
+  "lastUpdatedAt": "2026-06-12T01:51:07.207Z"
+}

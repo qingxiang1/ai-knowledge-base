@@ -1,80 +1,28 @@
 /**
  * 创建时间: 2026-06-12
- * 文件名: index.ts
- * 文件描述: Project01 企业级写作工作流前端类型定义
+ * 文件名: types.ts
+ * 文件描述: Project01 企业级写作工作流服务端共享类型定义
  * 作者: Felix(LQX5731@163.com)
- * 版本号: v2.0.0
+ * 版本号: v1.0.0
  * 最后更新时间: 2026-06-12
  */
 
-/**
- * 写作风格枚举
- */
-export enum WritingStyle {
-  FORMAL = "formal",
-  CASUAL = "casual",
-  ACADEMIC = "academic",
-  CREATIVE = "creative",
-  BUSINESS = "business",
-}
+import type { WritingAction, WritingStyle } from "./services/openai";
 
-/**
- * 写作动作枚举
- */
-export enum WritingAction {
-  GENERATE = "generate",
-  CONTINUE = "continue",
-  POLISH = "polish",
-  SHORTEN = "shorten",
-  EXPAND = "expand",
-}
+export const workflowStatuses = [
+  "draft",
+  "in_review",
+  "approved",
+  "rejected",
+  "published",
+] as const;
+export const userRoles = ["author", "reviewer", "publisher"] as const;
 
-/**
- * 企业工作流状态枚举
- */
-export enum WorkflowStatus {
-  DRAFT = "draft",
-  IN_REVIEW = "in_review",
-  APPROVED = "approved",
-  REJECTED = "rejected",
-  PUBLISHED = "published",
-}
-
-/**
- * 当前操作者角色枚举
- */
-export enum UserRole {
-  AUTHOR = "author",
-  REVIEWER = "reviewer",
-  PUBLISHER = "publisher",
-}
-
-/**
- * 合规状态枚举
- */
-export enum ComplianceStatus {
-  PASSED = "passed",
-  WARNING = "warning",
-  BLOCKED = "blocked",
-}
-
-/**
- * 规则严重级别枚举
- */
-export enum BrandRuleSeverity {
-  WARNING = "warning",
-  BLOCKER = "blocker",
-}
-
-/**
- * 规则分类枚举
- */
-export enum BrandRuleCategory {
-  CLAIM = "claim",
-  PRIVACY = "privacy",
-  BRAND = "brand",
-  HANDOFF = "handoff",
-}
+export type WorkflowStatus = (typeof workflowStatuses)[number];
+export type UserRole = (typeof userRoles)[number];
+export type ComplianceStatus = "passed" | "warning" | "blocked";
+export type BrandRuleSeverity = "warning" | "blocker";
+export type BrandRuleCategory = "claim" | "privacy" | "brand" | "handoff";
 
 /**
  * 模板定义
@@ -102,7 +50,7 @@ export interface WorkflowAuditLog {
 }
 
 /**
- * 合规命中问题定义
+ * 品牌规则命中项定义
  */
 export interface ComplianceIssue {
   id: string;
@@ -182,12 +130,9 @@ export interface ReviewDocumentRequest extends WorkflowMutationRequest {
 }
 
 /**
- * 轻量表单状态定义
+ * 文件存储结构定义
  */
-export interface WritingFormState {
-  title: string;
-  brief: string;
-  templateId: string;
-  style: WritingStyle;
-  action: WritingAction;
+export interface DocumentStoreSnapshot {
+  documents: EnterpriseDocument[];
+  lastUpdatedAt: string | null;
 }
