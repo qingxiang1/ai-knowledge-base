@@ -1,8 +1,10 @@
 <!--
-  文件描述: RAG召回策略详解，涵盖向量召回、关键词召回、多路召回与融合策略
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: Recall.md
+  文件描述: RAG召回策略详解，补充企业级召回判断框架、查询治理与验收标准
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # 召回策略
@@ -11,17 +13,19 @@
 
 ---
 
-## 前置知识
+## 零、前置知识
 
 阅读本节前，建议先了解以下内容：
 
-| 前置章节 | 关联点 |
-|---------|-------|
-| [RAG基础](./RAG基础.md) | 理解召回在 RAG 全链路中的位置——检索阶段 |
-| [Embedding](./Embedding.md) | 向量召回依赖 Embedding 模型的质量 |
-| [向量数据库](./向量数据库.md) | 召回的底层实现依赖向量数据库的检索能力 |
-| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解向量相似度计算的数学基础 |
-| [Chunk策略](./Chunk策略.md) | 分块质量直接影响召回效果 |
+| 前置章节                                           | 关联点                                  |
+| -------------------------------------------------- | --------------------------------------- |
+| [RAG基础](./RAG基础.md)                            | 理解召回在 RAG 全链路中的位置——检索阶段 |
+| [Embedding](./Embedding.md)                        | 向量召回依赖 Embedding 模型的质量       |
+| [向量数据库](./向量数据库.md)                      | 召回的底层实现依赖向量数据库的检索能力  |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 理解向量相似度计算的数学基础            |
+| [Chunk策略](./Chunk策略.md)                        | 分块质量直接影响召回效果                |
+
+**能力对标**：本章对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → 知识库构建能力」核心能力。掌握召回策略，意味着你不只会“搜一下文档”，而是能从覆盖率、延迟、成本和风险角度设计企业级检索入口。
 
 ---
 
@@ -63,28 +67,28 @@ RAG 系统架构中的召回环节：
 
 class RecallMetrics:
     """召回评估指标"""
-    
+
     @staticmethod
     def recall_at_k(retrieved: list, relevant: list, k: int) -> float:
         """
         Recall@K：前 K 个结果中召回的相关文档比例
-        
+
         Args:
             retrieved: 召回的文档 ID 列表（已按相关性排序）
             relevant: 所有相关文档 ID 集合
             k: 评估位置
-        
+
         Returns:
             Recall@K 值
         """
         retrieved_k = set(retrieved[:k])
         relevant_set = set(relevant)
-        
+
         if not relevant_set:
             return 0.0
-        
+
         return len(retrieved_k & relevant_set) / len(relevant_set)
-    
+
     @staticmethod
     def precision_at_k(retrieved: list, relevant: list, k: int) -> float:
         """
@@ -92,51 +96,51 @@ class RecallMetrics:
         """
         retrieved_k = set(retrieved[:k])
         relevant_set = set(relevant)
-        
+
         if not retrieved_k:
             return 0.0
-        
+
         return len(retrieved_k & relevant_set) / len(retrieved_k)
-    
+
     @staticmethod
     def mrr(retrieved: list, relevant: list) -> float:
         """
         MRR（Mean Reciprocal Rank）：第一个相关文档排名的倒数均值
         """
         relevant_set = set(relevant)
-        
+
         for i, doc_id in enumerate(retrieved):
             if doc_id in relevant_set:
                 return 1.0 / (i + 1)
-        
+
         return 0.0
-    
+
     @staticmethod
     def ndcg_at_k(retrieved: list, relevance_scores: dict, k: int) -> float:
         """
         NDCG@K：归一化折损累计增益
-        
+
         考虑文档的相关性程度（不仅仅是二值相关）
         """
         import math
-        
+
         def dcg(scores):
             return sum(
                 (2 ** score - 1) / math.log2(i + 2)
                 for i, score in enumerate(scores)
             )
-        
+
         # 实际 DCG
         actual_scores = [relevance_scores.get(doc_id, 0) for doc_id in retrieved[:k]]
         actual_dcg = dcg(actual_scores)
-        
+
         # 理想 DCG
         ideal_scores = sorted(relevance_scores.values(), reverse=True)[:k]
         ideal_dcg = dcg(ideal_scores)
-        
+
         if ideal_dcg == 0:
             return 0.0
-        
+
         return actual_dcg / ideal_dcg
 
 # 使用示例
@@ -160,6 +164,15 @@ print(f"MRR: {mrr_score:.2f}")           # 1.0 (第一个相关文档在位置1)
 """
 ```
 
+### 1.3 企业级召回的核心目标
+
+企业级召回不是单纯追求“找得多”，而是同时追求以下 4 件事：
+
+1. **把真正相关的内容尽量找出来**
+2. **把明显不相关的噪声控制在可接受范围**
+3. **在延迟预算内完成召回**
+4. **为后续 Rerank 和生成留下足够好的候选集**
+
 ---
 
 ## 二、向量召回
@@ -178,7 +191,7 @@ from typing import List, Dict, Tuple
 
 class DenseRetriever:
     """稠密向量召回器"""
-    
+
     def __init__(
         self,
         embedding_model,
@@ -188,7 +201,7 @@ class DenseRetriever:
     ):
         """
         初始化稠密向量召回器
-        
+
         Args:
             embedding_model: 向量化模型
             vector_db_client: 向量数据库客户端
@@ -199,25 +212,25 @@ class DenseRetriever:
         self.vector_db = vector_db_client
         self.collection_name = collection_name
         self.top_k = top_k
-    
+
     def embed_query(self, query: str) -> np.ndarray:
         """
         将查询文本转为向量
-        
+
         Args:
             query: 查询文本
-        
+
         Returns:
             查询向量
         """
         # 使用 Embedding 模型编码
         query_vector = self.embedding_model.encode(query)
-        
+
         # 归一化（如果使用余弦相似度）
         query_vector = query_vector / np.linalg.norm(query_vector)
-        
+
         return query_vector
-    
+
     def retrieve(
         self,
         query: str,
@@ -226,20 +239,20 @@ class DenseRetriever:
     ) -> List[Dict]:
         """
         执行向量召回
-        
+
         Args:
             query: 查询文本
             top_k: 召回数量
             filters: 过滤条件
-        
+
         Returns:
             召回结果列表，每项包含 id、score、content
         """
         k = top_k or self.top_k
-        
+
         # 1. 查询向量化
         query_vector = self.embed_query(query)
-        
+
         # 2. 向量搜索
         results = self.vector_db.search(
             collection=self.collection_name,
@@ -247,7 +260,7 @@ class DenseRetriever:
             top_k=k,
             filters=filters
         )
-        
+
         # 3. 格式化结果
         formatted_results = []
         for item in results:
@@ -257,9 +270,9 @@ class DenseRetriever:
                 "content": item.get("content"),
                 "metadata": item.get("metadata", {})
             })
-        
+
         return formatted_results
-    
+
     def batch_retrieve(
         self,
         queries: List[str],
@@ -267,12 +280,12 @@ class DenseRetriever:
     ) -> List[List[Dict]]:
         """
         批量召回
-        
+
         适用于批量评估或批量处理
         """
         # 批量编码
         query_vectors = self.embedding_model.encode(queries)
-        
+
         # 批量搜索
         all_results = []
         for query_vector in query_vectors:
@@ -282,7 +295,7 @@ class DenseRetriever:
                 top_k=top_k or self.top_k
             )
             all_results.append(results)
-        
+
         return all_results
 
 # 使用示例
@@ -328,29 +341,29 @@ from typing import List, Dict
 
 class SparseRetriever:
     """稀疏向量召回器（BM25）"""
-    
+
     def __init__(self, documents: List[Dict] = None):
         """
         初始化稀疏召回器
-        
+
         Args:
             documents: 文档列表，每项包含 id 和 content
         """
         self.documents = documents or []
         self.bm25 = None
         self.tokenized_corpus = []
-        
+
         if documents:
             self._build_index()
-    
+
     def _tokenize(self, text: str) -> List[str]:
         """
         中文分词
-        
+
         可根据需要替换为其他分词器
         """
         return list(jieba.cut(text))
-    
+
     def _build_index(self):
         """构建 BM25 索引"""
         # 对文档进行分词
@@ -358,21 +371,21 @@ class SparseRetriever:
             self._tokenize(doc["content"])
             for doc in self.documents
         ]
-        
+
         # 构建 BM25 索引
         self.bm25 = BM25Okapi(self.tokenized_corpus)
-        
+
         print(f"BM25 索引构建完成，文档数: {len(self.documents)}")
-    
+
     def add_documents(self, documents: List[Dict]):
         """
         增量添加文档
-        
+
         注意：BM25 不支持增量更新，需要重建索引
         """
         self.documents.extend(documents)
         self._build_index()
-    
+
     def retrieve(
         self,
         query: str,
@@ -380,26 +393,26 @@ class SparseRetriever:
     ) -> List[Dict]:
         """
         执行 BM25 召回
-        
+
         Args:
             query: 查询文本
             top_k: 召回数量
-        
+
         Returns:
             召回结果列表
         """
         if not self.bm25:
             raise ValueError("索引未构建，请先添加文档")
-        
+
         # 查询分词
         tokenized_query = self._tokenize(query)
-        
+
         # 计算 BM25 分数
         scores = self.bm25.get_scores(tokenized_query)
-        
+
         # 获取 top_k 索引
         top_indices = scores.argsort()[-top_k:][::-1]
-        
+
         # 格式化结果
         results = []
         for idx in top_indices:
@@ -410,7 +423,7 @@ class SparseRetriever:
                     "content": self.documents[idx]["content"],
                     "metadata": self.documents[idx].get("metadata", {})
                 })
-        
+
         return results
 
 # 使用示例
@@ -461,12 +474,12 @@ class RecallResult:
 
 class MultiChannelRetriever:
     """多路召回器"""
-    
+
     def __init__(self):
         """初始化多路召回器"""
         self.channels: Dict[str, Callable] = {}
         self.weights: Dict[str, float] = {}
-    
+
     def add_channel(
         self,
         name: str,
@@ -475,7 +488,7 @@ class MultiChannelRetriever:
     ):
         """
         添加召回渠道
-        
+
         Args:
             name: 渠道名称
             retriever: 召回函数，接收 query 和 top_k，返回结果列表
@@ -484,7 +497,7 @@ class MultiChannelRetriever:
         self.channels[name] = retriever
         self.weights[name] = weight
         print(f"已添加召回渠道: {name} (weight={weight})")
-    
+
     def retrieve(
         self,
         query: str,
@@ -493,25 +506,25 @@ class MultiChannelRetriever:
     ) -> List[RecallResult]:
         """
         执行多路召回
-        
+
         Args:
             query: 查询文本
             top_k: 每路召回数量
             channel_names: 指定使用的渠道（None=全部）
-        
+
         Returns:
             合并后的召回结果
         """
         channels_to_use = channel_names or list(self.channels.keys())
-        
+
         all_results = []
         for name in channels_to_use:
             if name not in self.channels:
                 continue
-            
+
             # 执行单路召回
             channel_results = self.channels[name](query, top_k)
-            
+
             # 标记渠道
             for result in channel_results:
                 all_results.append(RecallResult(
@@ -521,9 +534,9 @@ class MultiChannelRetriever:
                     content=result.get("content", ""),
                     metadata=result.get("metadata", {})
                 ))
-        
+
         return all_results
-    
+
     def retrieve_and_fuse(
         self,
         query: str,
@@ -532,18 +545,18 @@ class MultiChannelRetriever:
     ) -> List[Dict]:
         """
         召回并融合结果
-        
+
         Args:
             query: 查询文本
             top_k: 最终返回数量
             fusion_method: 融合方法（rrf/weighted/linear）
-        
+
         Returns:
             融合后的结果
         """
         # 执行多路召回
         all_results = self.retrieve(query, top_k=top_k * 2)
-        
+
         # 融合
         if fusion_method == "rrf":
             return self._rrf_fusion(all_results, top_k)
@@ -551,7 +564,7 @@ class MultiChannelRetriever:
             return self._weighted_fusion(all_results, top_k)
         else:
             return self._linear_fusion(all_results, top_k)
-    
+
     def _rrf_fusion(
         self,
         results: List[RecallResult],
@@ -560,36 +573,36 @@ class MultiChannelRetriever:
     ) -> List[Dict]:
         """
         RRF（Reciprocal Rank Fusion）融合
-        
+
         无需调参，效果稳定
         """
         from collections import defaultdict
-        
+
         # 按文档 ID 聚合排名
         doc_ranks = defaultdict(list)
-        
+
         # 按渠道分组，计算排名
         channel_results = defaultdict(list)
         for r in results:
             channel_results[r.channel].append(r)
-        
+
         for channel, channel_res in channel_results.items():
             # 按分数排序
             sorted_res = sorted(channel_res, key=lambda x: x.score, reverse=True)
             for rank, res in enumerate(sorted_res, 1):
                 doc_ranks[res.id].append(rank)
-        
+
         # 计算 RRF 分数
         rrf_scores = {}
         for doc_id, ranks in doc_ranks.items():
             rrf_scores[doc_id] = sum(1.0 / (k + rank) for rank in ranks)
-        
+
         # 排序并返回
         sorted_docs = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
-        
+
         # 获取文档详情
         doc_map = {r.id: r for r in results}
-        
+
         final_results = []
         for doc_id, score in sorted_docs[:top_k]:
             r = doc_map[doc_id]
@@ -600,9 +613,9 @@ class MultiChannelRetriever:
                 "metadata": r.metadata,
                 "sources": [r.channel for r in results if r.id == doc_id]
             })
-        
+
         return final_results
-    
+
     def _weighted_fusion(
         self,
         results: List[RecallResult],
@@ -610,18 +623,18 @@ class MultiChannelRetriever:
     ) -> List[Dict]:
         """加权分数融合"""
         from collections import defaultdict
-        
+
         doc_scores = defaultdict(float)
         doc_map = {}
-        
+
         for r in results:
             weight = self.weights.get(r.channel, 1.0)
             doc_scores[r.id] += r.score * weight
             doc_map[r.id] = r
-        
+
         # 排序
         sorted_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
-        
+
         final_results = []
         for doc_id, score in sorted_docs[:top_k]:
             r = doc_map[doc_id]
@@ -631,9 +644,9 @@ class MultiChannelRetriever:
                 "content": r.content,
                 "metadata": r.metadata
             })
-        
+
         return final_results
-    
+
     def _linear_fusion(
         self,
         results: List[RecallResult],
@@ -644,13 +657,13 @@ class MultiChannelRetriever:
         channel_scores = defaultdict(list)
         for r in results:
             channel_scores[r.channel].append(r)
-        
+
         # 归一化
         normalized_results = []
         for channel, channel_res in channel_scores.items():
             scores = [r.score for r in channel_res]
             min_score, max_score = min(scores), max(scores)
-            
+
             for r in channel_res:
                 normalized_score = (r.score - min_score) / (max_score - min_score) if max_score > min_score else 0
                 normalized_results.append(RecallResult(
@@ -660,7 +673,7 @@ class MultiChannelRetriever:
                     content=r.content,
                     metadata=r.metadata
                 ))
-        
+
         # 使用加权融合
         return self._weighted_fusion(normalized_results, top_k)
 
@@ -717,16 +730,16 @@ import openai
 
 class QueryRewriter:
     """查询改写器"""
-    
+
     def __init__(self, llm_client=None):
         """
         初始化查询改写器
-        
+
         Args:
             llm_client: LLM 客户端，用于生成改写
         """
         self.llm = llm_client
-    
+
     def expand_with_synonyms(
         self,
         query: str,
@@ -734,7 +747,7 @@ class QueryRewriter:
     ) -> List[str]:
         """
         同义词扩展
-        
+
         将查询中的关键词替换为同义词，生成多个查询
         """
         if synonym_dict is None:
@@ -745,18 +758,18 @@ class QueryRewriter:
                 "NLP": ["自然语言处理"],
                 "大模型": ["LLM", "大型语言模型", "Foundation Model"]
             }
-        
+
         expanded_queries = [query]
-        
+
         for term, synonyms in synonym_dict.items():
             if term in query:
                 for synonym in synonyms:
                     new_query = query.replace(term, synonym)
                     if new_query not in expanded_queries:
                         expanded_queries.append(new_query)
-        
+
         return expanded_queries
-    
+
     def generate_hyde_query(
         self,
         query: str,
@@ -764,63 +777,63 @@ class QueryRewriter:
     ) -> List[str]:
         """
         HyDE（Hypothetical Document Embedding）
-        
+
         生成假设文档，用假设文档的向量进行搜索
         """
         if not self.llm:
             raise ValueError("需要 LLM 客户端才能使用 HyDE")
-        
+
         prompt = f"""
         基于以下查询，生成 {num_hypothetical} 个可能包含答案的文档片段。
         每个片段应简洁且信息丰富。
-        
+
         查询：{query}
-        
+
         文档片段：
         """
-        
+
         response = self.llm.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         # 解析生成的文档
         hypothetical_docs = response.choices[0].message.content.strip().split("\n")
         hypothetical_docs = [doc.strip() for doc in hypothetical_docs if doc.strip()]
-        
+
         return hypothetical_docs
-    
+
     def decompose_query(
         self,
         query: str
     ) -> List[str]:
         """
         查询分解
-        
+
         将复杂查询分解为多个子查询
         """
         if not self.llm:
             return [query]
-        
+
         prompt = f"""
         将以下复杂查询分解为 2-4 个简单的子查询。
         每个子查询应独立且可回答。
-        
+
         查询：{query}
-        
+
         子查询（每行一个）：
         """
-        
+
         response = self.llm.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         sub_queries = response.choices[0].message.content.strip().split("\n")
         sub_queries = [q.strip("- ").strip() for q in sub_queries if q.strip()]
-        
+
         return sub_queries if sub_queries else [query]
-    
+
     def rewrite_for_retrieval(
         self,
         query: str,
@@ -828,7 +841,7 @@ class QueryRewriter:
     ) -> List[str]:
         """
         查询改写主入口
-        
+
         Args:
             query: 原始查询
             strategy: 改写策略
@@ -880,7 +893,7 @@ from typing import List, Dict
 
 class ContextAwareRetriever:
     """上下文感知召回器"""
-    
+
     def __init__(
         self,
         base_retriever,
@@ -889,7 +902,7 @@ class ContextAwareRetriever:
     ):
         """
         初始化上下文感知召回器
-        
+
         Args:
             base_retriever: 基础召回器
             llm_client: LLM 客户端
@@ -899,31 +912,31 @@ class ContextAwareRetriever:
         self.llm = llm_client
         self.max_history = max_history
         self.conversation_history: List[Dict] = []
-    
+
     def add_to_history(self, role: str, content: str):
         """添加对话历史"""
         self.conversation_history.append({
             "role": role,
             "content": content
         })
-        
+
         # 保持历史长度
         if len(self.conversation_history) > self.max_history * 2:
             self.conversation_history = self.conversation_history[-self.max_history * 2:]
-    
+
     def rewrite_with_context(self, query: str) -> str:
         """
         基于对话历史改写查询
         """
         if not self.conversation_history:
             return query
-        
+
         # 构建历史上下文
         history_text = "\n".join([
             f"{'User' if msg['role'] == 'user' else 'Assistant'}: {msg['content']}"
             for msg in self.conversation_history[-self.max_history * 2:]
         ])
-        
+
         prompt = f"""
         基于以下对话历史，理解用户的最新查询意图。
         如果查询包含指代或省略，请将其补充完整。
@@ -936,15 +949,15 @@ class ContextAwareRetriever:
 
         改写后的查询：
         """
-        
+
         response = self.llm.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         rewritten = response.choices[0].message.content.strip()
         return rewritten if rewritten else query
-    
+
     def retrieve(
         self,
         query: str,
@@ -960,13 +973,13 @@ class ContextAwareRetriever:
             print(f"查询改写: '{query}' -> '{rewritten_query}'")
         else:
             rewritten_query = query
-        
+
         # 执行召回
         results = self.retriever.retrieve(rewritten_query, top_k)
-        
+
         # 添加到历史
         self.add_to_history("user", query)
-        
+
         return results
 
 # 使用示例
@@ -997,18 +1010,18 @@ results = context_retriever.retrieve("它有哪些应用场景？", top_k=5)
 
 class IterativeRetriever:
     """迭代召回器"""
-    
+
     def __init__(self, retriever, llm_client):
         """
         初始化迭代召回器
-        
+
         Args:
             retriever: 基础召回器
             llm_client: LLM 客户端
         """
         self.retriever = retriever
         self.llm = llm_client
-    
+
     def iterative_search(
         self,
         query: str,
@@ -1018,37 +1031,37 @@ class IterativeRetriever:
     ) -> List[Dict]:
         """
         迭代召回
-        
+
         1. 初始召回大量结果
         2. 分析结果，提取关键信息
         3. 生成更精确的查询
         4. 重复直到满足条件
-        
+
         Args:
             query: 初始查询
             max_iterations: 最大迭代次数
             initial_top_k: 初始召回数量
             refinement_top_k: 精化召回数量
-        
+
         Returns:
             最终结果
         """
         current_query = query
         all_results = []
-        
+
         for i in range(max_iterations):
             print(f"\n迭代 {i + 1}/{max_iterations}")
             print(f"当前查询: {current_query}")
-            
+
             # 召回
             top_k = initial_top_k if i == 0 else refinement_top_k
             results = self.retriever.retrieve(current_query, top_k)
-            
+
             if not results:
                 break
-            
+
             all_results.extend(results)
-            
+
             # 检查是否足够相关
             if i < max_iterations - 1:
                 # 生成下一步查询
@@ -1057,12 +1070,12 @@ class IterativeRetriever:
                     current_results=results,
                     iteration=i
                 )
-        
+
         # 去重并排序
         final_results = self._deduplicate_and_rank(all_results)
-        
+
         return final_results[:refinement_top_k]
-    
+
     def _generate_next_query(
         self,
         original_query: str,
@@ -1075,26 +1088,26 @@ class IterativeRetriever:
         # 提取当前结果的摘要
         contents = [r["content"][:200] for r in current_results[:5]]
         context = "\n".join([f"{i+1}. {c}" for i, c in enumerate(contents)])
-        
+
         prompt = f"""
         原始查询：{original_query}
-        
+
         已检索到的相关信息：
         {context}
-        
+
         基于以上信息，生成一个更精确的查询，以找到更多相关内容。
         查询应简洁，不超过 20 个字。
-        
+
         新查询：
         """
-        
+
         response = self.llm.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         return response.choices[0].message.content.strip()
-    
+
     def _deduplicate_and_rank(
         self,
         results: List[Dict]
@@ -1104,15 +1117,15 @@ class IterativeRetriever:
         """
         seen_ids = set()
         unique_results = []
-        
+
         for r in results:
             if r["id"] not in seen_ids:
                 seen_ids.add(r["id"])
                 unique_results.append(r)
-        
+
         # 按分数排序
         unique_results.sort(key=lambda x: x["score"], reverse=True)
-        
+
         return unique_results
 
 # 使用示例
@@ -1187,11 +1200,11 @@ results = iterative.iterative_search(
 
 class RecallOptimizer:
     """召回优化器"""
-    
+
     def __init__(self, retriever):
         self.retriever = retriever
         self.query_cache = {}
-    
+
     def optimize_with_feedback(
         self,
         query: str,
@@ -1200,7 +1213,7 @@ class RecallOptimizer:
     ):
         """
         基于反馈优化召回
-        
+
         利用用户点击/标注数据优化
         """
         # 1. 获取正例向量
@@ -1208,15 +1221,15 @@ class RecallOptimizer:
             self.retriever.get_vector(doc_id)
             for doc_id in positive_ids
         ]
-        
+
         # 2. 计算正例中心
         centroid = np.mean(positive_vectors, axis=0)
-        
+
         # 3. 调整查询向量（Rocchio 算法）
         original_vector = self.retriever.embed_query(query)
-        
+
         alpha, beta, gamma = 1.0, 0.75, 0.15
-        
+
         adjusted_vector = (
             alpha * original_vector +
             beta * centroid -
@@ -1225,10 +1238,10 @@ class RecallOptimizer:
                 for doc_id in negative_ids
             ], axis=0)
         )
-        
+
         # 4. 使用调整后的向量搜索
         return self.retriever.search_by_vector(adjusted_vector)
-    
+
     def hard_negative_mining(
         self,
         query: str,
@@ -1237,12 +1250,12 @@ class RecallOptimizer:
     ) -> List[str]:
         """
         困难负样本挖掘
-        
+
         找到与查询相似但不相关的文档，用于训练
         """
         # 1. 召回 top_k 结果
         results = self.retriever.retrieve(query, top_k=50)
-        
+
         # 2. 排除正例，选择排名靠前但非正例的
         negatives = []
         for r in results:
@@ -1250,7 +1263,7 @@ class RecallOptimizer:
                 negatives.append(r["id"])
             if len(negatives) >= num_negatives:
                 break
-        
+
         return negatives
 
 # 使用示例
@@ -1277,70 +1290,85 @@ hard_negatives = optimizer.hard_negative_mining(
 
 ## 六、AI产品经理关注点
 
-```
-召回策略产品化要点：
+### 6.1 企业级召回判断框架
 
-核心决策
-├── 召回策略选择
-│   ├── 数据规模 < 10万：单路稠密向量
-│   ├── 数据规模 10万-1000万：稠密 + 稀疏多路
-│   └── 数据规模 > 1000万：多路 + 分层 + 精排
-├── 延迟要求
-│   ├── < 50ms：纯向量 + 缓存
-│   ├── < 200ms：多路并行 + 轻量融合
-│   └── < 500ms：复杂策略 + 重排序
-└── 准确率要求
-    ├── 高召回率：多路 + 大 top_k
-    └── 高精度：精排 + 阈值过滤
+#### 6.1.1 设计召回策略前至少要回答 5 个问题
 
-关键指标
-├── 召回率（Recall@K）
-│   └── 目标：> 90%（K=20）
-├── 延迟（P99）
-│   └── 目标：< 100ms
-├── 覆盖率
-│   └── 目标：> 95% 查询有结果
-└── 多样性
-    └── 目标：Top5 结果来自 > 3 个不同主题
+| 问题                   | 说明                                 |
+| ---------------------- | ------------------------------------ |
+| 知识规模有多大         | 不同规模对应不同召回架构             |
+| 查询表达是否稳定       | 表达越多样，越需要查询改写和多路召回 |
+| 业务更重命中率还是延迟 | 决定是否采用复杂融合                 |
+| 是否存在权限与过滤条件 | 召回必须支持 metadata 过滤           |
+| 下游是否有 Rerank      | 有精排时可适当放大召回候选集         |
 
-优化方向
-├── 查询理解
-│   ├── 意图识别准确率
-│   └── 实体链接覆盖率
-├── 索引质量
-│   ├── 向量质量（Embedding 模型）
-│   └── 索引参数调优
-└── 融合策略
-    ├── RRF 参数调优
-    └── 权重学习
+#### 6.1.2 常见企业级召回策略组合
 
-成本考量
-├── 计算成本
-│   ├── 向量搜索：~$0.001/次
-│   └── 多路搜索：倍数增长
-├── 存储成本
-│   ├── 向量存储：4字节 * 维度 * 数量
-│   └── 索引存储：原始数据的 1-3 倍
-└── 优化投入
-    ├── 人力：算法工程师 + 工程
-    └── 时间：2-4 周迭代周期
-```
+| 场景                 | 推荐策略                                |
+| -------------------- | --------------------------------------- |
+| **小规模知识库**     | 稠密召回为主，必要时补 BM25             |
+| **中规模知识库**     | 稠密 + 稀疏多路召回 + 融合              |
+| **大规模复杂知识库** | 多路召回 + 查询改写 + 分层检索 + Rerank |
+| **高权限隔离场景**   | 先过滤再召回，确保结果天然合规          |
+
+### 6.2 核心指标
+
+| 指标           | 关注点                             |
+| -------------- | ---------------------------------- |
+| **Recall@K**   | 关键相关文档是否被找回             |
+| **P99 延迟**   | 是否满足产品响应要求               |
+| **覆盖率**     | 用户问题是否大多有候选结果         |
+| **结果多样性** | 是否避免 Top 结果过度同质化        |
+| **过滤命中率** | 权限、时间、部门等过滤是否正确生效 |
+
+### 6.3 查询治理与召回治理重点
+
+1. **查询治理**：意图识别、实体抽取、改写、扩展、去歧义
+2. **索引治理**：分块质量、Embedding 质量、metadata 完整性
+3. **融合治理**：RRF、加权融合、渠道权重的定期校准
+4. **Bad Case治理**：维护“明明有答案却没召回”的失败样本集
+
+### 6.4 常见失败模式
+
+| 失败模式           | 典型表现              | 优先排查方向                      |
+| ------------------ | --------------------- | --------------------------------- |
+| 召回不到答案       | 有答案但 Top-K 没命中 | Chunk、Embedding、top_k、查询改写 |
+| 召回太多噪声       | 候选很多但不相关      | 融合方式、过滤条件、索引质量      |
+| 查询歧义导致误召回 | 同词不同义、简称混淆  | 查询理解、实体链接、词典治理      |
+| 权限过滤失效       | 命中不该看的内容      | metadata、访问控制、过滤顺序      |
 
 ---
 
-## 七、延伸阅读与参考资源
+## 七、企业级验收标准
+
+### 7.1 学完本章后至少应做到
+
+- [ ] 能解释稠密召回、稀疏召回、多路召回各自的作用和边界
+- [ ] 能根据知识规模、延迟要求和精度要求初步选择召回策略
+- [ ] 能理解 Recall@K、P99 延迟、覆盖率等核心指标的业务意义
+- [ ] 能识别查询改写、索引质量、过滤条件对召回结果的影响
+
+### 7.2 进阶标准
+
+- [ ] 能为一个真实业务场景设计多路召回与融合策略
+- [ ] 能建立查询治理、召回评测和 Bad Case 复盘闭环
+- [ ] 能把权限过滤、召回候选集和下游 Rerank 联动起来做整体优化
+
+---
+
+## 八、延伸阅读与参考资源
 
 ### 相关章节
 
-| 章节 | 关联说明 |
-|------|---------|
-| [Rerank](./Rerank.md) | 召回后的精排环节，提升检索精度 |
-| [HybridSearch](./HybridSearch.md) | 多路召回的融合策略和混合检索实现 |
-| [Embedding](./Embedding.md) | 向量召回依赖 Embedding 模型质量 |
-| [向量数据库](./向量数据库.md) | 召回的底层实现依赖向量数据库 |
-| [企业知识库设计](./企业知识库设计.md) | 企业级召回策略和性能优化 |
-| [RAG基础](./RAG基础.md) | 召回在 RAG 全链路中的位置 |
-| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 向量相似度计算的数学基础 |
+| 章节                                               | 关联说明                         |
+| -------------------------------------------------- | -------------------------------- |
+| [Rerank](./Rerank.md)                              | 召回后的精排环节，提升检索精度   |
+| [HybridSearch](./HybridSearch.md)                  | 多路召回的融合策略和混合检索实现 |
+| [Embedding](./Embedding.md)                        | 向量召回依赖 Embedding 模型质量  |
+| [向量数据库](./向量数据库.md)                      | 召回的底层实现依赖向量数据库     |
+| [企业知识库设计](./企业知识库设计.md)              | 企业级召回策略和性能优化         |
+| [RAG基础](./RAG基础.md)                            | 召回在 RAG 全链路中的位置        |
+| [Embedding原理](../02-AI基础知识/Embedding原理.md) | 向量相似度计算的数学基础         |
 
 ### 外部资源
 

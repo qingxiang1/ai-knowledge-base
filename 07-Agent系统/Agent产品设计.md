@@ -1,13 +1,44 @@
 <!--
-  文件描述: Agent产品设计方法论，涵盖需求分析、交互设计、能力边界、商业模式及AI产品经理实践指南
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: Agent产品设计.md
+  文件描述: Agent产品设计方法论，补充场景判断、交互设计、能力边界、商业闭环与验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Agent 产品设计
 
 > Agent 产品设计是将 Agent 技术转化为用户价值的关键环节。优秀的产品设计需要在技术可行性和用户体验之间找到最佳平衡点。
+
+---
+
+## 零、前置知识
+
+阅读本节前，建议先掌握以下内容：
+
+| 前置章节                        | 关联点                                   |
+| ------------------------------- | ---------------------------------------- |
+| [Agent概念](./Agent概念.md)     | 判断场景是否真的需要 Agent               |
+| [Agent架构](./Agent架构.md)     | 产品方案需要映射到可实现的系统架构       |
+| [Planning](./Planning.md)       | Agent 产品的自主性来自任务规划能力       |
+| [Memory](./Memory.md)           | 个性化、连续性和用户信任依赖记忆设计     |
+| [ToolCalling](./ToolCalling.md) | Agent 产品能否产生真实价值取决于工具边界 |
+| [Agent评测](./Agent评测.md)     | 产品上线和迭代必须依赖评测指标           |
+
+**能力对标**：Agent 产品设计对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI产品设计力 → Agent 产品化能力」和「商业判断力 → 场景价值判断」。掌握本章，意味着你能把 Agent 技术能力转化为可落地、可运营、可评测、可商业化的产品方案。
+
+---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 判断一个业务场景是否适合 Agent，而不是普通 Chatbot、RAG 或工作流
+- 定义 Agent 产品的用户、目标、能力边界、自主等级和风险等级
+- 设计 Agent 的交互体验，包括计划展示、过程透明、用户干预、结果确认和失败兜底
+- 建立 Agent 产品的指标体系，包括任务成功率、用户满意度、留存、成本和安全指标
+- 输出一份完整的 Agent 产品方案，包括场景、价值、架构、交互、评测和上线策略
 
 ---
 
@@ -120,27 +151,27 @@ class UserScenario:
 
 class RequirementAnalyzer:
     """需求分析器"""
-    
+
     def __init__(self):
         """初始化分析器"""
         self.scenarios: List[UserScenario] = []
         self.priorities: Dict[str, int] = {}
-    
+
     def add_scenario(self, scenario: UserScenario):
         """
         添加用户场景
-        
+
         Args:
             scenario: 用户场景
         """
         self.scenarios.append(scenario)
-    
+
     def analyze_fit(self) -> Dict[str, Any]:
         """
         分析 Agent 适配度
-        
+
         评估哪些场景适合用 Agent 解决
-        
+
         Returns:
             适配度分析结果
         """
@@ -149,10 +180,10 @@ class RequirementAnalyzer:
             "medium_fit": [],
             "low_fit": []
         }
-        
+
         for scenario in self.scenarios:
             fit_score = self._calculate_fit(scenario)
-            
+
             if fit_score >= 0.7:
                 analysis["high_fit"].append({
                     "scenario": scenario,
@@ -171,20 +202,20 @@ class RequirementAnalyzer:
                     "score": fit_score,
                     "reason": "不适合 Agent"
                 })
-        
+
         return analysis
-    
+
     def _calculate_fit(self, scenario: UserScenario) -> float:
         """
         计算场景适配度
-        
+
         评估标准：
         - 任务复杂度（越高越适合）
         - 频率（越高越适合）
         - 痛点明确度
         """
         score = 0.0
-        
+
         # 复杂度加分
         if scenario.task_complexity == TaskComplexity.COMPLEX:
             score += 0.4
@@ -192,7 +223,7 @@ class RequirementAnalyzer:
             score += 0.3
         else:
             score += 0.1
-        
+
         # 频率加分
         if scenario.frequency == "daily":
             score += 0.3
@@ -200,19 +231,19 @@ class RequirementAnalyzer:
             score += 0.2
         else:
             score += 0.1
-        
+
         # 痛点数量加分
         score += min(len(scenario.pain_points) * 0.1, 0.3)
-        
+
         return min(score, 1.0)
-    
+
     def generate_prd(self, scenario: UserScenario) -> Dict:
         """
         生成产品需求文档（PRD）框架
-        
+
         Args:
             scenario: 用户场景
-        
+
         Returns:
             PRD 框架
         """
@@ -234,26 +265,26 @@ class RequirementAnalyzer:
             },
             "成功指标": scenario.success_criteria
         }
-    
+
     def _extract_capabilities(self, scenario: UserScenario) -> List[str]:
         """提取所需能力"""
         capabilities = []
-        
+
         if scenario.task_complexity == TaskComplexity.COMPLEX:
             capabilities.extend(["任务规划", "多步推理", "错误恢复"])
-        
+
         if len(scenario.pain_points) > 2:
             capabilities.append("多维度分析")
-        
+
         return capabilities
-    
+
     def _define_io(self, scenario: UserScenario) -> Dict:
         """定义输入输出"""
         return {
             "输入": "用户自然语言描述 + 上下文",
             "输出": "结构化结果 + 执行过程说明"
         }
-    
+
     def _define_boundaries(self, scenario: UserScenario) -> List[str]:
         """定义边界条件"""
         return [
@@ -321,11 +352,11 @@ class InteractionDesign:
 
 class InteractionDesigner:
     """交互设计师"""
-    
+
     def __init__(self):
         """初始化设计师"""
         self.patterns: Dict[str, InteractionDesign] = {}
-    
+
     def design_interaction(
         self,
         scenario: str,
@@ -334,12 +365,12 @@ class InteractionDesigner:
     ) -> InteractionDesign:
         """
         设计交互模式
-        
+
         Args:
             scenario: 场景描述
             user_type: 用户类型
             risk_level: 风险等级（low/medium/high）
-        
+
         Returns:
             交互设计
         """
@@ -359,13 +390,13 @@ class InteractionDesigner:
             steps_visible = False
             confirmation_points = []
             fallback_strategy = "默认处理"
-        
+
         # 根据用户类型调整
         if user_type == "expert":
             steps_visible = True  # 专家用户希望看到细节
         elif user_type == "beginner":
             confirmation_points.append("每一步")  # 新手需要更多引导
-        
+
         return InteractionDesign(
             mode=mode,
             steps_visible=steps_visible,
@@ -373,7 +404,7 @@ class InteractionDesigner:
             fallback_strategy=fallback_strategy,
             error_handling="友好提示 + 替代方案"
         )
-    
+
     def generate_dialogue_flow(
         self,
         design: InteractionDesign,
@@ -381,16 +412,16 @@ class InteractionDesigner:
     ) -> List[Dict]:
         """
         生成对话流程
-        
+
         Args:
             design: 交互设计
             task: 任务描述
-        
+
         Returns:
             对话流程
         """
         flow = []
-        
+
         # 开场
         flow.append({
             "role": "agent",
@@ -398,7 +429,7 @@ class InteractionDesigner:
             "content": f"我来帮您 {task}。",
             "options": ["开始", "了解更多"]
         })
-        
+
         # 信息收集
         flow.append({
             "role": "agent",
@@ -406,7 +437,7 @@ class InteractionDesigner:
             "content": "请告诉我更多细节...",
             "input_type": "text"
         })
-        
+
         # 确认（如果有确认点）
         if design.confirmation_points:
             flow.append({
@@ -416,7 +447,7 @@ class InteractionDesigner:
                 "show_plan": design.steps_visible,
                 "options": ["确认", "修改", "取消"]
             })
-        
+
         # 执行
         flow.append({
             "role": "agent",
@@ -424,7 +455,7 @@ class InteractionDesigner:
             "content": "正在执行...",
             "show_progress": design.steps_visible
         })
-        
+
         # 结果
         flow.append({
             "role": "agent",
@@ -432,7 +463,7 @@ class InteractionDesigner:
             "content": "执行完成，结果如下...",
             "follow_up": ["还有其他需要吗？", "保存结果"]
         })
-        
+
         return flow
 
 # 使用示例
@@ -485,66 +516,66 @@ class Capability:
 
 class CapabilityManager:
     """能力管理器"""
-    
+
     def __init__(self):
         """初始化能力管理器"""
         self.capabilities: Dict[str, Capability] = {}
         self.unsupported: List[str] = []
-    
+
     def register_capability(self, capability: Capability):
         """
         注册能力
-        
+
         Args:
             capability: 能力定义
         """
         self.capabilities[capability.name] = capability
-    
+
     def get_capability_statement(self) -> str:
         """
         获取能力声明
-        
+
         Returns:
             能力声明文本
         """
         lines = ["我可以帮您："]
-        
+
         for name, cap in self.capabilities.items():
             lines.append(f"\n**{name}**")
             lines.append(f"  {cap.description}")
             lines.append(f"  例如：{', '.join(cap.examples[:2])}")
-        
+
         lines.append("\n**暂不支持：**")
         for item in self.unsupported:
             lines.append(f"  - {item}")
-        
+
         return "\n".join(lines)
-    
+
     def check_request(self, request: str) -> Dict:
         """
         检查请求是否在能力范围内
-        
+
         Args:
             request: 用户请求
-        
+
         Returns:
             检查结果
         """
         # 简化实现：关键词匹配
         matched_capabilities = []
-        
+
         for name, cap in self.capabilities.items():
             # 检查名称匹配
             if name in request:
                 matched_capabilities.append(cap)
                 continue
-            
+
             # 检查示例匹配
             for example in cap.examples:
                 if any(word in request for word in example.split()):
                     matched_capabilities.append(cap)
                     break
-        
+
         if matched_capabilities:
             best_match = max(matched_capabilities, key=lambda c: c.confidence)
             return {
@@ -560,7 +591,7 @@ class CapabilityManager:
                 "confidence": 0,
                 "suggestion": self._suggest_alternative(request)
             }
-    
+
     def _suggest_alternative(self, request: str) -> str:
         """建议替代方案"""
         # 简化实现
@@ -763,7 +794,78 @@ Agent 产品经理核心能力：
 
 ---
 
-## 六、参考资源
+## 六、产品设计模板
+
+### 6.1 Agent 产品方案检查表
+
+| 设计项   | 关键问题                                           | 输出物           |
+| -------- | -------------------------------------------------- | ---------------- |
+| 场景判断 | 为什么必须用 Agent，而不是 Chatbot、RAG 或工作流？ | Agent 适配度分析 |
+| 用户目标 | 用户真正想完成的任务是什么？成功标准是什么？       | 用户任务定义     |
+| 自主等级 | Agent 能自主规划、调用工具、执行动作到什么程度？   | 自主性等级表     |
+| 能力边界 | Agent 明确能做什么、不能做什么、需要人工确认什么？ | 能力边界说明     |
+| 交互设计 | 用户如何发起、确认、干预、暂停、恢复和评价任务？   | 核心交互流程     |
+| 风险控制 | 失败、幻觉、越权、隐私和高成本调用如何兜底？       | 风险控制矩阵     |
+| 评测上线 | 达到什么指标才能灰度、全量或回滚？                 | 上线门禁标准     |
+
+### 6.2 Agent 产品方案字段建议
+
+```json
+{
+  "product_name": "企业经营分析 Agent",
+  "target_users": ["业务负责人", "数据分析师", "部门主管"],
+  "core_scenario": "自动分析经营数据并生成可执行建议",
+  "agent_fit_reason": "任务多步骤、需调用数据工具、需结合历史上下文并产出决策建议",
+  "autonomy_level": "human_confirmed_execution",
+  "capabilities": ["数据查询", "指标分析", "异常识别", "报告生成", "行动建议"],
+  "boundaries": [
+    "不直接修改生产数据",
+    "不替代最终业务决策",
+    "高风险建议需人工确认"
+  ],
+  "tools": ["database_query", "chart_generator", "report_writer"],
+  "memory_strategy": "保存用户关注指标和历史分析偏好",
+  "success_metrics": {
+    "task_success_rate": ">= 85%",
+    "user_satisfaction": ">= 4.2/5",
+    "manual_takeover_rate": "<= 15%",
+    "p95_latency": "<= 30s"
+  }
+}
+```
+
+---
+
+## 七、常见误区
+
+| 误区                     | 问题                                   | 正确做法                                      |
+| ------------------------ | -------------------------------------- | --------------------------------------------- |
+| 把聊天机器人包装成 Agent | 没有规划、工具和行动能力，用户预期落空 | 明确 Agent 必须具备目标、状态、工具和执行闭环 |
+| 一开始就做高自主 Agent   | 风险、成本和不可控性过高               | 从建议型、确认型 Agent 开始，逐步提升自主性   |
+| 只强调智能，不设计边界   | 用户不知道何时可信、何时需人工判断     | 明确能力范围、失败场景和人工接管机制          |
+| 忽略过程透明             | 用户无法信任 Agent 的行动路径          | 展示计划、工具调用、关键依据和结果来源        |
+| 没有上线门禁             | 质量波动直接影响真实用户               | 用评测指标、灰度监控和回滚条件控制上线风险    |
+
+---
+
+## 八、阶段验收标准
+
+- [ ] 能判断一个场景是否适合 Agent，并说明与 Chatbot、RAG、工作流的区别
+- [ ] 能定义 Agent 产品的用户、任务目标、能力边界、自主等级和风险等级
+- [ ] 能设计核心交互流程，包括计划确认、过程展示、用户干预、结果确认和失败兜底
+- [ ] 能设计 Agent 产品指标，包括任务成功率、满意度、留存、成本、安全和人工接管率
+- [ ] 能输出完整 Agent 产品方案，覆盖场景价值、系统架构、交互体验、评测上线和运营迭代
+
+---
+
+## 九、版本记录
+
+- **2026-06-05** 补充前置知识、能力对标、学习目标、产品设计模板、常见误区和阶段验收标准
+- **2026-06-03** 初版完成，涵盖需求分析、交互设计、能力边界、商业模式和产品经理实践指南
+
+---
+
+## 十、参考资源
 
 - [The Rise of Agentic AI](https://www.anthropic.com/research) - Anthropic 的 Agent 研究
 - [AI Agent Design Patterns](https://www.patterns.dev/posts/ai-agent/) - Agent 设计模式

@@ -1,13 +1,44 @@
 <!--
-  文件描述: Agent工具调用模块详解，涵盖工具定义、调用协议、错误处理、安全控制及AI产品经理关注点
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: ToolCalling.md
+  文件描述: Agent工具调用模块详解，补充工具定义、调用协议、错误处理、安全控制与产品化验收清单
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # Tool Calling（工具调用）
 
 > 工具调用是 Agent 扩展能力边界的核心机制。通过调用外部工具，Agent 可以获取实时信息、执行计算、操作外部系统，突破大模型本身的知识和时效限制。
+
+---
+
+## 零、前置知识
+
+阅读本节前，建议先掌握以下内容：
+
+| 前置章节                                                 | 关联点                                             |
+| -------------------------------------------------------- | -------------------------------------------------- |
+| [FunctionCalling](../05-AI应用开发/FunctionCalling.md)   | Agent 工具调用建立在函数调用和结构化参数生成之上   |
+| [ToolCalling](../05-AI应用开发/ToolCalling.md)           | 理解通用工具调用流程、工具 schema 和执行结果处理   |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 工具参数、返回值和错误信息需要结构化表达           |
+| [Agent架构](./Agent架构.md)                              | 理解 Tool Registry、执行器、安全网关在架构中的位置 |
+| [Planning](./Planning.md)                                | 计划步骤需要映射为具体工具调用或人工确认动作       |
+| [MCP基础](../08-MCP生态/MCP基础.md)                      | MCP 是工具标准化接入的重要协议方向                 |
+
+**能力对标**：Tool Calling 对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → 工具集成能力」和「技术理解力 → API/系统集成能力」。掌握 Tool Calling，意味着你能为 Agent 设计安全、可控、可扩展的外部能力边界。
+
+---
+
+## 本章学习目标
+
+完成本节后，你应该能够：
+
+- 设计工具定义、参数 schema、返回结构、错误码和调用协议
+- 判断工具适合做成原子工具、组合技能、插件还是 MCP Server
+- 设计工具注册、发现、权限控制、人工确认、审计日志和限流机制
+- 处理工具调用失败、超时、参数错误、权限不足和结果不可信等问题
+- 定义 Tool Calling 的质量指标，包括调用成功率、参数有效率、延迟、安全事件和用户确认通过率
 
 ---
 
@@ -150,36 +181,36 @@ class ToolDefinition:
 
 class BaseTool(ABC):
     """工具基类"""
-    
+
     def __init__(self, definition: ToolDefinition):
         """
         初始化工具
-        
+
         Args:
             definition: 工具定义
         """
         self.definition = definition
-    
+
     @abstractmethod
     def execute(self, **kwargs) -> Dict[str, Any]:
         """
         执行工具
-        
+
         Args:
             **kwargs: 工具参数
-        
+
         Returns:
             执行结果
         """
         pass
-    
+
     def validate_params(self, params: Dict) -> tuple[bool, str]:
         """
         验证参数
-        
+
         Args:
             params: 参数字典
-        
+
         Returns:
             (是否有效, 错误信息)
         """
@@ -187,20 +218,20 @@ class BaseTool(ABC):
             # 检查必填参数
             if param.required and param.name not in params:
                 return False, f"缺少必填参数: {param.name}"
-            
+
             # 检查类型
             if param.name in params:
                 value = params[param.name]
                 if not self._check_type(value, param.type):
                     return False, f"参数 {param.name} 类型错误，期望 {param.type}"
-            
+
             # 检查枚举
             if param.enum and param.name in params:
                 if params[param.name] not in param.enum:
                     return False, f"参数 {param.name} 值不在允许范围内"
-        
+
         return True, ""
-    
+
     def _check_type(self, value: Any, expected_type: str) -> bool:
         """检查类型"""
         type_map = {
@@ -210,40 +241,40 @@ class BaseTool(ABC):
             "array": list,
             "object": dict
         }
-        
+
         expected = type_map.get(expected_type)
         if expected:
             return isinstance(value, expected)
-        
+
         return True
-    
+
     def to_function_schema(self) -> Dict:
         """
         转换为 OpenAI Function Calling 格式
-        
+
         Returns:
             Function schema
         """
         properties = {}
         required = []
-        
+
         for param in self.definition.parameters:
             prop = {
                 "type": param.type,
                 "description": param.description
             }
-            
+
             if param.enum:
                 prop["enum"] = param.enum
-            
+
             if param.example is not None:
                 prop["example"] = param.example
-            
+
             properties[param.name] = prop
-            
+
             if param.required:
                 required.append(param.name)
-        
+
         return {
             "type": "function",
             "function": {
@@ -260,11 +291,11 @@ class BaseTool(ABC):
 # 示例工具实现
 class SearchTool(BaseTool):
     """搜索工具"""
-    
+
     def __init__(self, search_engine):
         """
         初始化搜索工具
-        
+
         Args:
             search_engine: 搜索引擎实例
         """
@@ -290,24 +321,24 @@ class SearchTool(BaseTool):
             ],
             return_type="string"
         )
-        
+
         super().__init__(definition)
         self.search_engine = search_engine
-    
+
     def execute(self, query: str, num_results: int = 5) -> Dict[str, Any]:
         """
         执行搜索
-        
+
         Args:
             query: 搜索关键词
             num_results: 结果数量
-        
+
         Returns:
             搜索结果
         """
         try:
             results = self.search_engine.search(query, num_results)
-            
+
             return {
                 "status": "success",
                 "data": results,
@@ -323,7 +354,7 @@ class SearchTool(BaseTool):
 
 class CalculatorTool(BaseTool):
     """计算器工具"""
-    
+
     def __init__(self):
         """初始化计算器工具"""
         definition = ToolDefinition(
@@ -341,16 +372,16 @@ class CalculatorTool(BaseTool):
             ],
             return_type="number"
         )
-        
+
         super().__init__(definition)
-    
+
     def execute(self, expression: str) -> Dict[str, Any]:
         """
         执行计算
-        
+
         Args:
             expression: 数学表达式
-        
+
         Returns:
             计算结果
         """
@@ -362,13 +393,13 @@ class CalculatorTool(BaseTool):
                     "status": "error",
                     "error": "表达式包含非法字符"
                 }
-            
+
             # 替换 ^ 为 **
             expression = expression.replace("^", "**")
-            
+
             # 安全计算
             result = eval(expression, {"__builtins__": {}}, {})
-            
+
             return {
                 "status": "success",
                 "result": result,
@@ -382,11 +413,11 @@ class CalculatorTool(BaseTool):
 
 class DatabaseQueryTool(BaseTool):
     """数据库查询工具"""
-    
+
     def __init__(self, db_connection):
         """
         初始化数据库查询工具
-        
+
         Args:
             db_connection: 数据库连接
         """
@@ -413,18 +444,18 @@ class DatabaseQueryTool(BaseTool):
             return_type="array",
             requires_confirmation=True  # 需要用户确认
         )
-        
+
         super().__init__(definition)
         self.db = db_connection
-    
+
     def execute(self, query: str, limit: int = 100) -> Dict[str, Any]:
         """
         执行数据库查询
-        
+
         Args:
             query: SQL 查询
             limit: 记录数限制
-        
+
         Returns:
             查询结果
         """
@@ -435,14 +466,14 @@ class DatabaseQueryTool(BaseTool):
                 "status": "error",
                 "error": "只允许 SELECT 查询"
             }
-        
+
         try:
             # 添加 LIMIT
             if "limit" not in query_lower:
                 query = f"{query} LIMIT {limit}"
-            
+
             results = self.db.execute(query).fetchall()
-            
+
             return {
                 "status": "success",
                 "data": results,
@@ -466,59 +497,59 @@ class DatabaseQueryTool(BaseTool):
 
 class ToolRegistry:
     """工具注册中心"""
-    
+
     def __init__(self):
         """初始化工具注册中心"""
         self.tools: Dict[str, BaseTool] = {}
         self.categories: Dict[ToolCategory, List[str]] = {
             cat: [] for cat in ToolCategory
         }
-    
+
     def register(self, tool: BaseTool):
         """
         注册工具
-        
+
         Args:
             tool: 工具实例
         """
         name = tool.definition.name
-        
+
         if name in self.tools:
             raise ValueError(f"工具 {name} 已存在")
-        
+
         self.tools[name] = tool
         self.categories[tool.definition.category].append(name)
-    
+
     def unregister(self, name: str):
         """
         注销工具
-        
+
         Args:
             name: 工具名称
         """
         if name in self.tools:
             tool = self.tools.pop(name)
             self.categories[tool.definition.category].remove(name)
-    
+
     def get(self, name: str) -> Optional[BaseTool]:
         """
         获取工具
-        
+
         Args:
             name: 工具名称
-        
+
         Returns:
             工具实例
         """
         return self.tools.get(name)
-    
+
     def list_tools(self, category: ToolCategory = None) -> List[ToolDefinition]:
         """
         列出工具
-        
+
         Args:
             category: 分类过滤
-        
+
         Returns:
             工具定义列表
         """
@@ -527,37 +558,37 @@ class ToolRegistry:
                 self.tools[name].definition
                 for name in self.categories[category]
             ]
-        
+
         return [tool.definition for tool in self.tools.values()]
-    
+
     def get_schemas(self) -> List[Dict]:
         """
         获取所有工具的 Function Schema
-        
+
         Returns:
             Schema 列表
         """
         return [tool.to_function_schema() for tool in self.tools.values()]
-    
+
     def search(self, query: str) -> List[ToolDefinition]:
         """
         搜索工具
-        
+
         Args:
             query: 搜索关键词
-        
+
         Returns:
             匹配的工具定义
         """
         results = []
         query_lower = query.lower()
-        
+
         for tool in self.tools.values():
             # 匹配名称和描述
             if (query_lower in tool.definition.name.lower() or
                 query_lower in tool.definition.description.lower()):
                 results.append(tool.definition)
-        
+
         return results
 
 # 使用示例
@@ -618,32 +649,32 @@ class ToolResult:
 
 class ToolExecutor:
     """工具执行器"""
-    
+
     def __init__(self, registry: ToolRegistry):
         """
         初始化执行器
-        
+
         Args:
             registry: 工具注册中心
         """
         self.registry = registry
         self.history: List[Dict] = []
-    
+
     async def execute(self, call: ToolCall) -> ToolResult:
         """
         执行工具调用
-        
+
         Args:
             call: 调用请求
-        
+
         Returns:
             调用结果
         """
         start_time = datetime.now()
-        
+
         # 1. 查找工具
         tool = self.registry.get(call.tool_name)
-        
+
         if not tool:
             return ToolResult(
                 call_id=call.id,
@@ -652,10 +683,10 @@ class ToolExecutor:
                 data=None,
                 error_message=f"工具 {call.tool_name} 不存在"
             )
-        
+
         # 2. 验证参数
         valid, error = tool.validate_params(call.parameters)
-        
+
         if not valid:
             return ToolResult(
                 call_id=call.id,
@@ -664,7 +695,7 @@ class ToolExecutor:
                 data=None,
                 error_message=error
             )
-        
+
         # 3. 执行工具（带超时和重试）
         for attempt in range(tool.definition.retry_count):
             try:
@@ -673,12 +704,12 @@ class ToolExecutor:
                     self._run_tool(tool, call.parameters),
                     timeout=tool.definition.timeout
                 )
-                
+
                 execution_time = (datetime.now() - start_time).total_seconds()
-                
+
                 # 记录历史
                 self._record_history(call, result, execution_time)
-                
+
                 return ToolResult(
                     call_id=call.id,
                     tool_name=call.tool_name,
@@ -686,7 +717,7 @@ class ToolExecutor:
                     data=result,
                     execution_time=execution_time
                 )
-                
+
             except asyncio.TimeoutError:
                 if attempt == tool.definition.retry_count - 1:
                     return ToolResult(
@@ -696,9 +727,9 @@ class ToolExecutor:
                         data=None,
                         error_message="工具调用超时"
                     )
-                
+
                 await asyncio.sleep(1 * (attempt + 1))  # 指数退避
-                
+
             except Exception as e:
                 if attempt == tool.definition.retry_count - 1:
                     return ToolResult(
@@ -708,15 +739,15 @@ class ToolExecutor:
                         data=None,
                         error_message=str(e)
                     )
-                
+
                 await asyncio.sleep(1 * (attempt + 1))
-    
+
     async def _run_tool(self, tool: BaseTool, params: Dict) -> Any:
         """运行工具"""
         # 同步工具在异步环境中运行
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, tool.execute, **params)
-    
+
     def _record_history(self, call: ToolCall, result: Any, execution_time: float):
         """记录调用历史"""
         self.history.append({
@@ -729,7 +760,7 @@ class ToolExecutor:
             "execution_time": execution_time,
             "timestamp": datetime.now().isoformat()
         })
-    
+
     def get_history(self) -> List[Dict]:
         """获取调用历史"""
         return self.history
@@ -764,11 +795,11 @@ LLM 工具调用集成
 
 class LLMToolIntegration:
     """LLM 工具调用集成"""
-    
+
     def __init__(self, llm_client, tool_registry: ToolRegistry):
         """
         初始化集成
-        
+
         Args:
             llm_client: LLM 客户端
             tool_registry: 工具注册中心
@@ -776,7 +807,7 @@ class LLMToolIntegration:
         self.llm = llm_client
         self.registry = tool_registry
         self.executor = ToolExecutor(tool_registry)
-    
+
     async def chat_with_tools(
         self,
         messages: List[Dict],
@@ -784,23 +815,23 @@ class LLMToolIntegration:
     ) -> Dict:
         """
         支持工具调用的对话
-        
+
         Args:
             messages: 对话历史
             max_tool_calls: 最大工具调用次数
-        
+
         Returns:
             最终回复
         """
         tool_schemas = self.registry.get_schemas()
-        
+
         for _ in range(max_tool_calls):
             # 调用 LLM
             response = self.llm.chat(
                 messages=messages,
                 tools=tool_schemas
             )
-            
+
             # 检查是否需要调用工具
             if not response.get("tool_calls"):
                 # 直接返回回复
@@ -808,10 +839,10 @@ class LLMToolIntegration:
                     "content": response["content"],
                     "tool_calls": []
                 }
-            
+
             # 执行工具调用
             tool_results = []
-            
+
             for tool_call in response["tool_calls"]:
                 call = ToolCall(
                     id=tool_call["id"],
@@ -819,26 +850,26 @@ class LLMToolIntegration:
                     parameters=json.loads(tool_call["function"]["arguments"]),
                     timestamp=datetime.now()
                 )
-                
+
                 result = await self.executor.execute(call)
-                
+
                 tool_results.append({
                     "tool_call_id": call.id,
                     "role": "tool",
                     "name": call.tool_name,
                     "content": json.dumps(result.data) if result.status == "success" else result.error_message
                 })
-            
+
             # 将工具结果加入对话
             messages.append({
                 "role": "assistant",
                 "content": response["content"],
                 "tool_calls": response["tool_calls"]
             })
-            
+
             for result in tool_results:
                 messages.append(result)
-        
+
         # 达到最大调用次数，返回最后回复
         return {
             "content": "已达到最大工具调用次数",
@@ -883,7 +914,7 @@ class PermissionLevel(Enum):
 
 class ToolSecurityManager:
     """工具安全管理器"""
-    
+
     def __init__(self):
         """初始化安全管理器"""
         self.permissions: Dict[str, PermissionLevel] = {}
@@ -892,17 +923,17 @@ class ToolSecurityManager:
             "rm -rf", "drop table", "delete from",
             "exec(", "eval(", "system("
         ]
-    
+
     def set_permission(self, tool_name: str, level: PermissionLevel):
         """
         设置工具权限
-        
+
         Args:
             tool_name: 工具名称
             level: 权限级别
         """
         self.permissions[tool_name] = level
-    
+
     def check_permission(
         self,
         tool_name: str,
@@ -911,51 +942,51 @@ class ToolSecurityManager:
     ) -> bool:
         """
         检查权限
-        
+
         Args:
             tool_name: 工具名称
             user_id: 用户 ID
             user_role: 用户角色
-        
+
         Returns:
             是否有权限
         """
         level = self.permissions.get(tool_name, PermissionLevel.PUBLIC)
-        
+
         if level == PermissionLevel.PUBLIC:
             return True
-        
+
         if level == PermissionLevel.USER:
             return user_id is not None
-        
+
         if level == PermissionLevel.ADMIN:
             return user_role == "admin"
-        
+
         if level == PermissionLevel.RESTRICTED:
             allowed = self.allowed_users.get(tool_name, set())
             return user_id in allowed
-        
+
         return False
-    
+
     def validate_input(self, params: Dict) -> tuple[bool, str]:
         """
         验证输入安全
-        
+
         Args:
             params: 参数字典
-        
+
         Returns:
             (是否安全, 错误信息)
         """
         # 将参数转为字符串检查
         param_str = json.dumps(params).lower()
-        
+
         for pattern in self.blocked_patterns:
             if pattern in param_str:
                 return False, f"输入包含危险模式: {pattern}"
-        
+
         return True, ""
-    
+
     def audit_log(
         self,
         user_id: str,
@@ -965,7 +996,7 @@ class ToolSecurityManager:
     ):
         """
         记录审计日志
-        
+
         Args:
             user_id: 用户 ID
             tool_name: 工具名称
@@ -979,7 +1010,7 @@ class ToolSecurityManager:
             "parameters": params,
             "result_status": result.get("status", "unknown")
         }
-        
+
         # 记录到日志系统
         print(f"[AUDIT] {json.dumps(log_entry)}")
 
@@ -1016,11 +1047,11 @@ print(f"安全: {safe}, 错误: {error}")
 
 class HumanConfirmation:
     """人工确认管理"""
-    
+
     def __init__(self):
         """初始化确认管理"""
         self.pending_confirmations: Dict[str, Dict] = {}
-    
+
     def request_confirmation(
         self,
         call_id: str,
@@ -1030,18 +1061,18 @@ class HumanConfirmation:
     ) -> str:
         """
         请求确认
-        
+
         Args:
             call_id: 调用 ID
             tool_name: 工具名称
             params: 参数
             description: 操作描述
-        
+
         Returns:
             确认请求 ID
         """
         confirmation_id = f"confirm_{call_id}"
-        
+
         self.pending_confirmations[confirmation_id] = {
             "call_id": call_id,
             "tool_name": tool_name,
@@ -1050,48 +1081,48 @@ class HumanConfirmation:
             "status": "pending",
             "timestamp": datetime.now().isoformat()
         }
-        
+
         return confirmation_id
-    
+
     def confirm(self, confirmation_id: str) -> bool:
         """
         确认操作
-        
+
         Args:
             confirmation_id: 确认请求 ID
-        
+
         Returns:
             是否成功
         """
         if confirmation_id not in self.pending_confirmations:
             return False
-        
+
         self.pending_confirmations[confirmation_id]["status"] = "confirmed"
         return True
-    
+
     def reject(self, confirmation_id: str) -> bool:
         """
         拒绝操作
-        
+
         Args:
             confirmation_id: 确认请求 ID
-        
+
         Returns:
             是否成功
         """
         if confirmation_id not in self.pending_confirmations:
             return False
-        
+
         self.pending_confirmations[confirmation_id]["status"] = "rejected"
         return True
-    
+
     def get_status(self, confirmation_id: str) -> Optional[str]:
         """
         获取确认状态
-        
+
         Args:
             confirmation_id: 确认请求 ID
-        
+
         Returns:
             状态
         """
@@ -1204,7 +1235,89 @@ Tool Calling 产品化要点：
 
 ---
 
-## 六、参考资源
+## 六、产品设计模板
+
+### 6.1 工具接入 PRD 检查表
+
+| 设计项      | 关键问题                                        | 输出物         |
+| ----------- | ----------------------------------------------- | -------------- |
+| 工具边界    | 工具是原子能力、组合技能、插件还是 MCP Server？ | 工具分层清单   |
+| Schema 设计 | 参数、返回值、错误码是否结构化且可验证？        | Tool Schema    |
+| 权限控制    | 谁能调用工具？哪些场景需要二次授权？            | 权限矩阵       |
+| 人工确认    | 哪些调用会产生外部影响，需要用户确认？          | 高风险操作清单 |
+| 执行策略    | 工具超时、失败、限流时如何处理？                | 重试与降级策略 |
+| 结果可信    | 工具结果是否需要校验、引用来源或置信度？        | 结果校验规则   |
+| 审计追踪    | 调用人、参数、结果、时间、错误是否可追溯？      | 审计日志规范   |
+
+### 6.2 工具 Schema 字段建议
+
+```json
+{
+  "name": "send_email",
+  "description": "向指定收件人发送邮件",
+  "category": "communication",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "to": {
+        "type": "string",
+        "description": "收件人邮箱"
+      },
+      "subject": {
+        "type": "string",
+        "description": "邮件标题"
+      },
+      "content": {
+        "type": "string",
+        "description": "邮件正文"
+      }
+    },
+    "required": ["to", "subject", "content"]
+  },
+  "permissions": {
+    "level": "user",
+    "requires_confirmation": true
+  },
+  "runtime": {
+    "timeout_seconds": 10,
+    "retry_count": 2,
+    "rate_limit": "10/minute"
+  }
+}
+```
+
+---
+
+## 七、常见误区
+
+| 误区               | 问题                                 | 正确做法                                       |
+| ------------------ | ------------------------------------ | ---------------------------------------------- |
+| 工具描述过短       | 模型无法准确选择工具                 | 用清晰名称、适用场景、反例和参数说明提升可选性 |
+| 工具过于万能       | 参数复杂、失败率高、难审计           | 拆成原子工具，再通过 Planning 组合             |
+| 不做权限控制       | 可能执行越权、破坏性或高成本操作     | 按工具风险设置权限、确认和审计                 |
+| 工具失败只返回错误 | Agent 无法恢复任务                   | 返回结构化错误码、原因和建议动作               |
+| 忽略结果可信度     | 工具返回的数据可能过期、不完整或冲突 | 加入来源、时间戳、置信度和校验机制             |
+
+---
+
+## 八、阶段验收标准
+
+- [ ] 能设计一个工具的名称、描述、参数 schema、返回结构和错误码
+- [ ] 能区分原子工具、组合技能、插件、MCP Server 的适用场景
+- [ ] 能设计 Tool Registry、Tool Executor、Security Manager 的基础架构
+- [ ] 能为敏感工具设计权限控制、人工确认、审计日志和撤销机制
+- [ ] 能定义工具调用指标，包括调用成功率、参数有效率、P99 延迟、超时率和安全事件数
+
+---
+
+## 九、版本记录
+
+- **2026-06-05** 补充前置知识、能力对标、学习目标、产品设计模板、常见误区和阶段验收标准
+- **2026-06-03** 初版完成，涵盖工具定义、工具注册、调用协议、LLM 集成、安全控制与产品关注点
+
+---
+
+## 十、参考资源
 
 - [OpenAI Function Calling](https://platform.openai.com/docs/guides/function-calling) - OpenAI 函数调用指南
 - [LangChain Tools](https://python.langchain.com/docs/modules/agents/tools/) - LangChain 工具模块

@@ -1,1007 +1,813 @@
 <!--
-  文件描述: MCP服务端开发指南，涵盖环境搭建、工具注册、请求处理、错误管理及部署运维
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: MCP服务端开发.md
+  文件描述: MCP服务端开发指南，面向新手和技术转型者系统讲解工具拆分、Schema设计、权限治理、部署运维与企业落地方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-05
 -->
 
 # MCP 服务端开发
 
-> 学习如何开发 MCP Server，将现有能力封装为标准化工具，供 AI 应用调用。
+> MCP Server 是企业工具能力真正被模型消费的出口。很多团队在这个阶段最容易犯的错误，是把“现有后端接口”直接套一层协议就对外开放。结果看起来接入很快，实际上工具难用、权限混乱、错误不清晰、上线风险高。本章的目标，是帮助你把“能跑起来的 MCP Server”升级为“能稳定上线、能被复用、能被治理的 MCP Server”。
 
 ---
 
-## 一、环境准备
+## 零、前置知识
 
-### 1.1 开发环境搭建
+建议先阅读以下内容：
 
-```bash
-# 创建项目目录
-mkdir mcp-server-demo && cd mcp-server-demo
+- [MCP基础](./MCP基础.md)
+- [MCP协议](./MCP协议.md)
+- [ToolCalling](../05-AI应用开发/ToolCalling.md)
+- [Agent架构](../07-Agent系统/Agent架构.md)
 
-# 初始化 Python 项目
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate  # Windows
+如果你是刚从后端工程、测试、客户端或传统产品岗位转向 AI 产品经理，也建议先建立下面这层认知：
 
-# 安装 MCP SDK
-pip install mcp
-
-# 安装开发依赖
-pip install pytest black mypy
-
-# 验证安装
-python -c "import mcp; print(mcp.__version__)"
-```
-
-### 1.2 项目结构
-
-```
-MCP Server 项目结构：
-
-mcp-server-demo/
-├── src/
-│   └── my_mcp_server/
-│       ├── __init__.py
-│       ├── server.py          # 服务端主入口
-│       ├── tools/             # 工具实现
-│       │   ├── __init__.py
-│       │   ├── search.py      # 搜索工具
-│       │   └── calculator.py  # 计算工具
-│       ├── resources/         # 资源管理
-│       │   ├── __init__.py
-│       │   └── file_resource.py
-│       └── utils/             # 工具函数
-│           ├── __init__.py
-│           └── helpers.py
-├── tests/                     # 测试目录
-│   ├── __init__.py
-│   └── test_tools.py
-├── pyproject.toml             # 项目配置
-├── README.md                  # 项目说明
-└── .env                       # 环境变量
-```
+- MCP Server 不是普通 API 文档的另一种写法
+- 它面对的使用者，不只是人类开发者，还有模型和 Agent
+- 模型是“概率型调用者”，因此工具设计必须比普通接口更稳、更清晰
+- 服务端设计不好，会直接影响模型调用成功率、用户体验和业务安全
 
 ---
 
-## 二、基础 Server 开发
+## 本章学习目标
 
-### 2.1 最小可运行 Server
+完成本节后，你应该能够：
 
-```python
-"""
-MCP 最小服务端示例
-
-展示如何创建一个最基本的 MCP Server
-"""
-
-from mcp.server import Server
-from mcp.types import TextContent
-import asyncio
-
-# 创建 Server 实例
-app = Server("my-first-server")
-
-
-@app.list_tools()
-async def list_tools() -> list:
-    """
-    列出可用工具
-    
-    Returns:
-        工具列表
-    """
-    return [
-        {
-            "name": "echo",
-            "description": "回显用户输入的内容",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "message": {
-                        "type": "string",
-                        "description": "要回显的消息"
-                    }
-                },
-                "required": ["message"]
-            }
-        }
-    ]
-
-
-@app.call_tool()
-async def call_tool(name: str, arguments: dict) -> list:
-    """
-    调用工具
-    
-    Args:
-        name: 工具名称
-        arguments: 工具参数
-    
-    Returns:
-        调用结果
-    """
-    if name == "echo":
-        message = arguments.get("message", "")
-        return [TextContent(type="text", text=f"Echo: {message}")]
-    
-    raise ValueError(f"未知工具: {name}")
-
-
-async def main():
-    """主函数"""
-    from mcp.server.stdio import stdio_server
-    
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-### 2.2 使用 FastMCP 简化开发
-
-```python
-"""
-使用 FastMCP 快速开发
-
-FastMCP 是 MCP SDK 提供的高级封装，简化 Server 开发
-"""
-
-from mcp.server.fastmcp import FastMCP
-import random
-
-# 创建 FastMCP 实例
-mcp = FastMCP("fast-demo-server")
-
-
-@mcp.tool()
-def calculate(expression: str) -> str:
-    """
-    计算数学表达式
-    
-    Args:
-        expression: 数学表达式，如 "1 + 2 * 3"
-    
-    Returns:
-        计算结果
-    """
-    try:
-        # 安全计算：限制可用函数
-        allowed_names = {
-            "abs": abs,
-            "max": max,
-            "min": min,
-            "pow": pow,
-            "round": round,
-        }
-        
-        result = eval(expression, {"__builtins__": {}}, allowed_names)
-        return f"计算结果: {result}"
-    
-    except Exception as e:
-        return f"计算错误: {str(e)}"
-
-
-@mcp.tool()
-def random_number(min_val: int = 1, max_val: int = 100) -> str:
-    """
-    生成随机数
-    
-    Args:
-        min_val: 最小值
-        max_val: 最大值
-    
-    Returns:
-        随机数
-    """
-    number = random.randint(min_val, max_val)
-    return f"随机数 ({min_val}-{max_val}): {number}"
-
-
-@mcp.resource("greeting://{name}")
-def get_greeting(name: str) -> str:
-    """
-    获取问候语
-    
-    Args:
-        name: 用户名称
-    
-    Returns:
-        问候语
-    """
-    return f"你好，{name}！欢迎使用 MCP Server。"
-
-
-@mcp.prompt()
-def analyze_data_prompt(data: str) -> str:
-    """
-    数据分析提示模板
-    
-    Args:
-        data: 待分析的数据
-    
-    Returns:
-        提示文本
-    """
-    return f"""请分析以下数据：
-
-{data}
-
-分析要求：
-1. 总结数据的主要特征
-2. 识别异常值或趋势
-3. 提供 actionable insights
-"""
-
-
-if __name__ == "__main__":
-    # 使用 stdio 传输方式运行
-    mcp.run(transport='stdio')
-```
+- 理解 MCP Server 在整个 AI 系统中的职责和边界
+- 将真实业务能力拆分为可被模型稳定使用的 Resources、Prompts、Tools
+- 为服务端设计清晰的 Schema、权限审批、错误语义和审计日志
+- 设计部署、监控、测试、灰度和回滚机制
+- 输出一份适合企业评审的 MCP Server 实施方案
 
 ---
 
-## 三、工具开发进阶
+## 一、为什么 MCP Server 开发比你想象得更重要
 
-### 3.1 复杂工具实现
+### 1. 服务端决定“模型能看到什么世界”
 
-```python
-"""
-复杂工具开发示例
+模型本身不会直接访问数据库、飞书、GitHub 或审批系统。它能接触到的外部能力，实际上都来自服务端暴露的能力边界。
 
-实现一个具有完整功能的搜索工具
-"""
+从这个角度看，MCP Server 做的不是“把接口挂出来”，而是：
 
-from mcp.server.fastmcp import FastMCP
-from typing import List, Dict, Optional
-from dataclasses import dataclass
-import json
+- 决定模型能看到哪些能力
+- 决定这些能力以什么形式被理解
+- 决定调用时有哪些安全护栏
+- 决定结果是否足够稳定、可消费、可审计
 
-mcp = FastMCP("advanced-tools")
+这就是为什么服务端开发不是单纯工程实现，而是技术设计和产品设计的交叉点。
 
+### 2. 真实项目中的常见问题几乎都出在服务端设计
 
-@dataclass
-class SearchResult:
-    """搜索结果"""
-    title: str
-    content: str
-    source: str
-    relevance: float
+例如：
 
+- 工具太底层，模型不知道怎么选
+- 参数太多，模型总传错
+- 写操作和读操作混在一起，风险不可控
+- 错误返回全是内部异常，用户体验很差
+- 高风险调用没有审批和审计
+- 下游超时没有兜底，流程稳定性差
 
-class MockSearchEngine:
-    """模拟搜索引擎"""
-    
-    def __init__(self):
-        """初始化搜索引擎"""
-        self.documents = [
-            {
-                "title": "MCP 协议入门",
-                "content": "MCP（Model Context Protocol）是 Anthropic 推出的开放协议...",
-                "source": "官方文档",
-                "tags": ["mcp", "protocol", "ai"]
-            },
-            {
-                "title": "AI 产品经理指南",
-                "content": "AI 产品经理需要掌握的核心技能包括...",
-                "source": "知识库",
-                "tags": ["ai", "product", "manager"]
-            },
-            {
-                "title": "大模型应用开发",
-                "content": "构建基于大模型的应用需要考虑...",
-                "source": "技术博客",
-                "tags": ["llm", "development", "ai"]
-            }
-        ]
-    
-    def search(self, query: str, limit: int = 5) -> List[SearchResult]:
-        """
-        搜索文档
-        
-        Args:
-            query: 搜索关键词
-            limit: 返回结果数量
-        
-        Returns:
-            搜索结果列表
-        """
-        results = []
-        query_lower = query.lower()
-        
-        for doc in self.documents:
-            # 简单相关性计算
-            relevance = 0.0
-            
-            if query_lower in doc["title"].lower():
-                relevance += 0.5
-            if query_lower in doc["content"].lower():
-                relevance += 0.3
-            if any(query_lower in tag.lower() for tag in doc["tags"]):
-                relevance += 0.2
-            
-            if relevance > 0:
-                results.append(SearchResult(
-                    title=doc["title"],
-                    content=doc["content"],
-                    source=doc["source"],
-                    relevance=relevance
-                ))
-        
-        # 按相关性排序并限制数量
-        results.sort(key=lambda x: x.relevance, reverse=True)
-        return results[:limit]
+很多团队会把这些问题归类成“模型还不够聪明”，其实很大一部分是服务端接口设计不适合模型使用。
 
+### 3. AI 产品经理要学会从服务端设计反推产品质量
 
-# 初始化搜索引擎
-search_engine = MockSearchEngine()
+如果你能看懂一个 MCP Server 的设计，你就更容易判断：
 
-
-@mcp.tool()
-def search_knowledge_base(query: str, limit: int = 5) -> str:
-    """
-    搜索知识库
-    
-    Args:
-        query: 搜索关键词
-        limit: 返回结果数量（默认5条）
-    
-    Returns:
-        搜索结果摘要
-    """
-    results = search_engine.search(query, limit)
-    
-    if not results:
-        return f"未找到与 '{query}' 相关的内容。"
-    
-    output = f"找到 {len(results)} 条关于 '{query}' 的结果：\n\n"
-    
-    for i, result in enumerate(results, 1):
-        output += f"{i}. {result.title}\n"
-        output += f"   来源: {result.source} | 相关度: {result.relevance:.0%}\n"
-        output += f"   {result.content[:100]}...\n\n"
-    
-    return output
-
-
-@mcp.tool()
-def summarize_text(text: str, max_length: int = 200) -> str:
-    """
-    文本摘要
-    
-    Args:
-        text: 待摘要的文本
-        max_length: 摘要最大长度
-    
-    Returns:
-        文本摘要
-    """
-    if len(text) <= max_length:
-        return text
-    
-    # 简单摘要：取前 max_length 个字符
-    summary = text[:max_length].rsplit(' ', 1)[0]
-    return f"{summary}..."
-
-
-@mcp.tool()
-def format_data(data: str, format_type: str = "json") -> str:
-    """
-    格式化数据
-    
-    Args:
-        data: 待格式化的数据
-        format_type: 目标格式（json/markdown/table）
-    
-    Returns:
-        格式化后的数据
-    """
-    try:
-        # 尝试解析为 JSON
-        parsed = json.loads(data)
-        
-        if format_type == "json":
-            return json.dumps(parsed, ensure_ascii=False, indent=2)
-        
-        elif format_type == "markdown":
-            return _to_markdown(parsed)
-        
-        elif format_type == "table":
-            return _to_table(parsed)
-        
-        else:
-            return f"不支持的格式: {format_type}"
-    
-    except json.JSONDecodeError:
-        return "输入数据不是有效的 JSON 格式"
-
-
-def _to_markdown(data: dict) -> str:
-    """转换为 Markdown"""
-    lines = []
-    for key, value in data.items():
-        lines.append(f"## {key}\n")
-        lines.append(f"{value}\n")
-    return "\n".join(lines)
-
-
-def _to_table(data: dict) -> str:
-    """转换为表格"""
-    lines = ["| 键 | 值 |", "|---|---|"]
-    for key, value in data.items():
-        lines.append(f"| {key} | {value} |")
-    return "\n".join(lines)
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
-
-### 3.2 工具参数验证
-
-```python
-"""
-工具参数验证
-
-使用 Pydantic 进行参数校验
-"""
-
-from mcp.server.fastmcp import FastMCP
-from pydantic import BaseModel, Field, validator
-from typing import Literal
-from datetime import datetime
-
-mcp = FastMCP("validated-tools")
-
-
-class SearchParams(BaseModel):
-    """搜索参数模型"""
-    query: str = Field(..., min_length=1, max_length=200, description="搜索关键词")
-    category: Literal["all", "tech", "business", "design"] = Field(
-        default="all",
-        description="搜索类别"
-    )
-    date_range: str = Field(
-        default="",
-        description="日期范围，格式: YYYY-MM-DD,YYYY-MM-DD"
-    )
-    
-    @validator('date_range')
-    def validate_date_range(cls, v):
-        """验证日期范围格式"""
-        if not v:
-            return v
-        
-        try:
-            dates = v.split(',')
-            if len(dates) != 2:
-                raise ValueError("日期范围格式错误")
-            
-            datetime.strptime(dates[0], "%Y-%m-%d")
-            datetime.strptime(dates[1], "%Y-%m-%d")
-            
-            return v
-        except ValueError:
-            raise ValueError("日期格式应为: YYYY-MM-DD,YYYY-MM-DD")
-
-
-class CalculateParams(BaseModel):
-    """计算参数模型"""
-    expression: str = Field(..., min_length=1, description="数学表达式")
-    precision: int = Field(default=2, ge=0, le=10, description="结果精度")
-
-
-@mcp.tool()
-def advanced_search(params: SearchParams) -> str:
-    """
-    高级搜索（带参数验证）
-    
-    Args:
-        params: 搜索参数
-    
-    Returns:
-        搜索结果
-    """
-    return f"""搜索参数验证通过：
-- 关键词: {params.query}
-- 类别: {params.category}
-- 日期范围: {params.date_range or '不限'}
-
-（此处执行实际搜索逻辑）
-"""
-
-
-@mcp.tool()
-def precise_calculate(params: CalculateParams) -> str:
-    """
-    精确计算（带参数验证）
-    
-    Args:
-        params: 计算参数
-    
-    Returns:
-        计算结果
-    """
-    try:
-        result = eval(params.expression)
-        formatted = f"{result:.{params.precision}f}"
-        return f"表达式: {params.expression}\n结果: {formatted}"
-    except Exception as e:
-        return f"计算错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
+- 工具是不是好用
+- 上线风险大不大
+- 是否具备平台化复用价值
+- 是否已经到了能扩大接入范围的阶段
 
 ---
 
-## 四、资源与提示
+## 二、MCP Server 在整体架构中的职责边界
 
-### 4.1 资源管理
+### 1. 服务端到底负责什么
 
-```python
-"""
-MCP 资源管理
+一个成熟的 MCP Server，至少承担 5 类职责：
 
-提供文件、数据等资源的访问能力
-"""
+1. **能力暴露**
+   把外部系统能力封装成 Resources、Prompts、Tools
 
-from mcp.server.fastmcp import FastMCP
-from pathlib import Path
-import json
+2. **输入输出治理**
+   校验参数、约束结果、统一格式
 
-mcp = FastMCP("resource-server")
+3. **权限与风控**
+   决定谁能用、用到什么程度、哪些操作需要确认
 
+4. **执行与容错**
+   调用下游系统，处理超时、重试、幂等和异常
 
-@mcp.resource("file://{path}")
-def read_file(path: str) -> str:
-    """
-    读取文件内容
-    
-    Args:
-        path: 文件路径
-    
-    Returns:
-        文件内容
-    """
-    try:
-        file_path = Path(path)
-        
-        if not file_path.exists():
-            return f"文件不存在: {path}"
-        
-        if not file_path.is_file():
-            return f"路径不是文件: {path}"
-        
-        # 安全检查：限制访问范围
-        allowed_extensions = ['.txt', '.md', '.json', '.csv', '.py']
-        if file_path.suffix not in allowed_extensions:
-            return f"不支持的文件类型: {file_path.suffix}"
-        
-        content = file_path.read_text(encoding='utf-8')
-        return content
-    
-    except Exception as e:
-        return f"读取文件失败: {str(e)}"
+5. **观测与审计**
+   记录调用、延迟、失败、风险操作和追踪信息
 
+### 2. 服务端不应该承担什么
 
-@mcp.resource("data://users/{user_id}")
-def get_user_data(user_id: str) -> str:
-    """
-    获取用户数据
-    
-    Args:
-        user_id: 用户ID
-    
-    Returns:
-        用户数据 JSON
-    """
-    # 模拟用户数据
-    users = {
-        "1": {"name": "张三", "role": "管理员", "department": "技术部"},
-        "2": {"name": "李四", "role": "用户", "department": "产品部"},
-        "3": {"name": "王五", "role": "用户", "department": "设计部"}
-    }
-    
-    user = users.get(user_id)
-    if not user:
-        return json.dumps({"error": "用户不存在"}, ensure_ascii=False)
-    
-    return json.dumps(user, ensure_ascii=False, indent=2)
+很多团队会把过多业务逻辑压进 Server，导致职责失衡。服务端通常不适合承担：
 
+- 复杂的终端 UI 展示逻辑
+- 过重的会话交互逻辑
+- 产品层面的长对话管理
+- 所有跨系统编排的全部决策
 
-@mcp.resource("config://app")
-def get_app_config() -> str:
-    """
-    获取应用配置
-    
-    Returns:
-        配置信息
-    """
-    config = {
-        "app_name": "MCP Demo Server",
-        "version": "1.0.0",
-        "features": ["search", "calculate", "format"],
-        "limits": {
-            "max_query_length": 200,
-            "max_results": 50
-        }
-    }
-    
-    return json.dumps(config, ensure_ascii=False, indent=2)
+换句话说：
 
+- Host 更偏用户体验
+- Client 更偏连接和消费
+- Server 更偏能力提供与治理
 
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
+### 3. 对产品经理来说，这个边界为什么重要
 
-### 4.2 提示模板
+因为你在设计需求时，必须知道一个问题该落在哪层：
 
-```python
-"""
-MCP 提示模板
+- 是前端体验问题
+- 是模型调用策略问题
+- 是客户端路由问题
+- 还是服务端能力封装问题
 
-预定义常用提示，提升 AI 交互质量
-"""
-
-from mcp.server.fastmcp import FastMCP
-
-mcp = FastMCP("prompt-server")
-
-
-@mcp.prompt()
-def code_review(code: str, language: str = "python") -> str:
-    """
-    代码审查提示
-    
-    Args:
-        code: 待审查的代码
-        language: 编程语言
-    
-    Returns:
-        代码审查提示
-    """
-    return f"""请对以下 {language} 代码进行审查：
-
-```{language}
-{code}
-```
-
-审查要点：
-1. 代码风格和可读性
-2. 潜在的错误和异常处理
-3. 性能优化建议
-4. 安全漏洞检查
-5. 最佳实践符合度
-
-请按以下格式输出：
-- 总体评分（1-10）
-- 主要问题（如有）
-- 改进建议
-- 正面评价
-"""
-
-
-@mcp.prompt()
-def requirement_analysis(requirement: str) -> str:
-    """
-    需求分析提示
-    
-    Args:
-        requirement: 产品需求描述
-    
-    Returns:
-        需求分析提示
-    """
-    return f"""请对以下产品需求进行专业分析：
-
-需求描述：
-{requirement}
-
-分析维度：
-1. 需求清晰度评估
-2. 用户价值分析
-3. 技术可行性初步判断
-4. 潜在风险和挑战
-5. 建议的 MVP 范围
-6. 成功指标建议
-
-输出格式：
-## 需求摘要
-## 用户价值
-## 技术可行性
-## 风险分析
-## MVP 建议
-## 成功指标
-"""
-
-
-@mcp.prompt()
-def data_analysis_report(data: str, chart_type: str = "auto") -> str:
-    """
-    数据分析报告提示
-    
-    Args:
-        data: 数据内容
-        chart_type: 建议的图表类型
-    
-    Returns:
-        数据分析提示
-    """
-    return f"""请对以下数据进行深入分析并生成报告：
-
-数据内容：
-{data}
-
-分析要求：
-1. 数据概览和统计特征
-2. 趋势分析和异常检测
-3. 关键洞察和发现
-4. 建议的图表类型: {chart_type}
-5. Actionable recommendations
-
-报告结构：
-# 数据分析报告
-
-## 1. 数据概览
-## 2. 关键指标
-## 3. 趋势分析
-## 4. 异常发现
-## 5. 洞察与建议
-## 6. 下一步行动
-"""
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
+边界不清，项目就很容易反复扯皮。
 
 ---
 
-## 五、部署与运维
+## 三、从业务能力到 MCP 能力的拆分方法
 
-### 5.1 部署方式
+### 1. 第一原则：不要直接把底层 SDK 或内部 API 原样暴露出来
 
-```python
-"""
-MCP Server 部署配置
+这几乎是新手最容易犯的错误。
 
-不同场景的部署方案
-"""
+例如工单系统原本有一个底层接口：
 
-# stdio 方式（本地进程）
-# 适合：本地开发、桌面应用
-"""
-# claude_desktop_config.json
+```text
+ticket_operation(action, payload, operator, mode, extra_options)
+```
+
+如果你直接把它暴露给模型，大概率会遇到：
+
+- 模型很难理解 action 的业务含义
+- payload 结构过于复杂
+- 容易传错字段
+- 风险动作和安全动作混在一起
+
+### 2. 第二原则：按“业务动作”而不是“后端实现”拆工具
+
+更推荐的方式是：
+
+```text
+- list_tickets
+- get_ticket_detail
+- create_ticket
+- add_ticket_comment
+- update_ticket_status
+```
+
+这种拆法有几个好处：
+
+- 模型更容易选对工具
+- 产品和业务方更容易评审
+- 权限更容易做分级控制
+- 失败更容易定位
+
+### 3. 第三原则：优先单一职责
+
+对模型来说，一个工具最好只做一件明确的事。
+
+原因很简单：
+
+- 模型做选择时依赖工具描述
+- 如果一个工具同时承担多个业务分支，模型更容易误判
+- 输出不稳定时，上层也更难处理
+
+### 4. 一个从业务到工具的拆分流程
+
+你可以按下面的步骤做：
+
+```text
+第一步：画出业务动作清单
+- 查询
+- 新建
+- 修改
+- 删除
+- 审批
+
+第二步：标出风险等级
+- 只读
+- 中风险写
+- 高风险写
+
+第三步：映射为 MCP 对象
+- 可读内容 -> Resource
+- 模板 -> Prompt
+- 动作 -> Tool
+
+第四步：为每个 Tool 定义输入、输出、错误和权限边界
+```
+
+这套方法非常适合转型中的 AI 产品经理使用，因为它天然兼顾业务和技术。
+
+---
+
+## 四、Resources、Prompts、Tools 怎么设计更合理
+
+### 1. Resources 设计建议
+
+Resources 适合只读上下文，例如：
+
+- 文档正文
+- 业务对象只读视图
+- 配置文件
+- 知识条目
+
+设计时建议重点关注：
+
+- URI 是否稳定
+- 读取是否受权限控制
+- 内容是否需要脱敏
+- 大内容是否需要分页或摘要
+
+一个常见错误是把所有读取操作都做成 Tool。  
+这样做不是绝对不行，但通常会：
+
+- 增加调用复杂度
+- 模糊读写边界
+- 让权限控制更难理解
+
+### 2. Prompts 设计建议
+
+Prompts 适合表达可复用模板，例如：
+
+- 审批意见模板
+- PR Review 模板
+- 会议纪要模板
+- 周报总结模板
+
+设计时重点关注：
+
+- 模板命名是否清晰
+- 参数是否说明明确
+- 模板是否版本可控
+- 是否会泄露内部规则或敏感策略
+
+### 3. Tools 设计建议
+
+Tools 是服务端最核心的部分。
+
+适合做成 Tool 的通常是：
+
+- 查询并返回结构化结果
+- 创建记录
+- 修改状态
+- 发通知
+- 触发外部动作
+
+设计 Tool 时，建议始终问 5 个问题：
+
+1. 这个动作是不是明确单一
+2. 参数是否足够少、足够清晰
+3. 是否会产生副作用
+4. 是否需要审批或确认
+5. 返回结果是否足够稳定
+
+---
+
+## 五、Schema 设计为什么是服务端成败关键
+
+### 1. 对模型来说，Schema 就是“理解工具的说明书”
+
+很多人把 Schema 看成“技术细节”，其实对模型而言，它非常关键。
+
+模型是否能稳定调用工具，很大程度上取决于：
+
+- 字段名是否直观
+- 类型是否明确
+- 必填项是否合理
+- 枚举值是否清晰
+- 描述是否可理解
+
+### 2. 一个好 Schema 的基本特征
+
+- 字段命名符合业务语义
+- 参数数量尽量少
+- 必填项尽量少但关键项明确
+- 描述中避免歧义词
+- 枚举值不要太多
+- 返回结构稳定且可解析
+
+### 3. 一个直观例子
+
+不太好的设计：
+
+```json
 {
-    "mcpServers": {
-        "my-server": {
-            "command": "python",
-            "args": ["/path/to/server.py"]
-        }
-    }
+  "actionType": "string",
+  "payload": "object",
+  "mode": "string",
+  "flags": ["string"]
 }
-"""
-
-# SSE 方式（HTTP 服务）
-# 适合：Web 应用、远程访问
-"""
-# server_sse.py
-from mcp.server.sse import SseServerTransport
-from starlette.applications import Starlette
-from starlette.routing import Route
-
-sse = SseServerTransport("/messages")
-
-async def handle_sse(request):
-    async with sse.connect_sse(
-        request.scope, request.receive, request._send
-    ) as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
-
-app_starlette = Starlette(
-    routes=[Route("/sse", endpoint=handle_sse)]
-)
-"""
-
-# Docker 部署
-"""
-# Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY src/ ./src/
-EXPOSE 8000
-
-CMD ["python", "-m", "src.server"]
-"""
 ```
 
-### 5.2 监控与日志
+更好的设计：
 
-```python
-"""
-MCP Server 监控
+```json
+{
+  "ticket_title": "string",
+  "ticket_description": "string",
+  "priority": "low | medium | high"
+}
+```
 
-添加日志和监控能力
-"""
+第二种设计对模型和人都更友好。
 
-from mcp.server.fastmcp import FastMCP
-import logging
-import time
-from functools import wraps
+### 4. AI 产品经理在 Schema 评审时要看什么
 
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger("mcp-server")
+不要只看“字段有没有”，更要看：
 
-mcp = FastMCP("monitored-server")
+- 是否符合业务语言
+- 是否方便上层展示
+- 是否容易解释给用户
+- 是否会让模型误解
 
+这其实就是产品抽象能力在技术设计中的体现。
 
-def monitor_tool(func):
-    """
-    工具监控装饰器
-    
-    记录工具调用次数、耗时、成功率
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        tool_name = func.__name__
-        
-        logger.info(f"工具调用开始: {tool_name}")
-        
-        try:
-            result = func(*args, **kwargs)
-            duration = time.time() - start_time
-            
-            logger.info(
-                f"工具调用成功: {tool_name}, "
-                f"耗时: {duration:.3f}s"
-            )
-            
-            return result
-        
-        except Exception as e:
-            duration = time.time() - start_time
-            
-            logger.error(
-                f"工具调用失败: {tool_name}, "
-                f"耗时: {duration:.3f}s, "
-                f"错误: {str(e)}"
-            )
-            
-            raise
-    
-    return wrapper
+---
 
+## 六、读写分离与权限设计
 
-@mcp.tool()
-@monitor_tool
-def monitored_search(query: str) -> str:
-    """
-    受监控的搜索工具
-    
-    Args:
-        query: 搜索关键词
-    
-    Returns:
-        搜索结果
-    """
-    # 模拟搜索耗时
-    time.sleep(0.5)
-    
-    return f"搜索 '{query}' 完成"
+### 1. 读写分离是 MCP Server 设计中的第一道安全线
 
+最基本的原则是：
 
-@mcp.tool()
-@monitor_tool
-def monitored_calculate(expression: str) -> str:
-    """
-    受监控的计算工具
-    
-    Args:
-        expression: 数学表达式
-    
-    Returns:
-        计算结果
-    """
-    try:
-        result = eval(expression)
-        return f"{expression} = {result}"
-    except Exception as e:
-        logger.error(f"计算错误: {expression} - {str(e)}")
-        return f"计算错误: {str(e)}"
+- 读取能力和写入能力分开
+- 高风险写入能力进一步分开
+- 审批或删除类能力绝不和普通查询能力混在一起
 
+### 2. 为什么读写分离这么重要
 
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
+因为在模型参与调用时，任何可写能力都意味着真实业务风险。
+
+例如：
+
+- 创建工单
+- 发飞书消息
+- 合并 PR
+- 提交审批
+- 更新数据库记录
+
+这些动作一旦被错误触发，后果往往比“回答不够好”严重得多。
+
+### 3. 一个实用的权限分层方式
+
+可以将工具按风险分为：
+
+| 级别 | 类型 | 示例 | 建议策略 |
+|------|------|------|----------|
+| L1 | 只读 | 查文档、查状态、查记录 | 正常授权 |
+| L2 | 低风险写 | 新建草稿、加评论、保存草稿 | 可确认后执行 |
+| L3 | 高风险写 | 发通知、合并 PR、提交审批 | 必须审批或人工确认 |
+| L4 | 极高风险 | 删除、发布、导出敏感数据 | 默认禁用或强管控 |
+
+### 4. 产品经理要把权限设计前置
+
+不要等研发做完再问“这个动作要不要审批”。  
+更好的做法是在需求设计阶段就明确：
+
+- 哪些工具只能只读
+- 哪些工具允许自动执行
+- 哪些工具必须人工确认
+- 哪些工具试点阶段不开放
+
+---
+
+## 七、错误处理与返回设计
+
+### 1. 不要把内部异常直接暴露给模型和上层
+
+很多服务端会直接把下游异常透传出去，例如数据库报错、第三方系统报错、内部堆栈信息。
+
+这样做的问题是：
+
+- 上层无法稳定处理
+- 模型无法理解真实含义
+- 安全上可能泄露内部信息
+- 用户看到的提示会非常差
+
+### 2. 更好的错误设计思路
+
+建议把错误统一分成几类：
+
+- 参数错误
+- 权限错误
+- 业务错误
+- 系统错误
+
+然后为每类错误准备：
+
+- 稳定的错误码
+- 可理解的错误语义
+- 是否可重试的标识
+- 是否需要告警
+
+### 3. 返回结果也要稳定
+
+不要只返回一句“执行成功”。  
+更好的返回应包含：
+
+- 动作结果摘要
+- 关键业务字段
+- 是否成功
+- 是否部分成功
+- 可追踪信息，如 request id 或 trace id
+
+这样 Host 和 Client 才能更好地展示、记录和排障。
+
+---
+
+## 八、执行治理：超时、重试、幂等、回滚
+
+### 1. 服务端不能只关心“能不能调通”
+
+在生产环境中，更关键的是：
+
+- 下游慢了怎么办
+- 调用失败怎么办
+- 写操作执行一半怎么办
+- 用户重复触发怎么办
+
+### 2. 超时策略
+
+每个工具都建议定义：
+
+- 请求超时
+- 下游依赖超时
+- 长任务超时
+
+如果没有超时，系统容易出现：
+
+- 前端一直卡住
+- 模型等待过久
+- 连接资源被占满
+
+### 3. 重试策略
+
+不是所有错误都应该重试。
+
+适合重试的：
+
+- 网络波动
+- 临时超时
+- 短暂依赖故障
+
+不适合重试的：
+
+- 权限错误
+- 参数错误
+- 明确业务拒绝
+
+### 4. 幂等设计
+
+只要有写操作，就应该思考幂等。
+
+例如：
+
+- 创建工单时用户重复触发怎么办
+- 发消息时接口超时但其实已经发出去了怎么办
+- 提交审批时客户端重试是否会重复提交
+
+### 5. 回滚与补偿
+
+有些动作不能真正回滚，那就要至少设计补偿策略。
+
+例如：
+
+- 创建工单成功，但后续通知失败
+- 更新数据库成功，但审计日志写入失败
+
+这类问题不能靠“以后再看”，而应在服务端设计阶段就考虑。
+
+---
+
+## 九、部署与运维：让服务端从 Demo 走向生产
+
+### 1. 选择什么部署方式
+
+常见有 3 类：
+
+- 本地 `stdio`
+- 远程 `HTTP`
+- 流式或长连接
+
+选型时应结合：
+
+- 是否本地工具
+- 是否需要多宿主共享
+- 是否纳入企业网关
+- 是否需要进度反馈
+
+### 2. 生产环境至少要补齐什么
+
+建议至少具备：
+
+- 健康检查
+- 配置管理
+- 限流
+- 熔断
+- 日志
+- 指标
+- 告警
+- 灰度发布
+- 回滚策略
+
+### 3. 为什么这些对 AI 产品经理也重要
+
+因为这些能力会直接影响：
+
+- 能否稳定上线
+- 能否扩大用户范围
+- 出问题后能否快速止损
+- 是否能满足企业合规要求
+
+---
+
+## 十、观测与审计：企业级落地的底线
+
+### 1. 为什么调用日志不等于观测
+
+很多团队以为把请求记下来就够了，但企业里真正需要的是：
+
+- 能否看到成功率趋势
+- 能否看到高风险操作频率
+- 能否定位哪类工具最不稳定
+- 能否追踪某次问题的全链路
+
+### 2. 关键指标建议
+
+建议至少监控：
+
+| 指标 | 含义 |
+|------|------|
+| 工具调用成功率 | 判断整体可用性 |
+| P95 响应时间 | 判断体验和稳定性 |
+| 参数校验失败率 | 判断工具设计是否清晰 |
+| 权限拒绝率 | 判断权限策略是否合理 |
+| 高风险操作触发数 | 判断风险暴露程度 |
+| 下游依赖超时率 | 判断依赖稳定性 |
+
+### 3. 审计日志建议
+
+建议至少记录：
+
+- 调用时间
+- 调用身份
+- 工具名称
+- 参数摘要
+- 结果摘要
+- 是否审批
+- 是否失败
+- trace id 或 request id
+
+### 4. 审计对产品经理的意义
+
+审计不仅是合规要求，也是产品优化依据。
+
+比如你可以从审计看出：
+
+- 哪类工具根本没人用
+- 哪类高风险工具经常被拒绝
+- 哪些调用其实应该改成只读流程
+
+---
+
+## 十一、测试与联调：不要只验证“本地能跑”
+
+### 1. 服务端至少要经过哪几类测试
+
+建议覆盖：
+
+1. **Schema 测试**
+2. **权限测试**
+3. **业务正确性测试**
+4. **异常测试**
+5. **联调测试**
+
+### 2. 一些很容易被忽略的测试点
+
+- 模型是否容易选错工具
+- 参数缺失时错误是否清晰
+- 审批未通过时是否返回稳定结果
+- 下游超时时是否有降级
+- 同一请求重试时是否产生重复副作用
+
+### 3. 为什么 AI 场景更要强调联调
+
+因为单元测试通过，并不代表模型真的能稳定使用工具。
+
+企业里真正重要的是：
+
+- 模型能不能理解这个工具
+- 工具名字和描述是否足够好
+- 结果能否被 Host 和用户正确消费
+
+---
+
+## 十二、一个完整案例：把工单系统封装成 MCP Server
+
+### 1. 业务目标
+
+目标是让企业知识助手具备这些能力：
+
+- 查询工单
+- 查看详情
+- 创建工单
+- 给工单加评论
+
+### 2. 不推荐的做法
+
+把原有后端万能接口直接暴露：
+
+```text
+ticket_operation(action, payload)
+```
+
+问题在于：
+
+- 模型理解难
+- 参数复杂
+- 风险混合
+- 错误难分类
+
+### 3. 更合理的服务端设计
+
+拆为：
+
+- `list_tickets`
+- `get_ticket_detail`
+- `create_ticket`
+- `add_ticket_comment`
+
+配套设计：
+
+- `create_ticket` 必须校验标题、描述、优先级
+- `add_ticket_comment` 需要身份透传
+- 只读工具默认开放
+- 写工具按角色和审批策略控制
+
+### 4. AI 产品经理应该如何评审这个设计
+
+你可以问：
+
+- 为什么要拆成这四个工具
+- 哪些工具是只读，哪些是写操作
+- 参数是否足够少且业务语义清晰
+- 写操作是否支持审批
+- 出错时上层怎么提示用户
+
+如果研发能清楚回答，说明服务端设计已经具备较高成熟度。
+
+---
+
+## 十三、企业级 MCP Server 设计模板
+
+```json
+{
+  "server_name": "ticket-mcp-server",
+  "business_goal": "为企业知识助手提供标准化工单能力",
+  "capabilities": {
+    "resources": ["ticket://detail/{id}"],
+    "prompts": ["ticket_summary_prompt"],
+    "tools": [
+      "list_tickets",
+      "get_ticket_detail",
+      "create_ticket",
+      "add_ticket_comment"
+    ]
+  },
+  "security": {
+    "read_write_separation": true,
+    "approval_required_for": ["create_ticket"],
+    "audit_enabled": true,
+    "tenant_isolation": true
+  },
+  "runtime": {
+    "transport": "http",
+    "timeout_ms": 8000,
+    "retry_policy": "retry_only_on_temporary_failure",
+    "fallback_strategy": "readonly_mode_when_write_tools_disabled"
+  },
+  "observability": {
+    "metrics": [
+      "tool_success_rate",
+      "p95_latency_ms",
+      "validation_failure_rate",
+      "approval_reject_rate"
+    ],
+    "alerts": [
+      "write_tool_failure_spike",
+      "dependency_timeout_spike"
+    ]
+  },
+  "release_policy": {
+    "gray_release": true,
+    "rollback_defined": true
+  }
+}
 ```
 
 ---
 
-## 六、AI 产品经理关注点
+## 十四、AI 产品经理学习服务端开发时的建议方法
 
-```
-MCP Server 产品化要点：
+### 1. 别急着看 SDK，先看工具边界
 
-工具设计原则
-├── 原子性
-│   ├── 每个工具只做一件事
-│   ├── 工具之间可组合
-│   └── 避免过度封装
-├── 可发现性
-│   ├── 清晰的工具名称
-│   ├── 详细的描述说明
-│   └── 直观的参数命名
-├── 安全性
-│   ├── 输入验证
-│   ├── 权限控制
-│   └── 操作审计
-└── 稳定性
-    ├── 错误处理
-    ├── 超时控制
-    └── 降级策略
+先问：
 
-开发流程
-├── 需求分析
-│   ├── 识别可工具化的能力
-│   ├── 定义输入输出规范
-│   └── 评估技术可行性
-├── 工具设计
-│   ├── 设计参数结构
-│   ├── 编写描述文档
-│   └── 确定错误处理策略
-├── 开发实现
-│   ├── 核心逻辑开发
-│   ├── 参数验证
-│   └── 单元测试
-├── 集成测试
-│   ├── 与 Client 联调
-│   ├── 端到端测试
-│   └── 性能测试
-└── 发布运维
-    ├── 版本管理
-    ├── 监控告警
-    └── 文档更新
+- 这个业务到底应该拆成哪些能力
+- 哪些是 Resource
+- 哪些是 Tool
+- 哪些动作不该开放
 
-关键指标
-├── 技术指标
-│   ├── 工具响应时间 < 2s
-│   ├── 调用成功率 > 99%
-│   ├── 错误率 < 1%
-│   └── 资源占用合理
-├── 业务指标
-│   ├── 工具使用频次
-│   ├── 用户满意度
-│   └── 功能覆盖率
-└── 生态指标
-    ├── Server 接入数
-    ├── 工具复用率
-    └── 开发者活跃度
-```
+### 2. 练习从需求文档走到工具定义
+
+你可以挑一个熟悉的系统，比如：
+
+- 工单系统
+- 知识库
+- 飞书消息
+- GitHub 仓库
+
+然后练习把它拆成：
+
+- 能力清单
+- 风险分层
+- 输入输出
+- 审批策略
+
+### 3. 用“模型是否容易调用成功”来评判设计质量
+
+这和传统 API 设计很不同。
+
+MCP Server 的质量，不只取决于接口能不能跑通，还取决于：
+
+- 模型能不能用对
+- 上层能不能稳定接住结果
+- 企业能不能安全治理
 
 ---
 
-## 七、参考资源
+## 十五、常见误区补充
 
-- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) - 官方 Python SDK
-- [MCP Server 示例](https://github.com/modelcontextprotocol/servers) - 官方示例集合
-- [FastMCP 文档](https://github.com/modelcontextprotocol/python-sdk#fastmcp) - 高级封装说明
+### 误区 1：服务端只是现有 API 的协议包装层
+
+错误。它更像“业务能力到模型可用能力”的治理层。
+
+### 误区 2：工具越多越强
+
+错误。工具太多、边界重叠，会显著降低模型调用准确率。
+
+### 误区 3：写操作先开放，再慢慢补审批
+
+错误。企业场景中，这种顺序很容易带来真实事故。
+
+### 误区 4：本地跑通了就说明服务端设计没问题
+
+错误。真正的成熟度，要看模型调用、权限治理、错误设计、观测和上线能力。
+
+---
+
+## 十六、本章小结
+
+如果要用一句话总结 MCP Server 开发，可以这样说：
+
+**它不是把后端接口换一种协议暴露，而是把业务能力重构成“模型可理解、系统可治理、企业可上线”的能力层。**
+
+对 AI 产品经理来说，本章最重要的收获不是会写代码，而是建立下面这套判断力：
+
+- 工具应该怎么拆
+- 风险应该怎么分
+- 参数和结果应该怎么设计
+- 企业为什么必须把审批、审计、监控前置
+
+---
+
+## 十七、阶段验收标准
+
+完成本节后，至少应满足以下要求：
+
+- 能把一个业务系统拆成清晰的 Resources、Prompts、Tools
+- 能说明为什么不能直接暴露底层 SDK 或万能接口
+- 能为服务端定义权限、审批、幂等、审计和监控策略
+- 能写出一份企业级 MCP Server 设计模板
+
+---
+
+## 十八、版本记录
+
+- **2026-06-05** 扩写为教程版内容，补充职责边界、能力拆分方法、Schema 设计、权限治理、执行容错、部署运维、测试联调与完整案例
+- **2026-06-05** 补充服务端职责边界、工具拆分方法、安全治理、部署运维、测试策略与实施模板
+- **2026-06-03** 初版完成，介绍 MCP Server 基础开发示例
+
+## 参考资源
+
+- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
+- [MCP Server 示例](https://github.com/modelcontextprotocol/servers)
+- [MCP Inspector](https://github.com/modelcontextprotocol/inspector)

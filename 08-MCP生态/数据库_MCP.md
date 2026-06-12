@@ -1,1093 +1,660 @@
 <!--
-  文件描述: 数据库MCP集成案例，涵盖SQL数据库、NoSQL数据库及向量数据库的MCP化操作
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-03
+  创建时间: 2026-06-03
+  文件名: 数据库_MCP.md
+  文件描述: 数据库 MCP 集成案例，面向新手和技术转型者系统讲解结构化数据访问、风险边界、权限设计、分析场景与企业接入方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-05
 -->
 
 # 数据库 MCP
 
-> 通过 MCP 协议与各类数据库集成，实现 SQL 查询、NoSQL 操作、向量检索等功能的 AI 化操作。
+> 数据库 MCP 是企业落地中最有价值也最危险的一类能力。价值在于它直接连接企业核心数据资产，能让 AI 真正理解订单、客户、工单、运营指标和业务状态；危险在于，一旦边界设计错误，模型不只是“回答错”，而可能直接越权读取、泄露敏感信息，甚至改写正式数据。对正在转型 AI 产品经理的人来说，这一章非常关键，因为它会帮助你建立一种比“能不能查数据库”更重要的能力：如何判断数据能力应不应该开放、开放到什么程度、如何分阶段做。
 
 ---
 
-## 一、数据库 MCP 概述
+## 零、前置知识
 
-### 1.1 什么是数据库 MCP
+建议先阅读以下内容：
 
-```
-数据库 MCP 定义：
+- [MCP基础](./MCP基础.md)
+- [MCP最佳实践](./MCP最佳实践.md)
+- [RAG应用.md](../06-RAG知识库/RAG应用.md)
+- [数据分析基础](../11-数据分析/数据分析基础.md)
 
-数据库 MCP Server
-├── 本质：MCP 协议封装的数据库访问服务
-├── 功能：将数据库能力暴露为 MCP 工具
-├── 价值：让 AI 直接操作数据库
-└── 场景：
-    ├── 智能 SQL 查询
-    ├── 数据自动迁移
-    ├── 向量相似度检索
-    └── 数据库监控告警
+如果你对数据库还不够熟悉，建议先建立几个基础概念：
 
-支持的数据库类型
-├── 关系型数据库
-│   ├── MySQL
-│   ├── PostgreSQL
-│   ├── SQLite
-│   └── SQL Server
-├── NoSQL 数据库
-│   ├── MongoDB
-│   ├── Redis
-│   └── Elasticsearch
-└── 向量数据库
-    ├── ChromaDB
-    ├── Pinecone
-    ├── Milvus
-    └── Qdrant
-
-核心能力映射
-├── 查询能力
-│   ├── SQL 语句执行
-│   ├── 聚合查询
-│   ├── 分页查询
-│   └── 参数化查询
-├── 写入能力
-│   ├── 单条插入
-│   ├── 批量插入
-│   ├── 更新操作
-│   └── 删除操作
-├── 管理能力
-│   ├── 表结构查看
-│   ├── 索引管理
-│   ├── 权限控制
-│   └── 备份恢复
-└── 向量能力
-    ├── 向量存储
-    ├── 相似度检索
-    ├── 向量索引
-    └── 元数据过滤
-```
-
-### 1.2 核心价值
-
-```python
-"""
-数据库 MCP 核心价值分析
-
-从 AI 产品经理视角理解数据库 MCP 的价值
-"""
-
-from typing import Dict, List
-from dataclasses import dataclass
-
-@dataclass
-class EfficiencyGain:
-    """效率提升"""
-    task: str
-    manual_time: int  # 分钟
-    automated_time: int  # 分钟
-    accuracy_improvement: float  # 准确率提升百分比
-
-class DatabaseMCPValue:
-    """数据库 MCP 价值分析"""
-    
-    def __init__(self):
-        """初始化价值分析"""
-        self.gains = [
-            EfficiencyGain(
-                task="SQL 查询",
-                manual_time=60,
-                automated_time=5,
-                accuracy_improvement=0.40
-            ),
-            EfficiencyGain(
-                task="数据迁移",
-                manual_time=180,
-                automated_time=15,
-                accuracy_improvement=0.35
-            ),
-            EfficiencyGain(
-                task="向量检索",
-                manual_time=90,
-                automated_time=3,
-                accuracy_improvement=0.30
-            ),
-            EfficiencyGain(
-                task="数据监控",
-                manual_time=120,
-                automated_time=2,
-                accuracy_improvement=0.25
-            )
-        ]
-    
-    def analyze(self) -> Dict:
-        """
-        分析效率提升
-        
-        Returns:
-            分析结果
-        """
-        return {
-            gain.task: {
-                "手动耗时": f"{gain.manual_time} 分钟",
-                "自动化耗时": f"{gain.automated_time} 分钟",
-                "效率提升": f"{gain.manual_time / gain.automated_time:.1f}x",
-                "准确率提升": f"{gain.accuracy_improvement:.0%}"
-            }
-            for gain in self.gains
-        }
-
-# 使用示例
-"""
-value = DatabaseMCPValue()
-result = value.analyze()
-
-for task, metrics in result.items():
-    print(f"\n{task}:")
-    for key, value in metrics.items():
-        print(f"  {key}: {value}")
-"""
-```
+- 表、字段、主键
+- SQL 查询和聚合统计
+- 行级权限、字段级权限
+- OLTP 与分析查询的差异
+- 向量检索与结构化查询的区别
 
 ---
 
-## 二、环境配置
+## 本章学习目标
 
-### 2.1 安装数据库 MCP Server
+完成本节后，你应该能够：
 
-```bash
-# 方式一：使用 npx（推荐）
-npx -y @anthropic-ai/mcp-sqlite-server
-
-# 方式二：使用 Docker
-docker pull mcp/sqlite-server
-
-# 方式三：源码安装
-git clone https://github.com/anthropics/mcp-sqlite-server.git
-cd mcp-sqlite-server
-npm install
-npm run build
-```
-
-### 2.2 数据库连接配置
-
-```bash
-# MySQL 配置
-export MYSQL_HOST="localhost"
-export MYSQL_PORT="3306"
-export MYSQL_USER="root"
-export MYSQL_PASSWORD="password"
-export MYSQL_DATABASE="test_db"
-
-# PostgreSQL 配置
-export PG_HOST="localhost"
-export PG_PORT="5432"
-export PG_USER="postgres"
-export PG_PASSWORD="password"
-export PG_DATABASE="test_db"
-
-# MongoDB 配置
-export MONGO_URI="mongodb://localhost:27017"
-export MONGO_DATABASE="test_db"
-
-# Redis 配置
-export REDIS_HOST="localhost"
-export REDIS_PORT="6379"
-export REDIS_PASSWORD=""
-
-# ChromaDB 配置
-export CHROMA_HOST="localhost"
-export CHROMA_PORT="8000"
-```
+- 理解数据库场景为什么适合接入 MCP，同时为什么必须高度谨慎
+- 区分结构化查询、统计分析、向量检索、写入操作与通用 SQL 的边界
+- 设计字段级、行级、租户级权限和风控策略
+- 从 AI 产品经理视角判断数据库能力应如何分阶段开放
+- 输出一份企业级数据库 MCP 接入方案
 
 ---
 
-## 三、核心功能实现
+## 一、为什么数据库 MCP 是企业 AI 最想接、也最怕接的能力
 
-### 3.1 SQL 数据库操作
+### 1. 因为数据库连接的是最真实的业务世界
 
-```python
-"""
-数据库 MCP - SQL 数据库操作
+企业里很多真正高价值的信息，都不在一篇文档里，而是在结构化数据系统里，例如：
 
-通过 MCP 协议管理 SQL 数据库
-"""
+- 客户资料
+- 订单状态
+- 工单记录
+- 库存和供应链
+- 财务指标
+- 运营报表
 
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List, Optional, Any
-import sqlite3
-import os
+如果 AI 只能读文档，它更像一个“知识助手”；  
+如果 AI 能受控访问数据库，它才真正具备了“业务助手”的潜力。
 
-mcp = FastMCP("sql-database-manager")
+### 2. 但数据库能力一旦放开，风险会成倍增加
 
-# SQLite 数据库路径
-DB_PATH = os.getenv("SQLITE_DB_PATH", "database.db")
+数据库不是普通的知识源，因为它天然涉及：
 
+- 越权读取
+- 敏感字段泄露
+- 跨租户访问
+- 误更新正式数据
+- 大结果集导出
+- 高成本查询拖垮系统
 
-def get_connection():
-    """
-    获取数据库连接
-    
-    Returns:
-        数据库连接对象
-    """
-    return sqlite3.connect(DB_PATH)
+所以数据库 MCP 的问题从来不是“会不会连数据库”，而是：
 
+- 哪些能力值得开放
+- 用什么抽象开放
+- 哪些场景绝不能开放
 
-@mcp.tool()
-def execute_query(sql: str, params: List = None) -> str:
-    """
-    执行 SQL 查询
-    
-    Args:
-        sql: SQL 查询语句
-        params: 查询参数（可选）
-    
-    Returns:
-        查询结果
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        if params:
-            cursor.execute(sql, params)
-        else:
-            cursor.execute(sql)
-        
-        # 获取列名
-        columns = [description[0] for description in cursor.description] if cursor.description else []
-        
-        # 获取结果
-        rows = cursor.fetchall()
-        
-        # 格式化输出
-        output = f"查询到 {len(rows)} 条记录:\n\n"
-        
-        # 表头
-        if columns:
-            output += " | ".join(columns) + "\n"
-            output += "-" * (len(" | ".join(columns))) + "\n"
-        
-        # 数据行
-        for row in rows:
-            output += " | ".join(str(cell) for cell in row) + "\n"
-        
-        conn.close()
-        return output
-    
-    except Exception as e:
-        return f"查询错误: {str(e)}"
+### 3. 对 AI 产品经理来说，数据库场景是风险边界训练的核心
 
+很多产品功能型需求会说：
 
-@mcp.tool()
-def execute_update(sql: str, params: List = None) -> str:
-    """
-    执行 SQL 更新（INSERT/UPDATE/DELETE）
-    
-    Args:
-        sql: SQL 更新语句
-        params: 更新参数（可选）
-    
-    Returns:
-        执行结果
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        if params:
-            cursor.execute(sql, params)
-        else:
-            cursor.execute(sql)
-        
-        conn.commit()
-        affected_rows = cursor.rowcount
-        conn.close()
-        
-        return f"执行成功，影响 {affected_rows} 行"
-    
-    except Exception as e:
-        return f"执行错误: {str(e)}"
+- “让 AI 帮我查用户信息”
 
+但真正成熟的 AI 产品经理会继续问：
 
-@mcp.tool()
-def get_table_schema(table_name: str) -> str:
-    """
-    获取表结构
-    
-    Args:
-        table_name: 表名
-    
-    Returns:
-        表结构信息
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # 获取表结构
-        cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = cursor.fetchall()
-        
-        output = f"表 {table_name} 的结构:\n\n"
-        output += "列名 | 类型 | 是否可空 | 默认值 | 主键\n"
-        output += "-" * 60 + "\n"
-        
-        for col in columns:
-            cid, name, type_, notnull, dflt_value, pk = col
-            output += f"{name} | {type_} | {'NOT NULL' if notnull else 'NULL'} | {dflt_value or ''} | {'PK' if pk else ''}\n"
-        
-        # 获取索引信息
-        cursor.execute(f"PRAGMA index_list({table_name})")
-        indexes = cursor.fetchall()
-        
-        if indexes:
-            output += f"\n索引:\n"
-            for idx in indexes:
-                seq, name, unique, origin, partial = idx
-                output += f"  {name} {'(UNIQUE)' if unique else ''}\n"
-        
-        conn.close()
-        return output
-    
-    except Exception as e:
-        return f"获取表结构错误: {str(e)}"
+- 查哪些字段
+- 查到什么粒度
+- 是否允许导出明细
+- 是否允许跨租户
+- 是否只允许查聚合结果
+- 是否应该改成报表工具，而不是数据库工具
 
+这正是数据库 MCP 的学习价值。
 
-@mcp.tool()
-def list_tables() -> str:
-    """
-    列出所有表
-    
-    Returns:
-        表列表
-    """
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = cursor.fetchall()
-        
-        output = f"数据库中有 {len(tables)} 个表:\n\n"
-        
-        for table in tables:
-            output += f"- {table[0]}\n"
-        
-        conn.close()
-        return output
-    
-    except Exception as e:
-        return f"获取表列表错误: {str(e)}"
+---
 
+## 二、数据库 MCP 的典型业务价值
 
-@mcp.tool()
-def create_table(table_name: str, columns: Dict[str, str]) -> str:
-    """
-    创建表
-    
-    Args:
-        table_name: 表名
-        columns: 列定义 {列名: 类型}
-    
-    Returns:
-        创建结果
-    """
-    try:
-        column_defs = ", ".join([f"{name} {type_}" for name, type_ in columns.items()])
-        sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({column_defs})"
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(sql)
-        conn.commit()
-        conn.close()
-        
-        return f"表 {table_name} 创建成功"
-    
-    except Exception as e:
-        return f"创建表错误: {str(e)}"
+### 1. 统一数据查询入口
 
+最直接的价值是：
 
-@mcp.tool()
-def batch_insert(table_name: str, columns: List[str], values: List[List]) -> str:
-    """
-    批量插入数据
-    
-    Args:
-        table_name: 表名
-        columns: 列名列表
-        values: 数据值列表
-    
-    Returns:
-        插入结果
-    """
-    try:
-        placeholders = ", ".join(["?"] * len(columns))
-        column_str = ", ".join(columns)
-        sql = f"INSERT INTO {table_name} ({column_str}) VALUES ({placeholders})"
-        
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.executemany(sql, values)
-        conn.commit()
-        
-        inserted_count = cursor.rowcount
-        conn.close()
-        
-        return f"成功插入 {inserted_count} 条记录"
-    
-    except Exception as e:
-        return f"批量插入错误: {str(e)}"
+- 给模型暴露受控的数据查询能力
+- 让不同宿主和 Agent 共享同一套数据访问方式
 
+这比让每个应用各自接一套内部数据接口更容易治理。
 
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
+### 2. 降低业务系统适配成本
+
+例如一个企业内部 Copilot 可能同时需要：
+
+- 查询用户信息
+- 查询订单统计
+- 查询工单状态
+- 查询产品指标
+
+如果这些能力都分散在不同系统里，维护非常困难。  
+MCP 可以帮助把它们标准化成统一能力层。
+
+### 3. 增强分析效率
+
+很多业务问题其实不是要“任意查库”，而是要：
+
+- 查询某类报表
+- 统计某个维度
+- 做趋势分析
+- 做相似内容检索
+
+把这些能力做成参数化、受控的工具，比开放任意 SQL 更安全、也更适合模型使用。
+
+### 4. 与 RAG 和 Agent 场景形成互补
+
+数据库 MCP 和 RAG 并不是替代关系，而是互补关系：
+
+- RAG 擅长非结构化知识检索
+- 数据库 MCP 擅长结构化数据访问
+- 二者结合，才能让 AI 同时理解“制度”和“事实”
+
+---
+
+## 三、数据库 MCP 适合什么，不适合什么
+
+### 1. 适合优先开放的能力
+
+建议优先从以下低风险高价值场景开始：
+
+- 指定报表查询
+- 受控字段查询
+- 聚合统计
+- 趋势分析
+- 向量检索或相似度查询
+
+这些场景通常具备几个特点：
+
+- 业务价值明确
+- 结果格式相对稳定
+- 风险容易控制
+- 适合做成参数化工具
+
+### 2. 适合第二阶段推进的能力
+
+在信任和治理机制建立后，可以谨慎推进：
+
+- 新建记录
+- 更新低风险字段
+- 写入草稿型业务对象
+- 触发特定业务流程但不直接改核心数据
+
+### 3. 不建议默认开放的能力
+
+以下能力通常不适合第一阶段开放：
+
+- 任意 SQL 执行
+- 批量更新或删除
+- 跨租户明细查询
+- 导出大规模敏感数据
+- 直接改写核心交易数据
+
+这些能力不是“永远不能做”，而是通常不应作为 AI 产品的默认能力存在。
+
+---
+
+## 四、为什么不建议默认开放通用 SQL 工具
+
+### 1. 因为灵活性越高，风险通常也越高
+
+很多技术团队第一反应会是：
+
+- “做个 `execute_sql` 不就最灵活了吗？”
+
+从纯技术角度看，这很方便。  
+但从产品和企业治理角度看，这通常是最危险的设计之一。
+
+### 2. 通用 SQL 工具的典型问题
+
+#### 问题一：模型容易生成不安全查询
+
+模型可能：
+
+- 拼错字段
+- 拼错条件
+- 忘记加租户限制
+- 生成低效查询
+
+#### 问题二：权限难以细粒度控制
+
+如果工具本身是万能的，就很难在工具层分辨：
+
+- 哪次查的是安全报表
+- 哪次查的是敏感明细
+
+#### 问题三：结果难以稳定消费
+
+任意 SQL 的返回结构不固定，意味着：
+
+- Host 展示困难
+- 后续流程编排困难
+- 审计难标准化
+
+#### 问题四：运维风险大
+
+任意 SQL 还容易带来：
+
+- 大查询拖垮数据库
+- 误扫全表
+- 查询成本失控
+
+### 3. 更好的替代方式：参数化业务工具
+
+例如把：
+
+```text
+execute_sql("select * from orders where ...")
 ```
 
-### 3.2 向量数据库操作
+替换为：
 
-```python
-"""
-数据库 MCP - 向量数据库操作
+- `get_order_summary_by_date_range`
+- `query_customer_profile`
+- `count_tickets_by_status`
+- `search_similar_cases`
 
-通过 MCP 协议管理向量数据库（以 ChromaDB 为例）
-"""
+这种方式的好处是：
 
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List, Optional
-import chromadb
-import os
-import json
+- 业务语义更清晰
+- 权限更容易做
+- 返回结构更稳定
+- 更适合模型调用
 
-mcp = FastMCP("vector-database-manager")
+这正是 AI 产品经理要推动的设计方式。
 
-# ChromaDB 配置
-CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
-CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+---
 
-# 初始化 ChromaDB 客户端
-chroma_client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+## 五、从数据库能力到 MCP 工具的拆分方法
 
+### 1. 结构化查询类能力
 
-@mcp.tool()
-def create_collection(name: str, metadata: Dict = None) -> str:
-    """
-    创建向量集合
-    
-    Args:
-        name: 集合名称
-        metadata: 集合元数据（可选）
-    
-    Returns:
-        创建结果
-    """
-    try:
-        collection = chroma_client.create_collection(
-            name=name,
-            metadata=metadata or {}
-        )
-        
-        return f"集合 {name} 创建成功"
-    
-    except Exception as e:
-        return f"创建集合错误: {str(e)}"
+适合拆成：
 
+- `get_customer_profile`
+- `get_order_detail`
+- `query_invoice_status`
 
-@mcp.tool()
-def add_vectors(collection_name: str, ids: List[str], embeddings: List[List[float]], 
-                documents: List[str] = None, metadatas: List[Dict] = None) -> str:
-    """
-    添加向量
-    
-    Args:
-        collection_name: 集合名称
-        ids: 向量 ID 列表
-        embeddings: 向量嵌入列表
-        documents: 文档内容列表（可选）
-        metadatas: 元数据列表（可选）
-    
-    Returns:
-        添加结果
-    """
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        
-        collection.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=documents,
-            metadatas=metadatas
-        )
-        
-        return f"成功添加 {len(ids)} 个向量"
-    
-    except Exception as e:
-        return f"添加向量错误: {str(e)}"
+这类能力强调：
 
+- 查询对象明确
+- 返回结构固定
+- 容易做字段脱敏
 
-@mcp.tool()
-def search_similar(collection_name: str, query_embedding: List[float], 
-                   top_k: int = 5, filter_dict: Dict = None) -> str:
-    """
-    相似度检索
-    
-    Args:
-        collection_name: 集合名称
-        query_embedding: 查询向量
-        top_k: 返回结果数量
-        filter_dict: 过滤条件（可选）
-    
-    Returns:
-        检索结果
-    """
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=filter_dict
-        )
-        
-        output = f"找到 {len(results['ids'][0])} 个相似向量:\n\n"
-        
-        for i in range(len(results['ids'][0])):
-            output += f"结果 {i+1}:\n"
-            output += f"  ID: {results['ids'][0][i]}\n"
-            output += f"  距离: {results['distances'][0][i]:.4f}\n"
-            
-            if results['documents'] and results['documents'][0]:
-                output += f"  文档: {results['documents'][0][i]}\n"
-            
-            if results['metadatas'] and results['metadatas'][0]:
-                output += f"  元数据: {json.dumps(results['metadatas'][0][i], ensure_ascii=False)}\n"
-            
-            output += "\n"
-        
-        return output
-    
-    except Exception as e:
-        return f"检索错误: {str(e)}"
+### 2. 聚合统计类能力
 
+适合拆成：
 
-@mcp.tool()
-def delete_vectors(collection_name: str, ids: List[str] = None, 
-                   filter_dict: Dict = None) -> str:
-    """
-    删除向量
-    
-    Args:
-        collection_name: 集合名称
-        ids: 要删除的向量 ID 列表（可选）
-        filter_dict: 过滤条件（可选）
-    
-    Returns:
-        删除结果
-    """
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        
-        if ids:
-            collection.delete(ids=ids)
-            return f"成功删除 {len(ids)} 个向量"
-        elif filter_dict:
-            collection.delete(where=filter_dict)
-            return f"成功删除符合条件的向量"
-        else:
-            return "请提供 IDs 或过滤条件"
-    
-    except Exception as e:
-        return f"删除向量错误: {str(e)}"
+- `count_orders_by_status`
+- `daily_active_users`
+- `sales_summary_by_region`
 
+这类能力通常比明细查询更安全，也更适合高层分析场景。
 
-@mcp.tool()
-def get_collection_info(collection_name: str) -> str:
-    """
-    获取集合信息
-    
-    Args:
-        collection_name: 集合名称
-    
-    Returns:
-        集合信息
-    """
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        
-        count = collection.count()
-        
-        output = f"集合 {collection_name} 信息:\n\n"
-        output += f"向量数量: {count}\n"
-        
-        # 获取部分数据查看结构
-        if count > 0:
-            sample = collection.peek(limit=1)
-            output += f"\n示例数据:\n"
-            output += f"  ID: {sample['ids'][0]}\n"
-            if sample['documents']:
-                output += f"  文档: {sample['documents'][0]}\n"
-            if sample['metadatas']:
-                output += f"  元数据: {json.dumps(sample['metadatas'][0], ensure_ascii=False)}\n"
-        
-        return output
-    
-    except Exception as e:
-        return f"获取集合信息错误: {str(e)}"
+### 3. 向量检索类能力
 
+适合拆成：
 
-@mcp.tool()
-def list_collections() -> str:
-    """
-    列出所有集合
-    
-    Returns:
-        集合列表
-    """
-    try:
-        collections = chroma_client.list_collections()
-        
-        output = f"共有 {len(collections)} 个集合:\n\n"
-        
-        for collection in collections:
-            output += f"- {collection.name}\n"
-        
-        return output
-    
-    except Exception as e:
-        return f"获取集合列表错误: {str(e)}"
+- `search_similar_documents`
+- `search_similar_tickets`
+- `find_related_cases`
 
+这类能力常用于把结构化和语义检索结合起来。
 
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
+### 4. 写入类能力
+
+适合拆成：
+
+- `create_lead_record`
+- `update_ticket_status`
+- `insert_feedback_record`
+
+这类能力通常需要更严格的审批和幂等设计。
+
+### 5. 不推荐的能力形态
+
+不推荐：
+
+- 一个万能查询工具
+- 一个万能写入工具
+- 直接透出底层 SQL 或 ORM 抽象
+
+因为这些设计对研发方便，但对模型和治理都不友好。
+
+---
+
+## 六、字段级、行级、租户级权限怎么理解
+
+### 1. 字段级权限
+
+字段级权限要回答：
+
+- 哪些字段能返回
+- 哪些字段必须脱敏
+- 哪些字段只能对特定角色开放
+
+例如客户表中的：
+
+- 手机号
+- 邮箱
+- 身份证号
+- 财务字段
+
+这些通常不能默认直接暴露。
+
+### 2. 行级权限
+
+行级权限要回答：
+
+- 当前用户是否能看到这条记录
+- 是否只能看到自己部门的数据
+- 是否只能看到自己租户的数据
+
+### 3. 租户级权限
+
+在多租户系统中尤其重要。  
+你要确保：
+
+- A 租户的用户不会查到 B 租户的数据
+- 即便模型生成错误条件，也不能越过租户边界
+
+### 4. 为什么这些权限不能只靠 Prompt 控制
+
+很多新手会想：
+
+- “那我在 Prompt 里告诉模型别查别人的数据不就行了？”
+
+这远远不够。  
+Prompt 只能作为提示，真正的边界必须在服务端和权限系统里硬性落实。
+
+---
+
+## 七、数据库 MCP 的安全风险
+
+### 1. 注入风险
+
+如果工具参数拼接不当，可能产生：
+
+- SQL 注入
+- 条件绕过
+- 非预期查询
+
+### 2. 越权风险
+
+最常见的不是黑客攻击，而是：
+
+- 模型在没有意识到边界时生成过宽查询
+- 用户自然语言请求本身超出授权范围
+- 系统缺少租户或角色过滤
+
+### 3. 结果泄露风险
+
+即便查询本身合法，也可能在：
+
+- 返回结果
+- 日志
+- 调试信息
+
+中泄露敏感字段。
+
+### 4. 性能与资源风险
+
+数据库风险不只是安全，还包括：
+
+- 大查询拖库
+- 高频分析压垮业务库
+- 向量检索成本过高
+
+所以数据库 MCP 的最佳实践通常还会包括：
+
+- 查询限流
+- 大结果集限制
+- 分析库和业务库隔离
+
+---
+
+## 八、产品经理如何设计数据库 MCP 的开放顺序
+
+### 第一阶段：只开放低风险查询
+
+先做：
+
+- 报表查询
+- 聚合统计
+- 脱敏明细查询
+
+目标是建立业务价值和组织信任。
+
+### 第二阶段：扩展到更多结构化分析
+
+再做：
+
+- 多维度统计
+- 更丰富的业务对象查询
+- 与 RAG 的联合查询
+
+### 第三阶段：小范围试点写入能力
+
+谨慎试点：
+
+- 低风险新增记录
+- 状态更新
+- 草稿型数据写入
+
+### 第四阶段：平台化数据能力
+
+将数据库 MCP 沉淀成：
+
+- 企业内部数据访问能力层
+- 标准化数据工具目录
+- 多宿主、多 Agent 共享的数据底座
+
+---
+
+## 九、一个完整案例：客服 Copilot 查询客户与工单数据
+
+### 1. 场景目标
+
+客服希望问：
+
+- “这个客户最近三次工单是什么状态？”
+- “这个客户近 30 天投诉次数是多少？”
+- “有没有类似案例可参考？”
+
+### 2. 推荐的工具拆分
+
+不要暴露：
+
+- `execute_sql`
+
+更推荐：
+
+- `get_customer_profile`
+- `list_recent_tickets_by_customer`
+- `count_customer_complaints_last_30_days`
+- `search_similar_cases`
+
+### 3. 为什么这种拆法更好
+
+因为它可以明确：
+
+- 查询对象
+- 返回字段
+- 风险等级
+- 权限边界
+
+同时 Host 也更容易展示结果。
+
+### 4. AI 产品经理应该如何评审这个案例
+
+你可以问：
+
+- 返回的客户信息里哪些字段应该脱敏
+- 是否支持跨租户查询
+- 是否允许导出明细
+- 相似案例来自哪个数据源
+- 大结果集时如何处理
+
+这类问题会直接决定系统是否能上线。
+
+---
+
+## 十、指标、风控与审计
+
+### 1. 建议监控的关键指标
+
+| 指标                 | 建议目标  |
+| -------------------- | --------- |
+| 查询成功率           | >= 99%    |
+| P95 查询时延         | <= 3000ms |
+| 敏感字段脱敏覆盖率   | 100%      |
+| 高风险查询审批覆盖率 | 100%      |
+| 查询审计完整率       | 100%      |
+
+### 2. 建议增加的风控项
+
+- 单用户查询频次限制
+- 单次返回记录数限制
+- 非工作时段敏感查询告警
+- 跨租户查询拦截
+- 大结果集自动中断或审批
+
+### 3. 审计建议
+
+建议至少记录：
+
+- 查询发起人
+- 代理身份
+- 租户和业务场景
+- 使用的工具和参数摘要
+- 返回记录数和字段范围
+- 是否命中敏感拦截或审批
+
+### 4. 审计数据对产品优化的意义
+
+你可以据此发现：
+
+- 哪类查询最常用
+- 哪些工具根本没人用
+- 哪类查询风险过高
+- 某些工具是否应该从明细查询改为聚合查询
+
+---
+
+## 十一、企业级接入模板
+
+```json
+{
+  "provider": "database",
+  "server_name": "analytics-mcp-server",
+  "business_goal": "为客服 Copilot 和业务分析助手提供标准化数据库能力",
+  "data_sources": ["postgresql", "mysql", "vector_db"],
+  "enabled_tools": [
+    "get_customer_profile",
+    "list_recent_tickets_by_customer",
+    "count_customer_complaints_last_30_days",
+    "search_similar_cases"
+  ],
+  "disabled_tools": [
+    "execute_sql",
+    "bulk_delete_records",
+    "cross_tenant_export"
+  ],
+  "security": {
+    "row_level_access_control": true,
+    "field_masking": ["phone", "email", "id_number"],
+    "approval_required_for_sensitive_export": true,
+    "tenant_isolation": true
+  },
+  "observability": {
+    "audit_enabled": true,
+    "metrics": [
+      "query_success_rate",
+      "p95_query_latency_ms",
+      "sensitive_query_count",
+      "result_size_alert_count"
+    ]
+  },
+  "release_strategy": {
+    "phase_1": "aggregation_and_readonly_queries",
+    "phase_2": "expanded_structured_read",
+    "phase_3": "approved_low_risk_write"
+  }
+}
 ```
 
 ---
 
-## 四、高级功能
+## 十二、AI 产品经理如何学习这一章
 
-### 4.1 数据库迁移
+### 1. 先练习“把查询问题业务化”
 
-```python
-"""
-数据库 MCP - 数据库迁移
+不要先想 SQL 怎么写，而是先想：
 
-通过 MCP 协议实现数据库迁移
-"""
+- 用户到底想查什么业务问题
+- 这个问题能否转成参数化工具
 
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List
-import sqlite3
-import os
+### 2. 再练习“把风险边界说清楚”
 
-mcp = FastMCP("database-migration-manager")
+你应该能说出：
 
+- 哪些字段可查
+- 哪些字段要脱敏
+- 哪些场景只能给聚合值
+- 哪些场景绝不开放
 
-@mcp.tool()
-def export_table_data(source_db: str, table_name: str, output_file: str) -> str:
-    """
-    导出表数据
-    
-    Args:
-        source_db: 源数据库路径
-        table_name: 表名
-        output_file: 输出文件路径
-    
-    Returns:
-        导出结果
-    """
-    try:
-        conn = sqlite3.connect(source_db)
-        cursor = conn.cursor()
-        
-        # 获取表数据
-        cursor.execute(f"SELECT * FROM {table_name}")
-        rows = cursor.fetchall()
-        
-        # 获取列名
-        columns = [description[0] for description in cursor.description]
-        
-        # 写入文件
-        with open(output_file, 'w', encoding='utf-8') as f:
-            # 写入列名
-            f.write(",".join(columns) + "\n")
-            
-            # 写入数据
-            for row in rows:
-                f.write(",".join(str(cell) for cell in row) + "\n")
-        
-        conn.close()
-        
-        return f"成功导出 {len(rows)} 条记录到 {output_file}"
-    
-    except Exception as e:
-        return f"导出错误: {str(e)}"
+### 3. 最后练习“分阶段开放”的表达方式
 
+比如：
 
-@mcp.tool()
-def import_table_data(target_db: str, table_name: str, input_file: str) -> str:
-    """
-    导入表数据
-    
-    Args:
-        target_db: 目标数据库路径
-        table_name: 表名
-        input_file: 输入文件路径
-    
-    Returns:
-        导入结果
-    """
-    try:
-        conn = sqlite3.connect(target_db)
-        cursor = conn.cursor()
-        
-        with open(input_file, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        
-        # 第一行是列名
-        columns = lines[0].strip().split(",")
-        
-        # 插入数据
-        placeholders = ", ".join(["?"] * len(columns))
-        column_str = ", ".join(columns)
-        sql = f"INSERT INTO {table_name} ({column_str}) VALUES ({placeholders})"
-        
-        count = 0
-        for line in lines[1:]:
-            values = line.strip().split(",")
-            cursor.execute(sql, values)
-            count += 1
-        
-        conn.commit()
-        conn.close()
-        
-        return f"成功导入 {count} 条记录"
-    
-    except Exception as e:
-        return f"导入错误: {str(e)}"
+- “一期先做聚合查询，避免直接开放明细导出”
+- “低风险只读数据优先，写入能力放到后续试点”
 
-
-@mcp.tool()
-def compare_schemas(db1: str, db2: str) -> str:
-    """
-    比较两个数据库的表结构
-    
-    Args:
-        db1: 数据库1路径
-        db2: 数据库2路径
-    
-    Returns:
-        比较结果
-    """
-    try:
-        def get_tables(db_path):
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [row[0] for row in cursor.fetchall()]
-            conn.close()
-            return tables
-        
-        def get_table_columns(db_path, table_name):
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute(f"PRAGMA table_info({table_name})")
-            columns = {row[1]: row[2] for row in cursor.fetchall()}
-            conn.close()
-            return columns
-        
-        tables1 = set(get_tables(db1))
-        tables2 = set(get_tables(db2))
-        
-        output = "数据库结构比较结果:\n\n"
-        
-        # 只在 db1 中的表
-        only_in_db1 = tables1 - tables2
-        if only_in_db1:
-            output += f"只在 {db1} 中的表: {', '.join(only_in_db1)}\n"
-        
-        # 只在 db2 中的表
-        only_in_db2 = tables2 - tables1
-        if only_in_db2:
-            output += f"只在 {db2} 中的表: {', '.join(only_in_db2)}\n"
-        
-        # 共同表比较列
-        common_tables = tables1 & tables2
-        for table in common_tables:
-            cols1 = get_table_columns(db1, table)
-            cols2 = get_table_columns(db2, table)
-            
-            if cols1 != cols2:
-                output += f"\n表 {table} 的列差异:\n"
-                
-                only_cols1 = set(cols1.keys()) - set(cols2.keys())
-                only_cols2 = set(cols2.keys()) - set(cols1.keys())
-                
-                if only_cols1:
-                    output += f"  只在 {db1} 中的列: {', '.join(only_cols1)}\n"
-                if only_cols2:
-                    output += f"  只在 {db2} 中的列: {', '.join(only_cols2)}\n"
-        
-        return output
-    
-    except Exception as e:
-        return f"比较错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
-
-### 4.2 数据库监控
-
-```python
-"""
-数据库 MCP - 数据库监控
-
-通过 MCP 协议监控数据库状态
-"""
-
-from mcp.server.fastmcp import FastMCP
-from typing import Dict, List
-import sqlite3
-import os
-import time
-
-mcp = FastMCP("database-monitor")
-
-DB_PATH = os.getenv("SQLITE_DB_PATH", "database.db")
-
-
-@mcp.tool()
-def get_database_size() -> str:
-    """
-    获取数据库大小
-    
-    Returns:
-        数据库大小信息
-    """
-    try:
-        size = os.path.getsize(DB_PATH)
-        
-        # 转换为可读格式
-        if size < 1024:
-            size_str = f"{size} B"
-        elif size < 1024 * 1024:
-            size_str = f"{size / 1024:.2f} KB"
-        elif size < 1024 * 1024 * 1024:
-            size_str = f"{size / (1024 * 1024):.2f} MB"
-        else:
-            size_str = f"{size / (1024 * 1024 * 1024):.2f} GB"
-        
-        return f"数据库大小: {size_str} ({size} 字节)"
-    
-    except Exception as e:
-        return f"获取大小错误: {str(e)}"
-
-
-@mcp.tool()
-def get_table_stats() -> str:
-    """
-    获取表统计信息
-    
-    Returns:
-        表统计信息
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        # 获取所有表
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables = cursor.fetchall()
-        
-        output = "表统计信息:\n\n"
-        output += "表名 | 记录数\n"
-        output += "-" * 30 + "\n"
-        
-        total_rows = 0
-        for table in tables:
-            table_name = table[0]
-            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-            count = cursor.fetchone()[0]
-            total_rows += count
-            
-            output += f"{table_name} | {count}\n"
-        
-        output += f"\n总计: {len(tables)} 个表, {total_rows} 条记录"
-        
-        conn.close()
-        return output
-    
-    except Exception as e:
-        return f"获取统计信息错误: {str(e)}"
-
-
-@mcp.tool()
-def get_slow_queries(threshold_ms: int = 100) -> str:
-    """
-    获取慢查询（SQLite 不直接支持，这里模拟）
-    
-    Args:
-        threshold_ms: 慢查询阈值（毫秒）
-    
-    Returns:
-        慢查询列表
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        
-        # 启用查询计时
-        conn.execute("PRAGMA timer=ON")
-        
-        # 这里可以记录查询日志并分析
-        # 简化示例：返回提示信息
-        
-        conn.close()
-        
-        return f"慢查询监控已启用（阈值: {threshold_ms}ms）\n建议在生产环境中使用专门的慢查询日志工具"
-    
-    except Exception as e:
-        return f"监控错误: {str(e)}"
-
-
-@mcp.tool()
-def check_database_integrity() -> str:
-    """
-    检查数据库完整性
-    
-    Returns:
-        检查结果
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        cursor.execute("PRAGMA integrity_check")
-        result = cursor.fetchone()[0]
-        
-        conn.close()
-        
-        if result == "ok":
-            return "数据库完整性检查通过 ✓"
-        else:
-            return f"数据库完整性检查失败: {result}"
-    
-    except Exception as e:
-        return f"检查错误: {str(e)}"
-
-
-@mcp.tool()
-def get_index_usage() -> str:
-    """
-    获取索引使用情况
-    
-    Returns:
-        索引使用信息
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
-        indexes = cursor.fetchall()
-        
-        output = f"共有 {len(indexes)} 个索引:\n\n"
-        
-        for idx in indexes:
-            output += f"- {idx[0]}\n"
-        
-        conn.close()
-        return output
-    
-    except Exception as e:
-        return f"获取索引信息错误: {str(e)}"
-
-
-if __name__ == "__main__":
-    mcp.run(transport='stdio')
-```
+这就是 AI 产品经理的判断力。
 
 ---
 
-## 五、AI 产品经理关注点
+## 十三、常见误区补充
 
-```
-数据库 MCP 产品化要点：
+### 误区 1：有了数据库 MCP，就不需要报表系统或 BI 系统
 
-场景设计
-├── 数据查询
-│   ├── 自然语言转 SQL
-│   ├── 智能查询优化
-│   ├── 查询结果可视化
-│   └── 查询历史管理
-├── 数据管理
-│   ├── 自动数据清洗
-│   ├── 数据质量监控
-│   ├── 数据血缘追踪
-│   └── 数据版本控制
-├── 向量应用
-│   ├── 语义搜索
-│   ├── 推荐系统
-│   ├── 知识库检索
-│   └── 相似度匹配
-└── 运维监控
-    ├── 性能监控
-    ├── 容量规划
-    ├── 异常检测
-    └── 自动告警
+错误。数据库 MCP 更适合作为能力层和助手层，不等于完全替代专业分析平台。
 
-安全考虑
-├── 访问控制
-│   ├── 最小权限原则
-│   ├── 查询权限分级
-│   └── 敏感数据脱敏
-├── 数据保护
-│   ├── SQL 注入防护
-│   ├── 参数化查询
-│   └── 审计日志
-└── 合规性
-    ├── 数据保留政策
-    ├── 隐私保护
-    └── 审计要求
+### 误区 2：只读数据库就一定安全
 
-关键指标
-├── 性能指标
-│   ├── 查询响应时间
-│   ├── 并发处理能力
-│   ├── 吞吐量
-│   └── 资源利用率
-├── 质量指标
-│   ├── 查询准确率
-│   ├── 数据一致性
-│   ├── 系统可用性
-│   └── 错误率
-└── 体验指标
-│   ├── 查询易用性
-│   ├── 结果可读性
-│   └── 功能完整性
+错误。只读同样可能造成大规模敏感信息泄露。
 
-落地建议
-├── 阶段一：试点
-│   ├── 选择 1-2 个业务场景
-│   ├── 实现基础查询功能
-│   └── 收集用户反馈
-├── 阶段二：推广
-│   ├── 扩展更多业务场景
-│   ├── 完善功能覆盖
-│   └── 建立最佳实践
-└── 阶段三：优化
-    ├── 性能优化
-    ├── 智能化提升
-    └── 生态建设
-```
+### 误区 3：通用 SQL 工具最灵活，所以最好用
+
+错误。灵活度越高，越难治理，也越不适合模型稳定调用。
+
+### 误区 4：数据库接入只是工程问题，产品经理不用深入
+
+错误。字段边界、开放顺序、风险等级、脱敏和审批都需要产品经理参与定义。
 
 ---
 
-## 六、参考资源
+## 十四、本章小结
 
-- [SQLite 文档](https://www.sqlite.org/docs.html) - SQLite 官方文档
-- [ChromaDB 文档](https://docs.trychroma.com/) - ChromaDB 官方文档
-- [PostgreSQL 文档](https://www.postgresql.org/docs/) - PostgreSQL 官方文档
-- [MongoDB 文档](https://docs.mongodb.com/) - MongoDB 官方文档
-- [MCP 协议规范](https://spec.modelcontextprotocol.io/) - MCP 协议文档
+如果用一句话总结：
+
+**数据库 MCP 的关键，不是“让 AI 能查数据库”，而是“让 AI 以受控、可解释、可治理的方式访问企业结构化数据”。**
+
+对 AI 产品经理来说，这一章最重要的收获是：
+
+- 学会区分“高价值数据能力”和“高风险数据能力”
+- 学会把任意查询需求重构为可治理的参数化工具
+- 学会为结构化数据访问设计字段、租户、结果和审批边界
+
+---
+
+## 十五、阶段验收标准
+
+完成本节后，至少应满足以下要求：
+
+- 能区分只读查询、统计分析、向量检索和写入操作的边界
+- 能说明为什么不应默认开放通用 SQL 工具
+- 能设计字段级、行级与租户级权限控制
+- 能输出一份数据库 MCP 企业接入模板
+
+---
+
+## 十六、版本记录
+
+- **2026-06-05** 扩写为教程版内容，补充业务价值、风险边界、权限设计、开放顺序、客服案例与企业接入路径
+- **2026-06-05** 补充数据库场景价值、风险边界、权限治理与企业接入模板
+- **2026-06-03** 初版完成，介绍数据库 MCP 集成思路
+
+## 参考资源
+
+- [PostgreSQL](https://www.postgresql.org/docs/)
+- [MySQL](https://dev.mysql.com/doc/)
+- [MCP 官方文档](https://modelcontextprotocol.io/)

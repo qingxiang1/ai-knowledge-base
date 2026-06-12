@@ -1,8 +1,10 @@
 <!--
-  文件描述: Agent系统模块目录页，汇总该模块下所有章节文档，提供前置知识、学习路径与章节关联
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-03
-  最后修改日期: 2026-06-05
+  创建时间: 2026-06-03
+  文件名: index.md
+  文件描述: Agent系统模块目录页，补充企业级学习路径、能力对标、阶段验收与作品集要求
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.1.0
+  最后更新时间: 2026-06-05
 -->
 
 # 07 - Agent 系统
@@ -11,19 +13,32 @@
 
 ---
 
-## 前置知识
+## 本章定位
+
+`07-Agent系统` 解决的不是“会不会调用一个 Agent 框架”，而是以下 4 个更关键的问题：
+
+1. **如何判断业务问题是否真的需要 Agent，而不是普通 Chatbot、RAG 或工作流**
+2. **如何把 Planning、Memory、Tool、Reflection 组合成可解释、可控、可监控的任务执行系统**
+3. **如何在自主性、稳定性、成本、安全和用户信任之间做产品化权衡**
+4. **如何设计可上线、可评测、可回滚、可持续迭代的企业级 Agent 产品**
+
+学习本模块时，要始终把 Agent 看成“带目标、状态和工具的执行系统”，而不是单纯的“会思考的大模型”。
+
+---
+
+## 零、前置知识
 
 学习本模块前，建议先掌握以下内容：
 
-| 前置章节 | 为什么需要 | 关联点 |
-|---------|----------|-------|
-| [LLM工作原理](../02-AI基础知识/LLM工作原理.md) | 理解大模型工作机制 | Agent 的推理核心是 LLM，理解 LLM 才能理解 Agent |
-| [Prompt基础](../03-Prompt工程/Prompt基础.md) | 掌握 Prompt 设计 | Agent 的行为由 Prompt 定义，系统 Prompt 是 Agent 的"大脑" |
-| [ChainOfThought](../03-Prompt工程/ChainOfThought.md) | 掌握思维链技术 | Agent 的 Planning 需要思维链推理能力 |
-| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 掌握结构化输出 | Agent 的工具调用需要结构化参数输出 |
-| [FunctionCalling](../05-AI应用开发/FunctionCalling.md) | 掌握函数调用 | Agent 的 Tool Calling 是 Function Calling 的进阶应用 |
-| [ToolCalling](../05-AI应用开发/ToolCalling.md) | 掌握工具调用体系 | Agent 的工具编排是 Tool Calling 的核心场景 |
-| [能力模型](../00-Roadmap/能力模型.md) | 了解 AI 产品能力维度 | Agent 设计对应「AI应用构建力 → Agent 架构能力」核心能力 |
+| 前置章节                                                 | 为什么需要           | 关联点                                                    |
+| -------------------------------------------------------- | -------------------- | --------------------------------------------------------- |
+| [LLM工作原理](../02-AI基础知识/LLM工作原理.md)           | 理解大模型工作机制   | Agent 的推理核心是 LLM，理解 LLM 才能理解 Agent           |
+| [Prompt基础](../03-Prompt工程/Prompt基础.md)             | 掌握 Prompt 设计     | Agent 的行为由 Prompt 定义，系统 Prompt 是 Agent 的"大脑" |
+| [ChainOfThought](../03-Prompt工程/ChainOfThought.md)     | 掌握思维链技术       | Agent 的 Planning 需要思维链推理能力                      |
+| [StructuredOutput](../03-Prompt工程/StructuredOutput.md) | 掌握结构化输出       | Agent 的工具调用需要结构化参数输出                        |
+| [FunctionCalling](../05-AI应用开发/FunctionCalling.md)   | 掌握函数调用         | Agent 的 Tool Calling 是 Function Calling 的进阶应用      |
+| [ToolCalling](../05-AI应用开发/ToolCalling.md)           | 掌握工具调用体系     | Agent 的工具编排是 Tool Calling 的核心场景                |
+| [能力模型](../00-Roadmap/能力模型.md)                    | 了解 AI 产品能力维度 | Agent 设计对应「AI应用构建力 → Agent 架构能力」核心能力   |
 
 **能力对标**：本模块对应 [能力模型](../00-Roadmap/能力模型.md) 中「AI应用构建力 → Agent 架构能力」核心能力，是 AI 产品经理的**进阶硬技能**（掌握程度⭐⭐⭐⭐）。掌握 Agent 系统可帮助你从 L1（知道 Agent 是什么）提升至 L3（能设计企业级 Multi-Agent 协作系统）。
 
@@ -33,27 +48,27 @@
 
 ### Agent 基础篇
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 1 | [Agent概念](./Agent概念.md) | Agent 定义、分类、与 Chatbot 的区别、应用场景 | 所有人（Agent 入门必读） |
-| 2 | [Agent架构](./Agent架构.md) | Agent 四大组件（Planning/Memory/Tool/Reflection）、主流框架对比 | 所有人（理解 Agent 架构） |
+| 序号 | 文档                        | 核心内容                                                        | 适合谁                    |
+| ---- | --------------------------- | --------------------------------------------------------------- | ------------------------- |
+| 1    | [Agent概念](./Agent概念.md) | Agent 定义、分类、与 Chatbot 的区别、应用场景                   | 所有人（Agent 入门必读）  |
+| 2    | [Agent架构](./Agent架构.md) | Agent 四大组件（Planning/Memory/Tool/Reflection）、主流框架对比 | 所有人（理解 Agent 架构） |
 
 ### Agent 核心组件篇
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 3 | [Planning](./Planning.md) | 任务规划与分解、ReAct / Plan-and-Execute / ToT 等推理模式 | 需设计 Agent 任务处理流程者 |
-| 4 | [Memory](./Memory.md) | 短期/长期/工作记忆、向量检索、会话管理、记忆压缩 | 需设计 Agent 记忆系统者 |
-| 5 | [ToolCalling](./ToolCalling.md) | 工具类型体系、Tool Registry、动态调用、错误处理 | 需设计 Agent 工具集成者 |
-| 6 | [Reflection](./Reflection.md) | 自我反思机制、错误修正、迭代优化、质量评估 | 需提升 Agent 稳定性者 |
+| 序号 | 文档                            | 核心内容                                                  | 适合谁                      |
+| ---- | ------------------------------- | --------------------------------------------------------- | --------------------------- |
+| 3    | [Planning](./Planning.md)       | 任务规划与分解、ReAct / Plan-and-Execute / ToT 等推理模式 | 需设计 Agent 任务处理流程者 |
+| 4    | [Memory](./Memory.md)           | 短期/长期/工作记忆、向量检索、会话管理、记忆压缩          | 需设计 Agent 记忆系统者     |
+| 5    | [ToolCalling](./ToolCalling.md) | 工具类型体系、Tool Registry、动态调用、错误处理           | 需设计 Agent 工具集成者     |
+| 6    | [Reflection](./Reflection.md)   | 自我反思机制、错误修正、迭代优化、质量评估                | 需提升 Agent 稳定性者       |
 
 ### Agent 进阶篇
 
-| 序号 | 文档 | 核心内容 | 适合谁 |
-|------|------|----------|--------|
-| 7 | [MultiAgent](./MultiAgent.md) | 多 Agent 协作模式、角色分工、通信机制、冲突解决 | 需设计复杂协作系统者 |
-| 8 | [Agent评测](./Agent评测.md) | Agent 评估指标、测试方法、基准测试、质量监控 | 需评估 Agent 性能者 |
-| 9 | [Agent产品设计](./Agent产品设计.md) | Agent 产品化设计、用户体验、商业模式、落地实践 | 需落地 Agent 产品者 |
+| 序号 | 文档                                | 核心内容                                        | 适合谁               |
+| ---- | ----------------------------------- | ----------------------------------------------- | -------------------- |
+| 7    | [MultiAgent](./MultiAgent.md)       | 多 Agent 协作模式、角色分工、通信机制、冲突解决 | 需设计复杂协作系统者 |
+| 8    | [Agent评测](./Agent评测.md)         | Agent 评估指标、测试方法、基准测试、质量监控    | 需评估 Agent 性能者  |
+| 9    | [Agent产品设计](./Agent产品设计.md) | Agent 产品化设计、用户体验、商业模式、落地实践  | 需落地 Agent 产品者  |
 
 ---
 
@@ -61,12 +76,12 @@
 
 ### 按角色推荐
 
-| 角色 | 必读章节 | 选读章节 | 学习目标 |
-|------|---------|---------|---------|
-| **AI 产品经理** | Agent概念 → Agent架构 → Planning → Memory → Agent产品设计 | ToolCalling、Reflection、MultiAgent、Agent评测 | 能设计 Agent 产品方案、评估架构可行性 |
-| **技术架构师** | 全部章节 | - | 能设计 Agent 系统架构、选择框架、实现核心组件 |
-| **Prompt 工程师** | Agent概念 → Agent架构 → Planning → Reflection → Agent产品设计 | Memory、ToolCalling、MultiAgent | 能设计高质量 Agent Prompt、优化推理流程 |
-| **技术转型者** | Agent概念 → Agent架构 → Planning → Memory → ToolCalling → Reflection → MultiAgent → Agent评测 | Agent产品设计 | 从技术视角理解 Agent 全栈，掌握实现细节 |
+| 角色              | 必读章节                                                                                      | 选读章节                                       | 学习目标                                      |
+| ----------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
+| **AI 产品经理**   | Agent概念 → Agent架构 → Planning → Memory → Agent产品设计                                     | ToolCalling、Reflection、MultiAgent、Agent评测 | 能设计 Agent 产品方案、评估架构可行性         |
+| **技术架构师**    | 全部章节                                                                                      | -                                              | 能设计 Agent 系统架构、选择框架、实现核心组件 |
+| **Prompt 工程师** | Agent概念 → Agent架构 → Planning → Reflection → Agent产品设计                                 | Memory、ToolCalling、MultiAgent                | 能设计高质量 Agent Prompt、优化推理流程       |
+| **技术转型者**    | Agent概念 → Agent架构 → Planning → Memory → ToolCalling → Reflection → MultiAgent → Agent评测 | Agent产品设计                                  | 从技术视角理解 Agent 全栈，掌握实现细节       |
 
 ### 按学习阶段
 
@@ -151,21 +166,43 @@ Agent 产品化落地      Agent产品设计
 
 ## 关键术语速查
 
-| 术语 | 说明 |
-|------|------|
-| **Agent** | 能自主感知、决策、行动的智能代理，区别于被动响应的 Chatbot |
-| **Planning** | 任务规划，将复杂任务分解为可执行的子任务序列 |
-| **Memory** | 记忆系统，存储 Agent 的历史交互、知识、上下文 |
-| **Tool Calling** | 工具调用，Agent 通过调用外部工具扩展能力边界 |
-| **Reflection** | 自我反思，Agent 对自身行为的评估与修正 |
-| **ReAct** | Reasoning + Acting，交替推理与行动的 Agent 模式 |
-| **Plan-and-Execute** | 先规划后执行，分离规划与执行的 Agent 模式 |
-| **ToT** | Tree of Thought，树状思维推理模式 |
-| **Multi-Agent** | 多 Agent 协作系统，多个 Agent 分工协作完成复杂任务 |
-| **Tool Registry** | 工具注册中心，管理 Agent 可用的工具集合 |
-| **Short-term Memory** | 短期记忆，当前对话上下文 |
-| **Long-term Memory** | 长期记忆，持久化的历史知识和交互记录 |
-| **Working Memory** | 工作记忆，当前任务执行过程中的临时状态 |
+| 术语                  | 说明                                                       |
+| --------------------- | ---------------------------------------------------------- |
+| **Agent**             | 能自主感知、决策、行动的智能代理，区别于被动响应的 Chatbot |
+| **Planning**          | 任务规划，将复杂任务分解为可执行的子任务序列               |
+| **Memory**            | 记忆系统，存储 Agent 的历史交互、知识、上下文              |
+| **Tool Calling**      | 工具调用，Agent 通过调用外部工具扩展能力边界               |
+| **Reflection**        | 自我反思，Agent 对自身行为的评估与修正                     |
+| **ReAct**             | Reasoning + Acting，交替推理与行动的 Agent 模式            |
+| **Plan-and-Execute**  | 先规划后执行，分离规划与执行的 Agent 模式                  |
+| **ToT**               | Tree of Thought，树状思维推理模式                          |
+| **Multi-Agent**       | 多 Agent 协作系统，多个 Agent 分工协作完成复杂任务         |
+| **Tool Registry**     | 工具注册中心，管理 Agent 可用的工具集合                    |
+| **Short-term Memory** | 短期记忆，当前对话上下文                                   |
+| **Long-term Memory**  | 长期记忆，持久化的历史知识和交互记录                       |
+| **Working Memory**    | 工作记忆，当前任务执行过程中的临时状态                     |
+
+---
+
+## 阶段验收标准
+
+完成本模块后，至少应该能交付以下成果：
+
+- [ ] 能清晰解释 Agent、Chatbot、RAG、工作流之间的边界
+- [ ] 能画出一个企业级 Agent 的核心架构图，包括 Planning、Memory、Tool、Reflection 和状态管理
+- [ ] 能为一个业务场景判断是否适合引入 Agent，以及需要多高自主性
+- [ ] 能设计 Agent 的工具权限、执行确认、审计日志和失败回滚机制
+- [ ] 能定义 Agent 的任务成功率、工具调用成功率、成本、延迟、安全风险等核心指标
+- [ ] 能输出一份可评审的 Agent 产品方案或系统方案
+
+---
+
+## 最小作品集
+
+建议学习本模块后沉淀 2 个作品：
+
+1. **单 Agent 产品方案**：选择一个真实场景，设计目标、用户、任务流、工具集、记忆策略、权限边界和评测指标。
+2. **Agent 架构设计图**：画出从用户请求到任务编排、模型调用、工具执行、状态保存、日志审计、结果返回的完整链路。
 
 ---
 

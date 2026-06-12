@@ -1,855 +1,414 @@
 <!--
-  文件描述: AI写作助手项目完整实战指南，包含需求分析、架构设计、代码实现与部署说明
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-04
-  最后修改日期: 2026-06-04
+  创建时间: 2026-06-12
+  文件名: README.md
+  文件描述: AI 写作助手项目实战指南，面向新手和技术转型者系统讲解项目目标、真实目录结构、运行方式、核心能力、改造方向与复盘方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-12
 -->
 
-# Project01 - AI写作助手
+# Project01-AI写作助手
 
-> 一个基于 React + Node.js + OpenAI API 的 AI 辅助写作工具，支持文章生成、续写、润色等功能。
-
----
-
-## 项目概述
-
-### 功能特性
-
-- **文章生成**：根据主题和关键词自动生成文章
-- **智能续写**：基于上下文继续写作
-- **文本润色**：优化语法、提升表达
-- **多风格切换**：支持正式、轻松、学术等多种写作风格
-- **历史记录**：保存写作历史，支持回溯
-
-### 技术栈
-
-```
-前端: React 18 + TypeScript + Tailwind CSS
-后端: Node.js + Express + TypeScript
-AI: OpenAI GPT-4 API
-部署: Docker + Nginx
-```
+> 这是 `14-项目实战` 里最适合作为第一站的项目之一。它的好处在于：问题清晰、结构简单、反馈直接、容易跑通，也很适合拿来理解一个最基础的 AI 工具类产品是如何从输入、Prompt、调用后端，到最终结果展示形成闭环的。如果你是第一次做 AI 产品项目，这个项目非常适合用来建立“从需求到实现”的完整感觉。
 
 ---
 
-## 项目结构
+## 一、先理解这个项目在练什么
 
-```
+这个项目表面上是一个“AI 写作助手”，但对学习者来说，它真正训练的是下面几件事：
+
+- 如何把一个高频内容生产场景做成 AI 工具
+- 如何设计输入、操作类型和输出结果
+- 如何把前端交互和后端模型调用接起来
+- 如何在真实 API 不可用时提供 mock 降级，保证项目可演示
+- 如何从一个简单 Demo 出发，继续向作品集或 MVP 发展
+
+所以你在学习这个项目时，不要只把它当成“写作小工具”，而要把它当成最基础的 AI 应用模板。
+
+---
+
+## 二、项目目标与用户场景
+
+### 1. 这个项目解决什么问题
+
+很多人写作时会遇到几个高频痛点：
+
+- 没有起稿思路
+- 写到一半接不下去
+- 内容表达不够顺
+- 文本过长或过短，需要快速调整
+
+这个项目就是围绕这些典型动作设计的。
+
+### 2. 典型用户是谁
+
+这个项目最适合拿来模拟下面这类用户：
+
+- 内容运营
+- 学生和研究人员
+- 产品经理
+- 需要快速起草文档的知识工作者
+
+### 3. 核心使用场景是什么
+
+当前版本聚焦的是五类高频动作：
+
+- 生成
+- 续写
+- 润色
+- 精简
+- 扩展
+
+这五类动作构成了一个非常典型的文本 AI 工具闭环。
+
+---
+
+## 三、当前项目能力概览
+
+当前项目已经具备的核心能力包括：
+
+- 多风格写作：正式、轻松、学术、创意、商务
+- 多动作处理：生成、续写、润色、精简、扩展
+- 结果实时展示：输入区、结果区、错误提示
+- 历史记录：查看和删除历史写作记录
+- mock 模式：未配置 `OPENAI_API_KEY` 也能运行和演示
+- 企业工作流闭环：作者生成草稿、审核人审批、发布人内部模拟发布
+- 本地持久化：服务重启后保留企业单据与审计记录
+- 品牌规则校验：生成后自动扫描，阻断风险文案进入审核流
+
+这意味着它既适合学习，也适合做面试演示或课堂演示。
+
+---
+
+## 四、真实目录结构
+
+下面是当前仓库里的真实目录，不是旧版 README 中已经失真的结构：
+
+```text
 Project01-AI写作助手/
-├── README.md                 # 项目说明
-├── package.json              # 项目依赖
-├── tsconfig.json             # TypeScript 配置
-├── tailwind.config.js        # Tailwind 配置
-├── vite.config.ts            # Vite 构建配置
-├── public/
-│   └── index.html            # HTML 入口
-├── server/
-│   ├── index.ts              # Express 服务端入口
-│   ├── routes/
-│   │   └── writing.ts        # 写作相关 API
-│   └── services/
-│       └── openai.ts         # OpenAI 服务封装
-└── src/
-    ├── main.tsx              # 前端入口
-    ├── App.tsx               # 根组件
-    ├── components/
-    │   ├── Editor.tsx        # 编辑器组件
-    │   ├── Sidebar.tsx       # 侧边栏组件
-    │   ├── Toolbar.tsx       # 工具栏组件
-    │   └── HistoryPanel.tsx  # 历史记录面板
-    ├── hooks/
-    │   └── useWriting.ts     # 写作逻辑 Hook
+├── package.json
+├── index.html
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── tsconfig.node.json
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── index.css
+│   ├── components/
+│   │   ├── Editor.tsx
+│   │   └── HistoryPanel.tsx
+│   ├── hooks/
+│   │   └── useWriting.ts
+│   ├── services/
+│   │   └── api.ts
+│   └── types/
+│       └── index.ts
+└── server/
+    ├── index.ts
+    ├── package.json
+    ├── tsconfig.json
+    ├── .env.example
+    ├── routes/
+    │   └── writing.ts
+│   ├── config/
+    ├── config/
+    │   └── templates.ts
     ├── services/
-    │   └── api.ts            # API 调用封装
-    └── types/
-        └── index.ts          # 类型定义
+    │   ├── document-store.ts
+    │   ├── compliance.ts
+    │   └── openai.ts
+    └── types.ts
 ```
+
+最重要的文件可以这样理解：
+
+- `src/App.tsx`：企业工作流页面入口，组织角色切换与工作台布局
+- `src/components/Editor.tsx`：主编辑区，负责草稿编辑、流程动作和合规结果展示
+- `src/components/HistoryPanel.tsx`：企业单据列表与审计轨迹
+- `src/hooks/useWriting.ts`：前端核心状态和工作流动作逻辑
+- `server/routes/writing.ts`：企业单据生成、提审、审核、发布接口
+- `server/services/openai.ts`：企业草稿 Prompt 构建、OpenAI 调用和 mock 降级
+- `server/services/compliance.ts`：品牌规则扫描与提审阻断逻辑
+- `server/index.ts`：服务端入口和健康检查
 
 ---
 
-## 快速开始
+## 五、技术栈与实现方式
 
-### 1. 安装依赖
+### 前端
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+
+### 后端
+
+- Node.js
+- Express
+- TypeScript
+
+### AI 调用
+
+- OpenAI SDK
+- 支持真实 API 模式
+- 支持 mock 降级模式
+
+这个技术栈有一个很好的学习价值：
+
+- 足够简单
+- 足够主流
+- 足够适合做第一个可讲清楚的 AI 项目
+
+---
+
+## 六、运行方式
+
+### 1. 安装前端依赖
 
 ```bash
-# 安装前端依赖
-npm install
-
-# 安装服务端依赖
-cd server && npm install
+cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手
+pnpm install
 ```
 
-### 2. 配置环境变量
+### 2. 安装后端依赖
 
 ```bash
-# 根目录创建 .env 文件
-VITE_API_URL=http://localhost:3001
-
-# server 目录创建 .env 文件
-OPENAI_API_KEY=your_openai_api_key
-PORT=3001
+cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
+pnpm install
 ```
 
-### 3. 启动项目
+### 3. 配置环境变量
+
+项目后端目录已有 `.env.example`，可以复制为 `.env`：
 
 ```bash
-# 启动服务端
-cd server && npm run dev
-
-# 新终端启动前端
-npm run dev
+cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
+cp .env.example .env
 ```
 
-### 4. 访问应用
+如果你有真实 API Key，可以填写：
 
-打开浏览器访问 `http://localhost:5173`
+```env
+OPENAI_API_KEY=your_api_key_here
+PORT=3000
+```
+
+如果不填 `OPENAI_API_KEY`，项目会自动进入 `mock` 模式，依然可以运行和演示。
+
+### 4. 启动后端
+
+```bash
+cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
+pnpm dev
+```
+
+### 5. 启动前端
+
+```bash
+cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手
+pnpm dev
+```
+
+### 6. 默认访问地址
+
+- 前端：`http://localhost:5173`
+- 后端：`http://localhost:3000`
+- 健康检查：`http://localhost:3000/health`
 
 ---
 
-## 核心代码实现
-
-### 类型定义 (src/types/index.ts)
-
-```typescript
-/**
- * 写作风格枚举
- */
-export enum WritingStyle {
-  FORMAL = 'formal',      // 正式
-  CASUAL = 'casual',      // 轻松
-  ACADEMIC = 'academic',  // 学术
-  CREATIVE = 'creative',  // 创意
-  BUSINESS = 'business',  // 商务
-}
-
-/**
- * 写作请求参数
- */
-export interface WritingRequest {
-  content: string;           // 输入内容
-  style: WritingStyle;       // 写作风格
-  action: WritingAction;     // 操作类型
-  temperature?: number;      // 创造性程度 (0-1)
-}
-
-/**
- * 写作操作类型
- */
-export enum WritingAction {
-  GENERATE = 'generate',    // 生成
-  CONTINUE = 'continue',    // 续写
-  POLISH = 'polish',        // 润色
-  SHORTEN = 'shorten',      // 缩短
-  EXPAND = 'expand',        // 扩展
-}
-
-/**
- * 写作响应
- */
-export interface WritingResponse {
-  result: string;            // 生成结果
-  tokens_used: number;       // Token 使用量
-  model: string;             // 使用的模型
-}
-
-/**
- * 历史记录项
- */
-export interface HistoryItem {
-  id: string;
-  timestamp: number;
-  request: WritingRequest;
-  response: WritingResponse;
-}
-```
-
-### API 服务封装 (src/services/api.ts)
-
-```typescript
-import { WritingRequest, WritingResponse, HistoryItem } from '../types';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-/**
- * 发送写作请求
- * @param request 写作请求参数
- * @returns 写作响应
- */
-export async function generateWriting(request: WritingRequest): Promise<WritingResponse> {
-  const response = await fetch(`${API_BASE}/api/writing/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || '请求失败');
-  }
-
-  return response.json();
-}
-
-/**
- * 获取历史记录
- * @returns 历史记录列表
- */
-export async function getHistory(): Promise<HistoryItem[]> {
-  const response = await fetch(`${API_BASE}/api/writing/history`);
-  return response.json();
-}
-
-/**
- * 删除历史记录
- * @param id 记录 ID
- */
-export async function deleteHistoryItem(id: string): Promise<void> {
-  await fetch(`${API_BASE}/api/writing/history/${id}`, {
-    method: 'DELETE',
-  });
-}
-```
-
-### 写作逻辑 Hook (src/hooks/useWriting.ts)
-
-```typescript
-import { useState, useCallback } from 'react';
-import { WritingRequest, WritingResponse, WritingStyle, WritingAction } from '../types';
-import { generateWriting } from '../services/api';
-
-interface UseWritingReturn {
-  content: string;
-  result: string;
-  loading: boolean;
-  error: string | null;
-  style: WritingStyle;
-  setStyle: (style: WritingStyle) => void;
-  setContent: (content: string) => void;
-  handleAction: (action: WritingAction) => Promise<void>;
-  clearResult: () => void;
-}
-
-/**
- * 写作功能核心 Hook
- * 管理写作状态和处理写作请求
- */
-export function useWriting(): UseWritingReturn {
-  const [content, setContent] = useState('');
-  const [result, setResult] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [style, setStyle] = useState<WritingStyle>(WritingStyle.FORMAL);
-
-  /**
-   * 执行写作操作
-   * @param action 操作类型
-   */
-  const handleAction = useCallback(async (action: WritingAction) => {
-    if (!content.trim()) {
-      setError('请输入内容');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const request: WritingRequest = {
-        content,
-        style,
-        action,
-        temperature: action === WritingAction.CREATIVE ? 0.8 : 0.5,
-      };
-
-      const response = await generateWriting(request);
-      setResult(response.result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '未知错误');
-    } finally {
-      setLoading(false);
-    }
-  }, [content, style]);
-
-  const clearResult = useCallback(() => {
-    setResult('');
-    setError(null);
-  }, []);
-
-  return {
-    content,
-    result,
-    loading,
-    error,
-    style,
-    setStyle,
-    setContent,
-    handleAction,
-    clearResult,
-  };
-}
-```
-
-### 编辑器组件 (src/components/Editor.tsx)
-
-```typescript
-import React from 'react';
-import { WritingAction } from '../types';
-
-interface EditorProps {
-  content: string;
-  result: string;
-  loading: boolean;
-  error: string | null;
-  onContentChange: (value: string) => void;
-  onAction: (action: WritingAction) => void;
-  onClear: () => void;
-}
-
-/**
- * 编辑器组件
- * 提供文本输入和结果显示功能
- */
-export const Editor: React.FC<EditorProps> = ({
-  content,
-  result,
-  loading,
-  error,
-  onContentChange,
-  onAction,
-  onClear,
-}) => {
-  return (
-    <div className="flex flex-col h-full gap-4">
-      {/* 输入区域 */}
-      <div className="flex-1">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          输入内容
-        </label>
-        <textarea
-          value={content}
-          onChange={(e) => onContentChange(e.target.value)}
-          placeholder="输入主题、关键词或段落..."
-          className="w-full h-48 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
-
-      {/* 操作按钮 */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => onAction(WritingAction.GENERATE)}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? '生成中...' : '生成文章'}
-        </button>
-        <button
-          onClick={() => onAction(WritingAction.CONTINUE)}
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-        >
-          续写
-        </button>
-        <button
-          onClick={() => onAction(WritingAction.POLISH)}
-          disabled={loading}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-        >
-          润色
-        </button>
-        <button
-          onClick={() => onAction(WritingAction.SHORTEN)}
-          disabled={loading}
-          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-        >
-          精简
-        </button>
-        <button
-          onClick={() => onAction(WritingAction.EXPAND)}
-          disabled={loading}
-          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-        >
-          扩展
-        </button>
-        <button
-          onClick={onClear}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-        >
-          清空
-        </button>
-      </div>
-
-      {/* 错误提示 */}
-      {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-
-      {/* 结果区域 */}
-      {result && (
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            生成结果
-          </label>
-          <div className="w-full h-48 p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-auto whitespace-pre-wrap">
-            {result}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-```
-
-### 服务端 - OpenAI 服务 (server/services/openai.ts)
-
-```typescript
-import OpenAI from 'openai';
-import { WritingRequest, WritingResponse, WritingAction, WritingStyle } from '../../src/types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-/**
- * 构建写作 Prompt
- * @param request 写作请求
- * @returns 系统提示和用户提示
- */
-function buildPrompt(request: WritingRequest): { system: string; user: string } {
-  const styleMap: Record<WritingStyle, string> = {
-    [WritingStyle.FORMAL]: '正式、严谨',
-    [WritingStyle.CASUAL]: '轻松、口语化',
-    [WritingStyle.ACADEMIC]: '学术、专业',
-    [WritingStyle.CREATIVE]: '富有创意、生动',
-    [WritingStyle.BUSINESS]: '商务、简洁',
-  };
-
-  const actionMap: Record<WritingAction, string> = {
-    [WritingAction.GENERATE]: `根据以下主题或关键词，生成一篇${styleMap[request.style]}风格的文章。要求结构清晰、内容充实。`,
-    [WritingAction.CONTINUE]: `基于以下内容，继续${styleMap[request.style]}风格写作。保持上下文连贯，自然延伸。`,
-    [WritingAction.POLISH]: `对以下内容进行润色优化。保持${styleMap[request.style]}风格，提升表达质量，修正语法错误。`,
-    [WritingAction.SHORTEN]: `将以下内容精简压缩。保留核心信息，去除冗余表达，保持${styleMap[request.style]}风格。`,
-    [WritingAction.EXPAND]: `对以下内容进行扩展丰富。增加细节、例子或论证，保持${styleMap[request.style]}风格。`,
-  };
-
-  return {
-    system: `你是一位专业的写作助手，擅长根据用户需求生成高质量的文本内容。请用中文回复。`,
-    user: `${actionMap[request.action]}\n\n${request.content}`,
-  };
-}
-
-/**
- * 调用 OpenAI 生成文本
- * @param request 写作请求
- * @returns 写作响应
- */
-export async function generateText(request: WritingRequest): Promise<WritingResponse> {
-  const { system, user } = buildPrompt(request);
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: user },
-    ],
-    temperature: request.temperature ?? 0.7,
-    max_tokens: 2000,
-  });
-
-  const result = completion.choices[0]?.message?.content || '';
-  const tokens_used = completion.usage?.total_tokens || 0;
-
-  return {
-    result,
-    tokens_used,
-    model: 'gpt-4',
-  };
-}
-```
-
-### 服务端 - API 路由 (server/routes/writing.ts)
-
-```typescript
-import { Router } from 'express';
-import { generateText } from '../services/openai';
-import { WritingRequest, HistoryItem } from '../../src/types';
-import { v4 as uuidv4 } from 'uuid';
-
-const router = Router();
-
-// 内存存储历史记录（生产环境应使用数据库）
-const history: HistoryItem[] = [];
-
-/**
- * POST /api/writing/generate
- * 生成写作内容
- */
-router.post('/generate', async (req, res) => {
-  try {
-    const request: WritingRequest = req.body;
-
-    // 参数校验
-    if (!request.content?.trim()) {
-      return res.status(400).json({ message: '内容不能为空' });
-    }
-
-    const response = await generateText(request);
-
-    // 保存历史记录
-    const historyItem: HistoryItem = {
-      id: uuidv4(),
-      timestamp: Date.now(),
-      request,
-      response,
-    };
-    history.unshift(historyItem);
-
-    // 限制历史记录数量
-    if (history.length > 100) {
-      history.pop();
-    }
-
-    res.json(response);
-  } catch (error) {
-    console.error('生成失败:', error);
-    res.status(500).json({
-      message: error instanceof Error ? error.message : '生成失败',
-    });
-  }
-});
-
-/**
- * GET /api/writing/history
- * 获取历史记录
- */
-router.get('/history', (req, res) => {
-  res.json(history);
-});
-
-/**
- * DELETE /api/writing/history/:id
- * 删除历史记录
- */
-router.delete('/history/:id', (req, res) => {
-  const index = history.findIndex((item) => item.id === req.params.id);
-  if (index > -1) {
-    history.splice(index, 1);
-  }
-  res.status(204).send();
-});
-
-export default router;
-```
-
-### 服务端入口 (server/index.ts)
-
-```typescript
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import writingRoutes from './routes/writing';
-
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 3001;
-
-// 中间件
-app.use(cors());
-app.use(express.json());
-
-// 路由
-app.use('/api/writing', writingRoutes);
-
-// 健康检查
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// 启动服务
-app.listen(PORT, () => {
-  console.log(`🚀 服务端运行在 http://localhost:${PORT}`);
-});
-```
-
-### 前端入口 (src/main.tsx)
-
-```typescript
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-```
-
-### 根组件 (src/App.tsx)
-
-```typescript
-import React, { useState } from 'react';
-import { Editor } from './components/Editor';
-import { Sidebar } from './components/Sidebar';
-import { HistoryPanel } from './components/HistoryPanel';
-import { useWriting } from './hooks/useWriting';
-import { WritingStyle } from './types';
-
-/**
- * 应用根组件
- */
-const App: React.FC = () => {
-  const {
-    content,
-    result,
-    loading,
-    error,
-    style,
-    setStyle,
-    setContent,
-    handleAction,
-    clearResult,
-  } = useWriting();
-
-  const [showHistory, setShowHistory] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {/* 头部 */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">AI 写作助手</h1>
-          <div className="flex items-center gap-4">
-            <select
-              value={style}
-              onChange={(e) => setStyle(e.target.value as WritingStyle)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value={WritingStyle.FORMAL}>正式风格</option>
-              <option value={WritingStyle.CASUAL}>轻松风格</option>
-              <option value={WritingStyle.ACADEMIC}>学术风格</option>
-              <option value={WritingStyle.CREATIVE}>创意风格</option>
-              <option value={WritingStyle.BUSINESS}>商务风格</option>
-            </select>
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900"
-            >
-              历史记录
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* 主体内容 */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          {/* 编辑器 */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm p-6">
-            <Editor
-              content={content}
-              result={result}
-              loading={loading}
-              error={error}
-              onContentChange={setContent}
-              onAction={handleAction}
-              onClear={clearResult}
-            />
-          </div>
-
-          {/* 历史记录面板 */}
-          {showHistory && (
-            <div className="w-80">
-              <HistoryPanel />
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default App;
+## 七、这个项目最值得看的代码点
+
+### 1. 前端主流程
+
+当前前端主流程已经升级为企业工作流：
+
+- 作者填写标题、模板、摘要并生成草稿
+- 系统自动执行品牌规则扫描并返回合规状态
+- 作者根据风险提示修正文案后提交审核
+- 审核人与发布人继续完成后续状态流转
+- `HistoryPanel.tsx` 查看单据与审计轨迹
+
+这个结构非常适合新手理解 AI 工具类产品的最小前端闭环。
+
+### 2. 后端接口设计
+
+当前后端主要提供企业工作流相关接口：
+
+- `GET /api/writing/templates`
+- `GET /api/writing/documents`
+- `POST /api/writing/documents/generate`
+- `POST /api/writing/documents/:id/submit-review`
+- `POST /api/writing/documents/:id/review`
+- `POST /api/writing/documents/:id/publish`
+
+这套设计对应的是一个更贴近企业内容生产的接口模型：
+
+- 草稿生成与版本递增
+- 提审、审核、发布的状态流转
+- 审计日志与持久化单据管理
+- 品牌规则校验与提审拦截
+
+### 3. mock 降级策略
+
+这个项目最值得学习的地方之一，是 `server/services/openai.ts` 里做了 mock 降级：
+
+- 有 API Key 就调用真实模型
+- 没有 API Key 就返回模拟写作结果
+
+这对于项目实战非常重要，因为它意味着：
+
+- 项目不依赖外部 API 也能演示
+- 更适合作为练习项目或作品集 Demo
+
+### 4. Prompt 构建方式
+
+后端把“风格”和“动作”都映射成 Prompt 逻辑，这说明：
+
+- AI 产品的很多能力其实不是来自复杂架构
+- 而是来自正确的任务拆解和 Prompt 设计
+
+---
+
+## 八、如果你是产品经理，应该重点观察什么
+
+做这个项目时，不要只从代码角度看，更要从产品角度看下面几个问题：
+
+### 1. 为什么是这五个动作
+
+生成、续写、润色、精简、扩展，其实对应的是内容生产里最常见的五类用户意图。
+
+### 2. 为什么要做风格切换
+
+风格切换本质上是在提高工具的可配置性和场景适配性。
+
+### 3. 为什么历史记录重要
+
+AI 工具如果没有历史记录，用户很难复盘结果，也很难持续使用。历史记录虽然简单，但能显著提高产品完整度。
+
+### 4. 为什么 mock 模式重要
+
+对于实战项目来说，mock 模式不仅是技术便利，更是产品演示能力的一部分。
+
+---
+
+## 九、建议你至少做一次改造
+
+如果你只跑起来，这个项目的学习价值会有限。建议至少做一类改造：
+
+### 1. 交互改造
+
+例如：
+
+- 增加标题输入和正文输入分区
+- 增加“复制结果”按钮
+- 增加 Token 使用量展示
+
+### 2. 能力改造
+
+例如：
+
+- 增加“改写为摘要”动作
+- 增加“生成邮件”或“生成 PRD”模板
+- 增加英文输出或双语输出
+
+### 3. 产品改造
+
+例如：
+
+- 把它改造成营销文案助手
+- 把它改造成学术写作助手
+- 把它改造成产品文档助手
+
+只要你做过一次方向性改造，这个项目就更像你的项目，而不是公共样例。
+
+---
+
+## 十、怎么把这个项目讲成作品集
+
+如果你要把这个项目写进作品集或面试里，建议用下面的说法组织：
+
+### 项目定位
+
+- 一个面向知识工作者的 AI 写作辅助工具
+
+### 核心能力
+
+- 多风格文本生成
+- 多动作文本处理
+- 历史记录管理
+- mock/API 双模式运行
+
+### 关键取舍
+
+- 用最小功能闭环换取最快可运行版本
+- 先不做用户系统和数据库，降低复杂度
+- 通过 mock 模式保证演示稳定性
+
+### 下一步方向
+
+- 接入真实权限中心和组织角色
+- 将本地规则引擎替换为可配置的品牌规则中心
+- 对接真实发布渠道或 CMS
+
+这样讲，会比“我做了一个 AI 写作工具”更有说服力。
+
+---
+
+## 十一、最小复盘模板
+
+你可以直接用下面这份模板复盘这个项目：
+
+```md
+## Project01 复盘
+
+### 1. 项目目标
+
+- 用最小成本搭建一个可运行的 AI 写作工具
+
+### 2. 目标用户
+
+- 内容运营、学生、产品经理、知识工作者
+
+### 3. 核心能力
+
+- 文本生成、续写、润色、精简、扩展
+
+### 4. 当前优点
+
+- 结构简单、容易运行、支持 mock、适合演示
+
+### 5. 当前问题
+
+- 数据未持久化、能力边界较浅、缺少模板化场景
+
+### 6. 下一步迭代
+
+- 增加模板库、结果复制、数据库持久化、任务型输入
 ```
 
 ---
 
-## 配置文件
+## 十二、这个项目适合作为什么起点
 
-### package.json
+如果你后面还要继续做更多项目，这个项目最适合作为以下几个方向的起点：
 
-```json
-{
-  "name": "ai-writing-assistant",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "server": "cd server && npm run dev"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.0",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.8"
-  }
-}
-```
+- 所有 AI 工具型产品的最小模板
+- Prompt 驱动型产品的入门模板
+- 前后端分离 AI Demo 的入门模板
+- 作品集里的“第一个可运行 AI 项目”
 
-### server/package.json
-
-```json
-{
-  "name": "ai-writing-server",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "openai": "^4.24.1",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
-    "@types/uuid": "^9.0.7",
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
-  }
-}
-```
-
-### vite.config.ts
-
-```typescript
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-    },
-  },
-});
-```
-
-### tailwind.config.js
-
-```javascript
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};
-```
-
-### tsconfig.json
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
-}
-```
+所以它的价值不在于复杂，而在于“特别适合打基础”。
 
 ---
 
-## 部署指南
+## 版本记录
 
-### Docker 部署
+### v1.2.0
 
-```dockerfile
-# Dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-# 安装依赖
-COPY package*.json ./
-RUN npm install
-
-# 构建
-COPY . .
-RUN npm run build
-
-# 启动
-EXPOSE 5173
-CMD ["npm", "run", "preview"]
-```
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-
-services:
-  frontend:
-    build: .
-    ports:
-      - '5173:5173'
-    environment:
-      - VITE_API_URL=http://server:3001
-
-  server:
-    build: ./server
-    ports:
-      - '3001:3001'
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - PORT=3001
-```
-
----
-
-## 扩展建议
-
-1. **用户系统**：添加登录注册，支持多用户
-2. **数据持久化**：使用 PostgreSQL/MongoDB 存储数据
-3. **文件导入**：支持 Word/PDF 导入导出
-4. **模板库**：预设常见写作模板
-5. **协作功能**：支持多人实时协作编辑
+- 重构为教程化项目实战文档
+- 修复旧版 README 与真实目录结构不一致的问题
+- 补充项目目标、运行说明、产品视角、改造建议与作品集表达方式

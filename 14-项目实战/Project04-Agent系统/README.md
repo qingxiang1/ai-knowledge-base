@@ -1,903 +1,480 @@
 <!--
-  文件描述: 智能Agent系统项目完整实战指南，包含需求分析、架构设计、代码实现与部署说明
-  作者: AI-PM-Knowledge
-  创建日期: 2026-06-04
-  最后修改日期: 2026-06-04
+  创建时间: 2026-06-12
+  文件名: README.md
+  文件描述: Agent 系统项目实战指南，面向新手和技术转型者系统讲解项目目标、真实目录结构、运行方式、当前 Agent 能力边界、改造方向与复盘方法
+  作者: Felix(LQX5731@163.com)
+  版本号: v1.2.0
+  最后更新时间: 2026-06-12
 -->
 
 # Project04 - Agent系统
 
-> 一个基于 Python + LangChain + React 的智能 Agent 应用，支持任务规划、工具调用、多轮对话和自主执行。
+> 这是一个适合学习 Agent 产品原型的项目实战案例。当前项目采用 `React + TypeScript + Vite + Express` 实现，重点完成了 Agent 聊天界面、思考过程展示、工具调用展示和 mock/API 双模式演示，但它还不是一个已经具备真实任务规划、真实工具执行和多轮记忆管理的完整 Agent 框架。
 
----
+## 一、先理解这个项目在练什么
 
-## 项目概述
+这个项目最适合练的是以下三类能力：
 
-### 功能特性
+1. 把“聊天助手”升级成“看起来会思考、会调工具的 Agent 原型”。
+2. 学会把 Agent 产品的前台体验拆成回答、推理过程、工具调用三个层次。
+3. 理解一个 Agent Demo 与真实可执行 Agent 系统之间的技术差距。
 
-- **任务规划**：自动分解复杂任务为可执行步骤
-- **工具调用**：支持搜索引擎、计算器、天气查询等工具
-- **记忆管理**：短期对话记忆 + 长期知识存储
-- **多轮对话**：上下文感知的连续交互
-- **自主执行**：根据规划自动调用工具完成任务
-- **可视化**：Agent 思考过程可视化展示
+如果你是初学者，这个项目能帮助你第一次建立 Agent 产品的基础心智：
 
-### 技术栈
+- 普通聊天机器人只给答案
+- Agent 产品不仅给答案，还会展示计划、步骤和工具痕迹
 
-```
-Agent框架: LangChain + LangGraph
-LLM: OpenAI GPT-4 / Claude
-前端: React 18 + TypeScript + Monaco Editor
-后端: Python 3.10 + FastAPI
-记忆: Redis (短期) + PostgreSQL (长期)
-部署: Docker Compose
-```
+如果你是技术人员，这个项目很适合你用来练习：
 
----
+- React 聊天界面组织
+- Agent 结果结构化展示
+- 前后端接口串联
+- mock 模式与真实模型模式切换
+- 从 Agent UI Demo 继续演化到真实 Agent 执行系统
 
-## 项目结构
+如果你是想转型 AI 产品经理，这个项目最重要的学习价值在于：
 
-```
+- 识别“Agent 感”是怎么被设计出来的
+- 理解哪些能力只是呈现层
+- 判断哪些底层能力才真正决定 Agent 是否可交付
+
+## 二、项目目标与用户场景
+
+这个项目要模拟的核心问题是：
+
+> 当用户给出一个任务或复杂问题时，系统不仅返回答案，还能展示思考步骤和工具调用痕迹，让用户感受到这是一个“会执行”的智能助手。
+
+它适合模拟的场景包括：
+
+- 让 AI 帮你拆解一个任务
+- 让 AI 看起来像会搜索、会分析、会调用工具
+- 展示 Agent 产品在企业演示中的基本交互形态
+- 让团队快速理解 Agent 与普通问答机器人的体验差异
+
+但要明确，当前项目更偏向“Agent 体验原型”，而不是“具备真实工具编排、状态机和自动执行闭环的生产级 Agent 系统”。
+
+## 三、当前项目能力概览
+
+根据真实代码，这个项目当前已经实现了：
+
+- 前端 Agent 聊天界面
+- 多轮消息展示
+- “思考过程”分段展示
+- “工具调用”结果展示
+- 会话级 `session_id` 透传
+- 后端 `POST /api/v1/agent/chat` 接口
+- `OPENAI_API_KEY` 存在与否两种运行模式
+
+但它当前也有非常明确的边界：
+
+- 没有真实的 WebSocket 流式对话能力
+- 没有真实的工具注册、工具选择、工具执行和工具返回闭环
+- 没有真实的 ReAct、Plan-and-Execute 或状态图工作流
+- 没有真实会话记忆持久化
+- API 模式下只是直接调用模型回答，不会真的执行工具
+- “思考过程”和“工具调用”在很大程度上是演示型结构数据
+
+因此，当前项目更准确的定位应该是：
+
+> 一个带有 Agent 交互形态的产品原型，而不是一个完整的 Agent Runtime。
+
+## 四、真实目录结构
+
+下面是当前项目与真实代码一致的结构：
+
+```text
 Project04-Agent系统/
+├── server/
+│   ├── routes/
+│   │   └── agent.ts
+│   ├── .env.example
+│   ├── index.ts
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   └── tsconfig.json
+├── src/
+│   ├── components/
+│   │   └── AgentChat.tsx
+│   ├── services/
+│   │   └── api.ts
+│   ├── types/
+│   │   └── index.ts
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx
 ├── README.md
-├── docker-compose.yml
-├── backend/
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── agent/
-│   │   │   ├── __init__.py
-│   │   │   ├── core.py           # Agent 核心逻辑
-│   │   │   ├── graph.py          # LangGraph 工作流
-│   │   │   ├── tools.py          # 工具定义
-│   │   │   └── memory.py         # 记忆管理
-│   │   ├── models/
-│   │   │   └── schemas.py        # 数据模型
-│   │   └── api/
-│   │       └── routes.py         # API 路由
-│   ├── requirements.txt
-│   └── Dockerfile
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   │   ├── AgentChat.tsx     # Agent 聊天界面
-    │   │   ├── ThoughtChain.tsx  # 思考链展示
-    │   │   └── ToolPanel.tsx     # 工具面板
-    │   └── services/
-    │       └── agentApi.ts
-    └── package.json
+├── index.html
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```
 
----
+这与旧 README 中描述的 `backend/ frontend/ Python + LangChain + LangGraph + Redis` 结构完全不是同一套实现。
 
-## 核心代码实现
+当前真实项目是：
 
-### Agent 核心逻辑 (backend/app/agent/core.py)
+- 前端：`React + TypeScript + Vite`
+- 后端：`Express + TypeScript`
+- 模型调用：`openai`
 
-```python
-"""
-Agent 核心模块
+## 五、技术栈与实现方式
 
-实现 ReAct (Reasoning + Acting) 范式的智能 Agent。
-"""
+### 1. 当前真实可运行部分
 
-from typing import TypedDict, Annotated, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
-from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, END
-from app.agent.tools import get_tools
-from app.agent.memory import MemoryManager
+- 前端：React 18 + TypeScript + Vite
+- 样式：Tailwind CSS
+- 后端：Express + TypeScript
+- 模型 SDK：OpenAI Node SDK
+- 本地开发：前端 `5173`，后端 `8000`
 
+### 2. 当前没有真正落地但常被误认为“已经实现”的部分
 
-class AgentState(TypedDict):
-    """Agent 状态定义"""
-    messages: Annotated[Sequence[BaseMessage], "对话消息列表"]
-    next_step: Annotated[str, "下一步动作"]
-    tool_calls: Annotated[list, "工具调用记录"]
+旧 README 提到的这些能力，在当前仓库里并不存在真实实现：
 
+- LangChain
+- LangGraph
+- Redis 记忆
+- WebSocket 流式推理
+- 多工具编排执行
+- 任务图编排
 
-class ReActAgent:
-    """
-    ReAct Agent 实现
+这意味着你在阅读这个项目时，必须养成一个非常重要的习惯：
 
-    结合推理(Reasoning)和行动(Acting)，通过迭代思考-行动-观察循环解决问题。
-    """
+> 不要因为页面上出现了“思考过程”和“工具调用”两个区块，就默认后端已经具备完整 Agent 能力。
 
-    def __init__(self, model_name: str = "gpt-4", temperature: float = 0.1):
-        self.llm = ChatOpenAI(
-            model=model_name,
-            temperature=temperature,
-        )
-        self.tools = get_tools()
-        self.memory = MemoryManager()
-        self.graph = self._build_graph()
+## 六、运行方式
 
-    def _build_graph(self) -> StateGraph:
-        """构建 LangGraph 工作流"""
-        workflow = StateGraph(AgentState)
+### 1. 安装前端依赖
 
-        # 添加节点
-        workflow.add_node("think", self._think)
-        workflow.add_node("act", self._act)
-        workflow.add_node("observe", self._observe)
+在项目根目录执行：
 
-        # 添加边
-        workflow.set_entry_point("think")
-        workflow.add_edge("think", "act")
-        workflow.add_edge("act", "observe")
-        workflow.add_conditional_edges(
-            "observe",
-            self._should_continue,
-            {
-                "continue": "think",
-                "end": END,
-            },
-        )
-
-        return workflow.compile()
-
-    def _think(self, state: AgentState) -> AgentState:
-        """
-        思考节点：分析当前状态，决定下一步行动
-        """
-        messages = list(state["messages"])
-
-        # 构建系统提示
-        system_prompt = """你是一个智能助手，通过思考和使用工具来解决问题。
-
-可用工具：
-{tools}
-
-请按以下格式思考：
-1. 分析：当前情况分析
-2. 计划：下一步行动计划
-3. 行动：选择工具或直接回答
-
-如果需要使用工具，请明确说明工具名称和参数。""".format(
-            tools="\n".join([f"- {t.name}: {t.description}" for t in self.tools])
-        )
-
-        # 调用 LLM 思考
-        response = self.llm.invoke(
-            [("system", system_prompt)] + messages
-        )
-
-        messages.append(AIMessage(content=response.content))
-
-        return {
-            **state,
-            "messages": messages,
-            "next_step": "act",
-        }
-
-    def _act(self, state: AgentState) -> AgentState:
-        """
-        行动节点：执行工具调用
-        """
-        messages = list(state["messages"])
-        last_message = messages[-1]
-
-        tool_calls = list(state.get("tool_calls", []))
-
-        # 解析工具调用意图（简化实现，实际应使用结构化输出）
-        for tool in self.tools:
-            if tool.name in last_message.content:
-                try:
-                    # 提取参数（简化处理）
-                    result = tool.run(last_message.content)
-                    tool_calls.append({
-                        "tool": tool.name,
-                        "result": result,
-                    })
-                    messages.append(ToolMessage(
-                        content=str(result),
-                        tool_call_id=tool.name,
-                    ))
-                except Exception as e:
-                    messages.append(ToolMessage(
-                        content=f"工具调用失败: {str(e)}",
-                        tool_call_id=tool.name,
-                    ))
-
-        return {
-            **state,
-            "messages": messages,
-            "tool_calls": tool_calls,
-        }
-
-    def _observe(self, state: AgentState) -> AgentState:
-        """
-        观察节点：处理工具执行结果
-        """
-        # 观察结果已在 act 节点添加到消息中
-        return {
-            **state,
-            "next_step": "think",
-        }
-
-    def _should_continue(self, state: AgentState) -> str:
-        """
-        判断是否应该继续循环
-
-        Returns:
-            "continue" 继续迭代，"end" 结束
-        """
-        messages = state["messages"]
-        last_message = messages[-1]
-
-        # 如果最后一条是 AI 消息且没有工具调用意图，结束
-        if isinstance(last_message, AIMessage):
-            has_tool_intent = any(
-                t.name in last_message.content for t in self.tools
-            )
-            if not has_tool_intent:
-                return "end"
-
-        # 限制最大迭代次数
-        if len(state.get("tool_calls", [])) > 10:
-            return "end"
-
-        return "continue"
-
-    async def run(self, query: str, session_id: str = "default") -> dict:
-        """
-        运行 Agent
-
-        Args:
-            query: 用户查询
-            session_id: 会话 ID
-
-        Returns:
-            执行结果，包含回答和思考过程
-        """
-        # 加载历史记忆
-        history = await self.memory.get_history(session_id)
-
-        # 初始化状态
-        initial_state: AgentState = {
-            "messages": history + [HumanMessage(content=query)],
-            "next_step": "think",
-            "tool_calls": [],
-        }
-
-        # 执行工作流
-        result = await self.graph.ainvoke(initial_state)
-
-        # 提取最终回答
-        final_answer = ""
-        for msg in reversed(result["messages"]):
-            if isinstance(msg, AIMessage) and not any(
-                t.name in msg.content for t in self.tools
-            ):
-                final_answer = msg.content
-                break
-
-        # 保存记忆
-        await self.memory.save(session_id, result["messages"])
-
-        return {
-            "answer": final_answer,
-            "thought_process": [
-                {"role": type(m).__name__, "content": m.content}
-                for m in result["messages"]
-            ],
-            "tool_calls": result["tool_calls"],
-        }
+```bash
+pnpm install
 ```
 
-### 工具定义 (backend/app/agent/tools.py)
+### 2. 安装服务端依赖
 
-```python
-"""
-工具定义模块
+进入 `server` 目录执行：
 
-定义 Agent 可调用的外部工具。
-"""
-
-import json
-import math
-from typing import Any
-from langchain_core.tools import BaseTool, tool
-
-
-@tool
-def search_web(query: str) -> str:
-    """
-    网络搜索工具
-
-    Args:
-        query: 搜索关键词
-
-    Returns:
-        搜索结果摘要
-    """
-    # 实际实现应调用搜索引擎 API（如 SerpAPI、Bing API）
-    # 这里使用模拟数据演示
-    return f"[模拟搜索结果] 关于 '{query}' 的搜索结果：\n1. 相关网页1\n2. 相关网页2\n3. 相关网页3"
-
-
-@tool
-def calculator(expression: str) -> str:
-    """
-    计算器工具
-
-    Args:
-        expression: 数学表达式，如 "2 + 2 * 3"
-
-    Returns:
-        计算结果
-    """
-    try:
-        # 安全计算：只允许基本数学运算
-        allowed_names = {
-            "sqrt": math.sqrt,
-            "pow": math.pow,
-            "abs": abs,
-            "round": round,
-            "max": max,
-            "min": min,
-        }
-        result = eval(expression, {"__builtins__": {}}, allowed_names)
-        return f"计算结果: {result}"
-    except Exception as e:
-        return f"计算错误: {str(e)}"
-
-
-@tool
-def get_weather(city: str) -> str:
-    """
-    天气查询工具
-
-    Args:
-        city: 城市名称
-
-    Returns:
-        天气信息
-    """
-    # 实际实现应调用天气 API
-    return f"[模拟天气] {city} 今天天气晴朗，气温 25°C，适宜出行。"
-
-
-@tool
-def get_current_time() -> str:
-    """
-    获取当前时间
-
-    Returns:
-        当前时间字符串
-    """
-    from datetime import datetime
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
-@tool
-def code_interpreter(code: str, language: str = "python") -> str:
-    """
-    代码解释器
-
-    Args:
-        code: 代码内容
-        language: 编程语言
-
-    Returns:
-        执行结果或错误信息
-    """
-    if language != "python":
-        return f"暂不支持 {language} 语言"
-
-    try:
-        # 使用受限环境执行代码（生产环境应使用沙箱）
-        import io
-        import sys
-
-        stdout = io.StringIO()
-        sys.stdout = stdout
-
-        exec(code, {"__builtins__": {}}, {})
-
-        sys.stdout = sys.__stdout__
-        output = stdout.getvalue()
-
-        return output or "代码执行完成，无输出"
-    except Exception as e:
-        return f"执行错误: {str(e)}"
-
-
-def get_tools() -> list[BaseTool]:
-    """获取所有可用工具"""
-    return [
-        search_web,
-        calculator,
-        get_weather,
-        get_current_time,
-        code_interpreter,
-    ]
+```bash
+cd server
+pnpm install
 ```
 
-### 记忆管理 (backend/app/agent/memory.py)
+### 3. 配置环境变量
 
-```python
-"""
-记忆管理模块
+服务端提供了 `.env.example`，可复制为 `.env`：
 
-实现短期和长期记忆存储。
-"""
-
-import json
-from typing import List
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
-import redis.asyncio as redis
-
-
-class MemoryManager:
-    """
-    记忆管理器
-
-    使用 Redis 存储短期对话历史，支持会话隔离。
-    """
-
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
-        self.redis = redis.from_url(redis_url, decode_responses=True)
-        self.max_history = 20  # 最大保留消息数
-
-    def _serialize_message(self, msg: BaseMessage) -> dict:
-        """序列化消息"""
-        return {
-            "type": type(msg).__name__,
-            "content": msg.content,
-            "additional_kwargs": msg.additional_kwargs,
-        }
-
-    def _deserialize_message(self, data: dict) -> BaseMessage:
-        """反序列化消息"""
-        msg_type = data["type"]
-        content = data["content"]
-
-        if msg_type == "HumanMessage":
-            return HumanMessage(content=content)
-        elif msg_type == "AIMessage":
-            return AIMessage(content=content)
-        elif msg_type == "ToolMessage":
-            return ToolMessage(
-                content=content,
-                tool_call_id=data.get("additional_kwargs", {}).get("tool_call_id", ""),
-            )
-        else:
-            return BaseMessage(content=content)
-
-    async def save(self, session_id: str, messages: List[BaseMessage]) -> None:
-        """
-        保存对话历史
-
-        Args:
-            session_id: 会话 ID
-            messages: 消息列表
-        """
-        key = f"agent:session:{session_id}"
-
-        # 只保留最近的消息
-        trimmed = messages[-self.max_history:]
-        data = [self._serialize_message(m) for m in trimmed]
-
-        await self.redis.setex(key, 86400, json.dumps(data))  # 24小时过期
-
-    async def get_history(self, session_id: str) -> List[BaseMessage]:
-        """
-        获取对话历史
-
-        Args:
-            session_id: 会话 ID
-
-        Returns:
-            消息列表
-        """
-        key = f"agent:session:{session_id}"
-        data = await self.redis.get(key)
-
-        if not data:
-            return []
-
-        messages = json.loads(data)
-        return [self._deserialize_message(m) for m in messages]
-
-    async def clear(self, session_id: str) -> None:
-        """清空会话历史"""
-        key = f"agent:session:{session_id}"
-        await self.redis.delete(key)
+```bash
+cd server
+cp .env.example .env
 ```
 
-### API 路由 (backend/app/api/routes.py)
+当前可配置项非常简单：
 
-```python
-"""
-Agent API 路由
-
-提供 Agent 交互的 RESTful API。
-"""
-
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel, Field
-from app.agent.core import ReActAgent
-
-router = APIRouter(prefix="/agent", tags=["Agent"])
-
-# 全局 Agent 实例
-agent = ReActAgent()
-
-
-class ChatRequest(BaseModel):
-    """聊天请求"""
-    query: str = Field(..., min_length=1, description="用户输入")
-    session_id: str = Field("default", description="会话标识")
-
-
-class ChatResponse(BaseModel):
-    """聊天响应"""
-    answer: str = Field(..., description="Agent 回答")
-    thought_process: list[dict] = Field(..., description="思考过程")
-    tool_calls: list[dict] = Field(..., description="工具调用记录")
-
-
-@router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    """
-    发送消息与 Agent 对话
-    """
-    result = await agent.run(
-        query=request.query,
-        session_id=request.session_id,
-    )
-    return ChatResponse(**result)
-
-
-@router.websocket("/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str):
-    """
-    WebSocket 实时对话
-
-    提供流式的 Agent 响应。
-    """
-    await websocket.accept()
-
-    try:
-        while True:
-            # 接收用户消息
-            data = await websocket.receive_json()
-            query = data.get("query", "")
-
-            if not query:
-                continue
-
-            # 发送思考开始标记
-            await websocket.send_json({
-                "type": "thinking",
-                "content": "开始思考...",
-            })
-
-            # 执行 Agent
-            result = await agent.run(query, session_id)
-
-            # 发送思考过程
-            for step in result["thought_process"]:
-                await websocket.send_json({
-                    "type": "step",
-                    "role": step["role"],
-                    "content": step["content"][:500],  # 截断长内容
-                })
-
-            # 发送最终回答
-            await websocket.send_json({
-                "type": "answer",
-                "content": result["answer"],
-            })
-
-            # 发送工具调用信息
-            if result["tool_calls"]:
-                await websocket.send_json({
-                    "type": "tools",
-                    "calls": result["tool_calls"],
-                })
-
-    except WebSocketDisconnect:
-        print(f"WebSocket 断开: {session_id}")
-    except Exception as e:
-        await websocket.send_json({
-            "type": "error",
-            "content": str(e),
-        })
-        await websocket.close()
+```env
+OPENAI_API_KEY=
+PORT=8000
 ```
 
-### 前端 Agent 聊天组件 (frontend/src/components/AgentChat.tsx)
+说明如下：
 
-```typescript
-import React, { useState, useRef, useEffect, useCallback } from "react";
+- 不配置 `OPENAI_API_KEY`：进入 mock 模式，适合学习和演示
+- 配置 `OPENAI_API_KEY`：进入 API 模式，后端会调用真实模型生成回答
 
-interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  steps?: Array<{
-    role: string;
-    content: string;
-  }>;
-  tools?: Array<{
-    tool: string;
-    result: string;
-  }>;
-}
+### 4. 启动后端
 
-/**
- * Agent 聊天界面组件
- *
- * 支持 WebSocket 实时通信，展示 Agent 思考过程。
- */
-export const AgentChat: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [connected, setConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const sessionId = useRef(`session_${Date.now()}`);
+在 `server` 目录执行：
 
-  // 连接 WebSocket
-  useEffect(() => {
-    const ws = new WebSocket(
-      `ws://localhost:8000/api/v1/agent/ws/${sessionId.current}`
-    );
-
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => setConnected(false);
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      handleWebSocketMessage(data);
-    };
-
-    wsRef.current = ws;
-
-    return () => ws.close();
-  }, []);
-
-  // 自动滚动
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleWebSocketMessage = (data: any) => {
-    setMessages((prev) => {
-      const last = prev[prev.length - 1];
-
-      switch (data.type) {
-        case "thinking":
-          // 添加或更新思考中消息
-          if (last?.role === "assistant" && last?.content === "思考中...") {
-            return prev;
-          }
-          return [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              role: "assistant",
-              content: "思考中...",
-              steps: [],
-            },
-          ];
-
-        case "step":
-          // 添加思考步骤
-          if (last?.role === "assistant") {
-            const updated = { ...last };
-            updated.steps = [...(updated.steps || []), data];
-            return [...prev.slice(0, -1), updated];
-          }
-          return prev;
-
-        case "answer":
-          // 更新最终回答
-          if (last?.role === "assistant") {
-            return [
-              ...prev.slice(0, -1),
-              { ...last, content: data.content },
-            ];
-          }
-          return prev;
-
-        case "tools":
-          // 添加工具调用记录
-          if (last?.role === "assistant") {
-            return [
-              ...prev.slice(0, -1),
-              { ...last, tools: data.calls },
-            ];
-          }
-          return prev;
-
-        default:
-          return prev;
-      }
-    });
-  };
-
-  const sendMessage = useCallback(() => {
-    if (!input.trim() || !wsRef.current || !connected) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    wsRef.current.send(JSON.stringify({ query: input }));
-    setInput("");
-  }, [input, connected]);
-
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* 头部 */}
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">AI Agent</h1>
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              connected ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-          <span className="text-sm text-gray-500">
-            {connected ? "已连接" : "未连接"}
-          </span>
-        </div>
-      </header>
-
-      {/* 消息列表 */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-3xl rounded-lg p-4 ${
-                msg.role === "user"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white border shadow-sm"
-              }`}
-            >
-              {/* 消息内容 */}
-              <div className="whitespace-pre-wrap">{msg.content}</div>
-
-              {/* 思考过程 */}
-              {msg.steps && msg.steps.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-2">
-                    思考过程:
-                  </p>
-                  <div className="space-y-2">
-                    {msg.steps.map((step, idx) => (
-                      <div
-                        key={idx}
-                        className="text-xs p-2 bg-gray-50 rounded"
-                      >
-                        <span className="font-medium text-blue-600">
-                          {step.role}
-                        </span>
-                        <p className="text-gray-600 mt-1 line-clamp-3">
-                          {step.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 工具调用 */}
-              {msg.tools && msg.tools.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs font-medium text-gray-500 mb-2">
-                    工具调用:
-                  </p>
-                  <div className="space-y-1">
-                    {msg.tools.map((tool, idx) => (
-                      <div
-                        key={idx}
-                        className="text-xs p-2 bg-green-50 text-green-700 rounded"
-                      >
-                        <span className="font-medium">{tool.tool}</span>
-                        <span className="ml-2 text-green-600">✓</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* 输入框 */}
-      <div className="bg-white border-t p-4">
-        <div className="max-w-4xl mx-auto flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="输入任务或问题..."
-            disabled={!connected}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!connected || !input.trim()}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            发送
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+```bash
+pnpm dev
 ```
 
----
+或者在项目根目录执行：
 
-## 配置文件
-
-### backend/requirements.txt
-
-```
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-python-multipart==0.0.6
-pydantic-settings==2.1.0
-langchain==0.1.0
-langchain-openai==0.0.5
-langgraph==0.0.20
-redis==5.0.1
-websockets==12.0
+```bash
+pnpm server
 ```
 
-### docker-compose.yml
+### 5. 启动前端
 
-```yaml
-version: "3.8"
+在项目根目录执行：
 
-services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-
-volumes:
-  redis_data:
+```bash
+pnpm dev
 ```
 
----
+### 6. 访问地址
 
-## 扩展建议
+- 前端页面：`http://localhost:5173`
+- 后端健康检查：`http://localhost:8000/health`
 
-1. **工具扩展**：添加数据库查询、API 调用、邮件发送等工具
-2. **多 Agent 协作**：实现 Agent 之间的任务委派
-3. **计划执行分离**：引入 Plan-and-Execute 模式
-4. **人机协作**：关键步骤请求人工确认
-5. **A2A 协议**：支持与其他 Agent 系统互操作
+项目在 `vite.config.ts` 中配置了 `/api` 代理，因此前端请求会自动转发到 `http://localhost:8000`。
+
+## 七、这个项目最值得看的代码点
+
+建议你按下面顺序阅读。
+
+### 1. `src/App.tsx`
+
+这个文件很简单，但它说明了当前项目的页面组织非常聚焦：
+
+- 入口页只有一个 `AgentChat`
+- 说明项目目标不是复杂后台系统，而是集中打磨 Agent 交互原型
+
+### 2. `src/components/AgentChat.tsx`
+
+这是整个项目最值得看的前端文件。
+
+它完成了 Agent 产品体验层最关键的几件事：
+
+- 用户输入任务或问题
+- 展示用户与助手消息
+- 在回答下方渲染“思考过程”
+- 在回答下方渲染“工具调用”
+- 维护 `session_id`
+
+这部分的学习价值很高，因为它展示了一个 Agent 产品前台体验通常如何比普通聊天机器人多一层结构。
+
+普通聊天页面只需要：
+
+- 用户消息
+- 助手消息
+
+Agent 页面则额外强调：
+
+- 为什么这么回答
+- 中间做了哪些步骤
+- 是否调用过工具
+
+### 3. `src/services/api.ts`
+
+这里把前端请求统一收口到 `chatWithAgent()`。
+
+它的价值在于：
+
+- 组件层逻辑更干净
+- 请求路径统一管理
+- 未来方便扩展流式接口、取消请求、鉴权头等能力
+
+### 4. `src/types/index.ts`
+
+这个文件让我们能非常清楚地看到当前前后端约定的数据结构：
+
+- `answer`
+- `thought_process`
+- `tool_calls`
+
+这说明当前项目的重点不是“复杂工具系统”，而是“如何把 Agent 响应包装成前端能展示的结构化结果”。
+
+### 5. `server/routes/agent.ts`
+
+这是当前项目最关键的后端文件。
+
+它实现了两个模式：
+
+- mock 模式：返回一套看起来像 ReAct 的演示过程
+- API 模式：调用 OpenAI 直接回答，再拼出简化版思考过程
+
+这个文件最值得你观察的，不是它“做成了什么强大的 Agent”，而是它如何用最小成本构造出一个 Agent 原型的演示感。
+
+同时也要看清它的边界：
+
+- 没有真实工具执行
+- 没有真实推理循环
+- 没有任务规划状态
+- 没有执行失败重试
+- 没有多步动作编排
+
+### 6. `server/index.ts`
+
+这个文件确认了服务端是一个非常轻量的 Express 服务：
+
+- 注册 `/api/v1/agent`
+- 提供 `/health` 健康检查
+- 根据是否有 `OPENAI_API_KEY` 展示 `mock/api` 模式
+
+它很适合帮助新手理解一个 AI Demo 后端最小应该具备什么结构。
+
+## 八、从产品和技术角度，应该如何理解这个项目
+
+### 1. 从产品角度看
+
+这个项目已经具备了 Agent 产品原型的三个核心感觉：
+
+- 能接任务
+- 能展示思考
+- 能展示工具痕迹
+
+这三点足以在演示场景里让用户感知“这不是普通聊天机器人”。
+
+### 2. 从技术角度看
+
+它当前主要完成的是体验层与接口层：
+
+- 前端交互结构
+- 响应结构设计
+- mock 数据组织
+- 真实模型调用接入
+
+而真正的 Agent 系统底座还没有完成，例如：
+
+- 工具注册中心
+- 工具参数结构化
+- 执行状态机
+- 任务拆解
+- 观察与反思循环
+- 记忆系统
+- 多轮状态持久化
+
+### 3. 从学习角度看
+
+这个项目特别适合作为“Agent 产品认知升级”的样本：
+
+1. 先理解 Agent 页面长什么样。
+2. 再理解 Agent 接口该返回哪些结构化数据。
+3. 最后再理解真实 Agent Runtime 还需要补哪些底层能力。
+
+## 九、如果你是产品经理，应该重点观察什么
+
+如果你想从这个项目学习 Agent 产品设计，建议重点观察下面几个判断题。
+
+### 1. 展示思考过程，不等于真的会思考
+
+当前前端展示了思考过程卡片，但这并不自动意味着系统具有真实的推理链执行能力。
+
+你要学会区分：
+
+- 思考过程作为“界面呈现”
+- 思考过程作为“真实执行轨迹”
+
+这两者在产品设计和技术实现里不是同一个层级。
+
+### 2. 展示工具调用，不等于真的会用工具
+
+当前项目里，“工具调用”更多是一种结构化展示结果，而不是真实工具框架。
+
+一个真正可用的 Agent 工具系统至少要解决：
+
+- 工具列表如何注册
+- 工具参数如何校验
+- 工具执行失败如何重试
+- 多工具顺序如何安排
+- 工具结果如何回写上下文
+
+### 3. Agent 产品真正难的是稳定执行
+
+很多 Agent Demo 最大的误区，是把“会展示执行过程”误当成“会稳定完成任务”。
+
+真实企业场景更关心的是：
+
+- 任务是否可控
+- 工具是否可靠
+- 结果是否可追溯
+- 异常是否可中断
+- 人工是否能接管
+
+## 十、建议你至少做一次改造
+
+如果你要把这个项目写进作品集，建议至少做一次真正提高含金量的改造。
+
+### 改造方向 1：补齐真实工具执行
+
+这是最关键的一步。
+
+你可以先做几个最小可用工具：
+
+- 搜索工具
+- 天气工具
+- 计算器工具
+- 网页摘要工具
+
+然后补齐：
+
+- 工具定义
+- 工具参数校验
+- 工具执行结果回写
+- 工具调用失败兜底
+
+### 改造方向 2：把“思考过程”从伪造文本升级为真实执行轨迹
+
+当前的思考过程更偏演示型。
+
+你可以继续改造成：
+
+- 规划步骤
+- 工具选择步骤
+- 工具执行结果
+- 最终总结
+
+这样前端展示的每一步都会更可信。
+
+### 改造方向 3：增加真实会话记忆
+
+当前虽然前端透传了 `session_id`，但并没有完整会话记忆系统。
+
+你可以补齐：
+
+- 按会话保存历史
+- 对历史做裁剪
+- 支持清空会话
+- 支持多会话切换
+
+### 改造方向 4：支持流式响应
+
+Agent 产品很适合使用流式交互，因为用户天然希望“边想边看”。
+
+你可以继续补：
+
+- SSE 或 WebSocket
+- 中间步骤逐步返回
+- 工具调用实时回显
+- 最终答案流式输出
+
+### 改造方向 5：补齐企业级能力
+
+如果你想往企业方向推进，可以继续增加：
+
+- 任务审计日志
+- 人工确认节点
+- 工具权限管理
+- 失败回滚
+- 任务队列
+- 多 Agent 协作
+
+## 十一、怎么把这个项目讲成作品集
+
+你在面试里不要只说“我做了一个 Agent 系统”，而应该讲清楚你对 Agent 产品层次的理解。
+
+你可以这样表达：
+
+> 我做了一个 Agent 产品原型，前端重点实现了回答、思考过程和工具调用三个层次的结构化展示，后端实现了 mock/API 双模式切换，用最小闭环验证了 Agent 交互体验。我在这个项目中重点识别了 Agent UI、Agent orchestration 和 Agent runtime 之间的差异，并设计了从演示型 Agent 原型向真实工具执行系统演化的改造路径。
+
+这种表达比单纯说“做了个 AI 聊天页”更能体现你对 Agent 产品的理解深度。
+
+## 十二、最小复盘模板
+
+完成这个项目后，建议你至少回答下面几个问题：
+
+1. 当前项目中，哪些部分只是 Agent 的展示层？
+2. 为什么“有思考过程”不等于“有真实推理链”？
+3. 当前工具调用展示为什么还不能算真实工具系统？
+4. 如果你只能优先改一处，为什么会先做工具执行闭环？
+5. 在企业里部署 Agent，最先需要解决的是体验问题还是可控性问题？
+
+如果这些问题你都能回答清楚，这个项目就不只是“看起来像 Agent”，而是真正帮助你理解了 Agent 产品设计。
+
+## 十三、这个项目适合作为什么阶段的练习
+
+这个项目很适合作为以下阶段的训练样本：
+
+- 已经做过普通聊天产品，想升级到 Agent 交互形态
+- 想理解 Agent 与聊天机器人的真正区别
+- 想先做一个可演示的 Agent MVP，再逐步补齐底层执行能力
+- 想向 AI 产品经理转型，需要一个能同时看体验层与能力层差异的案例
+
+如果你前一个项目已经做过 AI 写作助手、企业知识库，那么这个项目会帮助你从“单点能力产品”进一步走向“任务型 AI 产品”的理解阶段。
