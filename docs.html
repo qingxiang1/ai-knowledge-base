@@ -138,6 +138,11 @@
         mergeNavbar: true,
         // 首页
         homepage: "README.md",
+        // 目录链接别名：将以 / 结尾的目录链接（如 00-Roadmap/）映射到其 index.md，
+        // 因为各模块目录使用 index.md 而非 docsify 默认的 README.md
+        alias: {
+          "/(.+)/$": "/$1/index.md",
+        },
         // 侧边栏标题
         sidebarDisplayLevel: 1,
         // 子目录最大展开层级
