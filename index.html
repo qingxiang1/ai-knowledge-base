@@ -1,754 +1,846 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI产品经理知识库</title>
     <style>
-        :root {
-            --bg: #f4f6f8;
-            --surface: #ffffff;
-            --text-primary: #1a1a2e;
-            --text-secondary: #6b7280;
-            --accent: #4f46e5;
-            --accent-light: #e0e7ff;
-            --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-            --radius: 12px;
-            --radius-sm: 8px;
-        }
+      :root {
+        --bg: #f4f6f8;
+        --surface: #ffffff;
+        --text-primary: #1a1a2e;
+        --text-secondary: #6b7280;
+        --accent: #4f46e5;
+        --accent-light: #e0e7ff;
+        --border: #e5e7eb;
+        --shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        --shadow-hover:
+          0 10px 15px -3px rgba(0, 0, 0, 0.08),
+          0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        --radius: 12px;
+        --radius-sm: 8px;
+      }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background-color: var(--bg);
+        color: var(--text-primary);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
 
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
-            padding: 80px 20px 60px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+      /* Hero Section */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        color: white;
+        padding: 80px 20px 60px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+          radial-gradient(
+            circle at 20% 50%,
+            rgba(79, 70, 229, 0.15) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 50%,
+            rgba(16, 185, 129, 0.1) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+      }
 
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 800px;
-            margin: 0 auto;
-        }
+      .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+      }
 
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 8px 20px;
-            border-radius: 100px;
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 24px;
-        }
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 20px;
+        border-radius: 100px;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 24px;
+      }
 
-        .hero-badge .dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
+      .hero-badge .dot {
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-
-        .hero h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        50% {
+          opacity: 0.5;
         }
+      }
 
-        .hero p {
-            font-size: 1.125rem;
-            color: rgba(255, 255, 255, 0.7);
-            max-width: 600px;
-            margin: 0 auto 32px;
-        }
+      .hero h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
 
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            flex-wrap: wrap;
-        }
+      .hero p {
+        font-size: 1.125rem;
+        color: rgba(255, 255, 255, 0.7);
+        max-width: 600px;
+        margin: 0 auto 32px;
+      }
 
-        .stat-item {
-            text-align: center;
-        }
+      .hero-stats {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        flex-wrap: wrap;
+      }
 
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: white;
-        }
+      .stat-item {
+        text-align: center;
+      }
 
-        .stat-label {
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-top: 4px;
-        }
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+      }
 
-        /* Main Content */
-        .main {
-            max-width: 1200px;
-            margin: -30px auto 0;
-            padding: 0 20px 60px;
-            position: relative;
-            z-index: 2;
-        }
+      .stat-label {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 4px;
+      }
 
-        /* Progress Path */
-        .path-section {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: var(--shadow);
-        }
+      /* Main Content */
+      .main {
+        max-width: 1200px;
+        margin: -30px auto 0;
+        padding: 0 20px 60px;
+        position: relative;
+        z-index: 2;
+      }
 
-        .path-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
+      /* Progress Path */
+      .path-section {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 32px;
+        margin-bottom: 32px;
+        box-shadow: var(--shadow);
+      }
 
-        .path-header h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
+      .path-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
 
-        .path-header .icon {
-            width: 36px;
-            height: 36px;
-            background: var(--accent-light);
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
+      .path-header h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
 
-        .path-items {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+      .path-header .icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-light);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
 
-        .path-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg);
-            border-radius: 100px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
+      .path-items {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
 
-        .path-item:hover {
-            background: var(--accent-light);
-            color: var(--accent);
-        }
+      .path-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--bg);
+        border-radius: 100px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+      }
 
-        .path-arrow {
-            color: var(--border);
-            font-size: 1.2rem;
-        }
+      .path-item:hover {
+        background: var(--accent-light);
+        color: var(--accent);
+      }
 
-        /* Module Grid */
+      .path-arrow {
+        color: var(--border);
+        font-size: 1.2rem;
+      }
+
+      /* Module Grid */
+      .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 24px;
+      }
+
+      @media (max-width: 768px) {
         .modules-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 24px;
+          grid-template-columns: 1fr;
         }
+      }
 
-        @media (max-width: 768px) {
-            .modules-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+      .module-card {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow);
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+      }
 
-        .module-card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 28px;
-            box-shadow: var(--shadow);
-            border: 1px solid transparent;
-            position: relative;
-            overflow: hidden;
-        }
+      .module-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--module-color, var(--accent));
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
 
-        .module-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--module-color, var(--accent));
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+      .module-card:hover::before {
+        opacity: 1;
+      }
 
-        .module-card:hover::before {
-            opacity: 1;
-        }
+      .module-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
 
-        .module-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+      .module-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        background: var(--module-bg, var(--accent-light));
+      }
 
-        .module-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-            background: var(--module-bg, var(--accent-light));
-        }
+      .module-title-group {
+        flex: 1;
+        min-width: 0;
+      }
 
-        .module-title-group {
-            flex: 1;
-            min-width: 0;
-        }
+      .module-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+      }
 
-        .module-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
+      .module-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
 
-        .module-desc {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
+      .module-count {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        background: var(--bg);
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
 
-        .module-count {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 10px;
-            background: var(--bg);
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
+      .module-links {
+        list-style: none;
+      }
 
-        .module-links {
-            list-style: none;
-        }
+      .module-links li {
+        border-bottom: 1px solid var(--bg);
+      }
 
-        .module-links li {
-            border-bottom: 1px solid var(--bg);
-        }
+      .module-links li:last-child {
+        border-bottom: none;
+      }
 
-        .module-links li:last-child {
-            border-bottom: none;
-        }
+      .module-links a {
+        display: block;
+        padding: 12px 0;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+      }
 
-        .module-links a {
-            display: block;
-            padding: 12px 0;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
+      .module-links a:hover {
+        color: var(--accent);
+        padding-left: 4px;
+      }
 
-        .module-links a:hover {
-            color: var(--accent);
-            padding-left: 4px;
-        }
+      .module-more {
+        display: block;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--bg);
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
 
-        .module-more {
-            display: block;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--bg);
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
+      .module-more:hover {
+        opacity: 0.8;
+        padding-left: 4px;
+      }
 
-        .module-more:hover {
-            opacity: 0.8;
-            padding-left: 4px;
-        }
+      /* Footer */
+      .site-footer {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
 
-        /* Footer */
-        .site-footer {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
+      .site-footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
 
-        .site-footer a {
-            color: var(--accent);
-            text-decoration: none;
-        }
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
 
-        ::-webkit-scrollbar-track {
-            background: var(--bg);
-        }
+      ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
 
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <!-- Hero Section -->
     <header class="hero">
-        <div class="hero-content">
-            <div class="hero-badge">
-                <span class="dot"></span>
-                <span>持续更新中</span>
-            </div>
-            <h1>AI产品经理知识库</h1>
-            <p>系统化的 AI 产品管理知识体系，从基础认知到创业实战，覆盖产品经理成长全路径</p>
-            <div class="hero-stats">
-                <div class="stat-item">
-                    <div class="stat-value">19</div>
-                    <div class="stat-label">知识模块</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">150+</div>
-                    <div class="stat-label">学习文档</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">9</div>
-                    <div class="stat-label">实战项目</div>
-                </div>
-            </div>
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <span>持续更新中</span>
         </div>
+        <h1>AI产品经理知识库</h1>
+        <p>
+          系统化的 AI
+          产品管理知识体系，从基础认知到创业实战，覆盖产品经理成长全路径
+        </p>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <div class="stat-value">19</div>
+            <div class="stat-label">知识模块</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">150+</div>
+            <div class="stat-label">学习文档</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">9</div>
+            <div class="stat-label">实战项目</div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="main">
-        <!-- Learning Path -->
-        <section class="path-section">
-            <div class="path-header">
-                <div class="icon">🎯</div>
-                <h2>推荐学习路径</h2>
+      <!-- Learning Path -->
+      <section class="path-section">
+        <div class="path-header">
+          <div class="icon">🎯</div>
+          <h2>推荐学习路径</h2>
+        </div>
+        <div class="path-items">
+          <span class="path-item">入门认知</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">AI基础</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">Prompt工程</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">大模型生态</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">AI应用开发</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">RAG知识库</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">Agent系统</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">MCP生态</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">工作流编排</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">产品设计</span>
+          <span class="path-arrow">→</span>
+          <span class="path-item">项目实战</span>
+        </div>
+      </section>
+
+      <!-- Modules Grid -->
+      <div class="modules-grid">
+        <!-- 00 -->
+        <article
+          class="module-card"
+          style="--module-color: #4f46e5; --module-bg: #e0e7ff"
+        >
+          <div class="module-header">
+            <div class="module-icon">📋</div>
+            <div class="module-title-group">
+              <div class="module-title">学习路线</div>
+              <div class="module-desc">规划你的 AI 产品成长路径</div>
             </div>
-            <div class="path-items">
-                <span class="path-item">入门认知</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">AI基础</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">Prompt工程</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">大模型生态</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">AI应用开发</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">RAG知识库</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">Agent系统</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">MCP生态</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">工作流编排</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">产品设计</span>
-                <span class="path-arrow">→</span>
-                <span class="path-item">项目实战</span>
+            <span class="module-count">4</span>
+          </div>
+          <ul class="module-links">
+            <li>
+              <a href="00-Roadmap/AI产品经理成长路线.md">AI产品经理成长路线</a>
+            </li>
+            <li><a href="00-Roadmap/年度学习计划.md">年度学习计划</a></li>
+            <li><a href="00-Roadmap/月度学习计划.md">月度学习计划</a></li>
+            <li><a href="00-Roadmap/能力模型.md">能力模型</a></li>
+          </ul>
+          <a href="00-Roadmap/index.md" class="module-more">查看更多 →</a>
+        </article>
+
+        <!-- 01 -->
+        <article
+          class="module-card"
+          style="--module-color: #0891b2; --module-bg: #cffafe"
+        >
+          <div class="module-header">
+            <div class="module-icon">🎯</div>
+            <div class="module-title-group">
+              <div class="module-title">产品基础</div>
+              <div class="module-desc">产品经理核心能力基础</div>
             </div>
-        </section>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="01-产品经理基础/产品经理认知.md">产品经理认知</a></li>
+            <li><a href="01-产品经理基础/JTBD理论.md">JTBD理论</a></li>
+            <li><a href="01-产品经理基础/MVP设计.md">MVP设计</a></li>
+            <li><a href="01-产品经理基础/用户需求分析.md">用户需求分析</a></li>
+          </ul>
+          <a href="01-产品经理基础/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-        <!-- Modules Grid -->
-        <div class="modules-grid">
-            <!-- 00 -->
-            <article class="module-card" style="--module-color: #4f46e5; --module-bg: #e0e7ff;">
-                <div class="module-header">
-                    <div class="module-icon">📋</div>
-                    <div class="module-title-group">
-                        <div class="module-title">学习路线</div>
-                        <div class="module-desc">规划你的 AI 产品成长路径</div>
-                    </div>
-                    <span class="module-count">4</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="00-Roadmap/AI产品经理成长路线.md">AI产品经理成长路线</a></li>
-                    <li><a href="00-Roadmap/年度学习计划.md">年度学习计划</a></li>
-                    <li><a href="00-Roadmap/月度学习计划.md">月度学习计划</a></li>
-                    <li><a href="00-Roadmap/能力模型.md">能力模型</a></li>
-                </ul>
-                <a href="00-Roadmap/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 02 -->
+        <article
+          class="module-card"
+          style="--module-color: #7c3aed; --module-bg: #ede9fe"
+        >
+          <div class="module-header">
+            <div class="module-icon">🤖</div>
+            <div class="module-title-group">
+              <div class="module-title">AI基础</div>
+              <div class="module-desc">人工智能核心技术原理</div>
+            </div>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="02-AI基础知识/AI发展史.md">AI发展史</a></li>
+            <li><a href="02-AI基础知识/Transformer.md">Transformer</a></li>
+            <li><a href="02-AI基础知识/LLM工作原理.md">LLM工作原理</a></li>
+            <li><a href="02-AI基础知识/Embedding原理.md">Embedding原理</a></li>
+          </ul>
+          <a href="02-AI基础知识/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 01 -->
-            <article class="module-card" style="--module-color: #0891b2; --module-bg: #cffafe;">
-                <div class="module-header">
-                    <div class="module-icon">🎯</div>
-                    <div class="module-title-group">
-                        <div class="module-title">产品基础</div>
-                        <div class="module-desc">产品经理核心能力基础</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="01-产品经理基础/产品经理认知.md">产品经理认知</a></li>
-                    <li><a href="01-产品经理基础/JTBD理论.md">JTBD理论</a></li>
-                    <li><a href="01-产品经理基础/MVP设计.md">MVP设计</a></li>
-                    <li><a href="01-产品经理基础/用户需求分析.md">用户需求分析</a></li>
-                </ul>
-                <a href="01-产品经理基础/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 03 -->
+        <article
+          class="module-card"
+          style="--module-color: #ea580c; --module-bg: #ffedd5"
+        >
+          <div class="module-header">
+            <div class="module-icon">✍️</div>
+            <div class="module-title-group">
+              <div class="module-title">Prompt工程</div>
+              <div class="module-desc">提示词设计与优化技巧</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="03-Prompt工程/Prompt基础.md">Prompt基础</a></li>
+            <li><a href="03-Prompt工程/ChainOfThought.md">思维链(COT)</a></li>
+            <li><a href="03-Prompt工程/FewShot.md">FewShot</a></li>
+            <li><a href="03-Prompt工程/StructuredOutput.md">结构化输出</a></li>
+          </ul>
+          <a href="03-Prompt工程/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 02 -->
-            <article class="module-card" style="--module-color: #7c3aed; --module-bg: #ede9fe;">
-                <div class="module-header">
-                    <div class="module-icon">🤖</div>
-                    <div class="module-title-group">
-                        <div class="module-title">AI基础</div>
-                        <div class="module-desc">人工智能核心技术原理</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="02-AI基础知识/AI发展史.md">AI发展史</a></li>
-                    <li><a href="02-AI基础知识/Transformer.md">Transformer</a></li>
-                    <li><a href="02-AI基础知识/LLM工作原理.md">LLM工作原理</a></li>
-                    <li><a href="02-AI基础知识/Embedding原理.md">Embedding原理</a></li>
-                </ul>
-                <a href="02-AI基础知识/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 04 -->
+        <article
+          class="module-card"
+          style="--module-color: #059669; --module-bg: #d1fae5"
+        >
+          <div class="module-header">
+            <div class="module-icon">🔬</div>
+            <div class="module-title-group">
+              <div class="module-title">大模型生态</div>
+              <div class="module-desc">主流大模型特性与选型</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="04-大模型生态/GPT系列.md">GPT系列</a></li>
+            <li><a href="04-大模型生态/Claude系列.md">Claude系列</a></li>
+            <li><a href="04-大模型生态/Qwen系列.md">Qwen系列</a></li>
+            <li><a href="04-大模型生态/DeepSeek系列.md">DeepSeek系列</a></li>
+          </ul>
+          <a href="04-大模型生态/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 03 -->
-            <article class="module-card" style="--module-color: #ea580c; --module-bg: #ffedd5;">
-                <div class="module-header">
-                    <div class="module-icon">✍️</div>
-                    <div class="module-title-group">
-                        <div class="module-title">Prompt工程</div>
-                        <div class="module-desc">提示词设计与优化技巧</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="03-Prompt工程/Prompt基础.md">Prompt基础</a></li>
-                    <li><a href="03-Prompt工程/ChainOfThought.md">思维链(COT)</a></li>
-                    <li><a href="03-Prompt工程/FewShot.md">FewShot</a></li>
-                    <li><a href="03-Prompt工程/StructuredOutput.md">结构化输出</a></li>
-                </ul>
-                <a href="03-Prompt工程/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 05 -->
+        <article
+          class="module-card"
+          style="--module-color: #2563eb; --module-bg: #dbeafe"
+        >
+          <div class="module-header">
+            <div class="module-icon">🛠️</div>
+            <div class="module-title-group">
+              <div class="module-title">AI应用开发</div>
+              <div class="module-desc">API集成与开发实践</div>
+            </div>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="05-AI应用开发/OpenAI_API.md">OpenAI API</a></li>
+            <li>
+              <a href="05-AI应用开发/FunctionCalling.md">Function Calling</a>
+            </li>
+            <li><a href="05-AI应用开发/Streaming.md">流式输出</a></li>
+            <li><a href="05-AI应用开发/Token管理.md">Token管理</a></li>
+          </ul>
+          <a href="05-AI应用开发/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 04 -->
-            <article class="module-card" style="--module-color: #059669; --module-bg: #d1fae5;">
-                <div class="module-header">
-                    <div class="module-icon">🔬</div>
-                    <div class="module-title-group">
-                        <div class="module-title">大模型生态</div>
-                        <div class="module-desc">主流大模型特性与选型</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="04-大模型生态/GPT系列.md">GPT系列</a></li>
-                    <li><a href="04-大模型生态/Claude系列.md">Claude系列</a></li>
-                    <li><a href="04-大模型生态/Qwen系列.md">Qwen系列</a></li>
-                    <li><a href="04-大模型生态/DeepSeek系列.md">DeepSeek系列</a></li>
-                </ul>
-                <a href="04-大模型生态/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 06 -->
+        <article
+          class="module-card"
+          style="--module-color: #9333ea; --module-bg: #f3e8ff"
+        >
+          <div class="module-header">
+            <div class="module-icon">📚</div>
+            <div class="module-title-group">
+              <div class="module-title">RAG知识库</div>
+              <div class="module-desc">检索增强生成技术体系</div>
+            </div>
+            <span class="module-count">12</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="06-RAG知识库/RAG基础.md">RAG基础</a></li>
+            <li><a href="06-RAG知识库/Chunk策略.md">Chunk策略</a></li>
+            <li><a href="06-RAG知识库/Embedding.md">Embedding</a></li>
+            <li><a href="06-RAG知识库/向量数据库.md">向量数据库</a></li>
+          </ul>
+          <a href="06-RAG知识库/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 05 -->
-            <article class="module-card" style="--module-color: #2563eb; --module-bg: #dbeafe;">
-                <div class="module-header">
-                    <div class="module-icon">🛠️</div>
-                    <div class="module-title-group">
-                        <div class="module-title">AI应用开发</div>
-                        <div class="module-desc">API集成与开发实践</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="05-AI应用开发/OpenAI_API.md">OpenAI API</a></li>
-                    <li><a href="05-AI应用开发/FunctionCalling.md">Function Calling</a></li>
-                    <li><a href="05-AI应用开发/Streaming.md">流式输出</a></li>
-                    <li><a href="05-AI应用开发/Token管理.md">Token管理</a></li>
-                </ul>
-                <a href="05-AI应用开发/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 07 -->
+        <article
+          class="module-card"
+          style="--module-color: #dc2626; --module-bg: #fee2e2"
+        >
+          <div class="module-header">
+            <div class="module-icon">🧠</div>
+            <div class="module-title-group">
+              <div class="module-title">Agent系统</div>
+              <div class="module-desc">智能代理架构与设计</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="07-Agent系统/Agent概念.md">Agent概念</a></li>
+            <li><a href="07-Agent系统/Agent架构.md">Agent架构</a></li>
+            <li><a href="07-Agent系统/MultiAgent.md">多Agent协作</a></li>
+            <li><a href="07-Agent系统/Memory.md">记忆系统</a></li>
+          </ul>
+          <a href="07-Agent系统/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 06 -->
-            <article class="module-card" style="--module-color: #9333ea; --module-bg: #f3e8ff;">
-                <div class="module-header">
-                    <div class="module-icon">📚</div>
-                    <div class="module-title-group">
-                        <div class="module-title">RAG知识库</div>
-                        <div class="module-desc">检索增强生成技术体系</div>
-                    </div>
-                    <span class="module-count">12</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="06-RAG知识库/RAG基础.md">RAG基础</a></li>
-                    <li><a href="06-RAG知识库/Chunk策略.md">Chunk策略</a></li>
-                    <li><a href="06-RAG知识库/Embedding.md">Embedding</a></li>
-                    <li><a href="06-RAG知识库/向量数据库.md">向量数据库</a></li>
-                </ul>
-                <a href="06-RAG知识库/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 08 -->
+        <article
+          class="module-card"
+          style="--module-color: #0d9488; --module-bg: #ccfbf1"
+        >
+          <div class="module-header">
+            <div class="module-icon">🔗</div>
+            <div class="module-title-group">
+              <div class="module-title">MCP生态</div>
+              <div class="module-desc">模型上下文协议体系</div>
+            </div>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="08-MCP生态/MCP基础.md">MCP基础</a></li>
+            <li><a href="08-MCP生态/MCP协议.md">MCP协议</a></li>
+            <li><a href="08-MCP生态/MCP服务端开发.md">MCP服务端开发</a></li>
+            <li><a href="08-MCP生态/MCP客户端开发.md">MCP客户端开发</a></li>
+          </ul>
+          <a href="08-MCP生态/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 07 -->
-            <article class="module-card" style="--module-color: #dc2626; --module-bg: #fee2e2;">
-                <div class="module-header">
-                    <div class="module-icon">🧠</div>
-                    <div class="module-title-group">
-                        <div class="module-title">Agent系统</div>
-                        <div class="module-desc">智能代理架构与设计</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="07-Agent系统/Agent概念.md">Agent概念</a></li>
-                    <li><a href="07-Agent系统/Agent架构.md">Agent架构</a></li>
-                    <li><a href="07-Agent系统/MultiAgent.md">多Agent协作</a></li>
-                    <li><a href="07-Agent系统/Memory.md">记忆系统</a></li>
-                </ul>
-                <a href="07-Agent系统/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 09 -->
+        <article
+          class="module-card"
+          style="--module-color: #4f46e5; --module-bg: #e0e7ff"
+        >
+          <div class="module-header">
+            <div class="module-icon">⚙️</div>
+            <div class="module-title-group">
+              <div class="module-title">工作流编排</div>
+              <div class="module-desc">自动化工作流搭建</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="09-工作流编排/Dify.md">Dify</a></li>
+            <li><a href="09-工作流编排/LangChain.md">LangChain</a></li>
+            <li><a href="09-工作流编排/LangGraph.md">LangGraph</a></li>
+            <li><a href="09-工作流编排/Coze.md">Coze</a></li>
+          </ul>
+          <a href="09-工作流编排/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 08 -->
-            <article class="module-card" style="--module-color: #0d9488; --module-bg: #ccfbf1;">
-                <div class="module-header">
-                    <div class="module-icon">🔗</div>
-                    <div class="module-title-group">
-                        <div class="module-title">MCP生态</div>
-                        <div class="module-desc">模型上下文协议体系</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="08-MCP生态/MCP基础.md">MCP基础</a></li>
-                    <li><a href="08-MCP生态/MCP协议.md">MCP协议</a></li>
-                    <li><a href="08-MCP生态/MCP服务端开发.md">MCP服务端开发</a></li>
-                    <li><a href="08-MCP生态/MCP客户端开发.md">MCP客户端开发</a></li>
-                </ul>
-                <a href="08-MCP生态/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 10 -->
+        <article
+          class="module-card"
+          style="--module-color: #db2777; --module-bg: #fce7f3"
+        >
+          <div class="module-header">
+            <div class="module-icon">🎨</div>
+            <div class="module-title-group">
+              <div class="module-title">AI产品设计</div>
+              <div class="module-desc">AI产品交互与体验设计</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="10-AI产品设计/AI产品设计原则.md">设计原则</a></li>
+            <li><a href="10-AI产品设计/Copilot设计.md">Copilot设计</a></li>
+            <li><a href="10-AI产品设计/AI搜索设计.md">AI搜索设计</a></li>
+            <li><a href="10-AI产品设计/AI用户体验.md">AI用户体验</a></li>
+          </ul>
+          <a href="10-AI产品设计/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 09 -->
-            <article class="module-card" style="--module-color: #4f46e5; --module-bg: #e0e7ff;">
-                <div class="module-header">
-                    <div class="module-icon">⚙️</div>
-                    <div class="module-title-group">
-                        <div class="module-title">工作流编排</div>
-                        <div class="module-desc">自动化工作流搭建</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="09-工作流编排/Dify.md">Dify</a></li>
-                    <li><a href="09-工作流编排/LangChain.md">LangChain</a></li>
-                    <li><a href="09-工作流编排/LangGraph.md">LangGraph</a></li>
-                    <li><a href="09-工作流编排/Coze.md">Coze</a></li>
-                </ul>
-                <a href="09-工作流编排/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 11 -->
+        <article
+          class="module-card"
+          style="--module-color: #ca8a04; --module-bg: #fef9c3"
+        >
+          <div class="module-header">
+            <div class="module-icon">📊</div>
+            <div class="module-title-group">
+              <div class="module-title">数据分析</div>
+              <div class="module-desc">AI产品数据指标体系</div>
+            </div>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="11-数据分析/数据分析基础.md">数据分析基础</a></li>
+            <li><a href="11-数据分析/留存分析.md">留存分析</a></li>
+            <li><a href="11-数据分析/漏斗分析.md">漏斗分析</a></li>
+            <li><a href="11-数据分析/AI产品指标.md">AI产品指标</a></li>
+          </ul>
+          <a href="11-数据分析/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 10 -->
-            <article class="module-card" style="--module-color: #db2777; --module-bg: #fce7f3;">
-                <div class="module-header">
-                    <div class="module-icon">🎨</div>
-                    <div class="module-title-group">
-                        <div class="module-title">AI产品设计</div>
-                        <div class="module-desc">AI产品交互与体验设计</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="10-AI产品设计/AI产品设计原则.md">设计原则</a></li>
-                    <li><a href="10-AI产品设计/Copilot设计.md">Copilot设计</a></li>
-                    <li><a href="10-AI产品设计/AI搜索设计.md">AI搜索设计</a></li>
-                    <li><a href="10-AI产品设计/AI用户体验.md">AI用户体验</a></li>
-                </ul>
-                <a href="10-AI产品设计/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 12 -->
+        <article
+          class="module-card"
+          style="--module-color: #16a34a; --module-bg: #dcfce7"
+        >
+          <div class="module-header">
+            <div class="module-icon">💰</div>
+            <div class="module-title-group">
+              <div class="module-title">商业化</div>
+              <div class="module-desc">AI产品商业模式与指标</div>
+            </div>
+            <span class="module-count">10</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="12-商业化/SaaS模式.md">SaaS模式</a></li>
+            <li><a href="12-商业化/ARR.md">ARR指标</a></li>
+            <li><a href="12-商业化/CAC.md">CAC获客成本</a></li>
+            <li><a href="12-商业化/LTV.md">LTV客户生命周期</a></li>
+          </ul>
+          <a href="12-商业化/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 11 -->
-            <article class="module-card" style="--module-color: #ca8a04; --module-bg: #fef9c3;">
-                <div class="module-header">
-                    <div class="module-icon">📊</div>
-                    <div class="module-title-group">
-                        <div class="module-title">数据分析</div>
-                        <div class="module-desc">AI产品数据指标体系</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="11-数据分析/数据分析基础.md">数据分析基础</a></li>
-                    <li><a href="11-数据分析/留存分析.md">留存分析</a></li>
-                    <li><a href="11-数据分析/漏斗分析.md">漏斗分析</a></li>
-                    <li><a href="11-数据分析/AI产品指标.md">AI产品指标</a></li>
-                </ul>
-                <a href="11-数据分析/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 13 -->
+        <article
+          class="module-card"
+          style="--module-color: #ea580c; --module-bg: #ffedd5"
+        >
+          <div class="module-header">
+            <div class="module-icon">🔍</div>
+            <div class="module-title-group">
+              <div class="module-title">竞品分析</div>
+              <div class="module-desc">主流AI产品深度分析</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="13-竞品分析/ChatGPT分析.md">ChatGPT分析</a></li>
+            <li><a href="13-竞品分析/Claude分析.md">Claude分析</a></li>
+            <li><a href="13-竞品分析/Cursor分析.md">Cursor分析</a></li>
+            <li><a href="13-竞品分析/Perplexity分析.md">Perplexity分析</a></li>
+          </ul>
+          <a href="13-竞品分析/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 12 -->
-            <article class="module-card" style="--module-color: #16a34a; --module-bg: #dcfce7;">
-                <div class="module-header">
-                    <div class="module-icon">💰</div>
-                    <div class="module-title-group">
-                        <div class="module-title">商业化</div>
-                        <div class="module-desc">AI产品商业模式与指标</div>
-                    </div>
-                    <span class="module-count">10</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="12-商业化/SaaS模式.md">SaaS模式</a></li>
-                    <li><a href="12-商业化/ARR.md">ARR指标</a></li>
-                    <li><a href="12-商业化/CAC.md">CAC获客成本</a></li>
-                    <li><a href="12-商业化/LTV.md">LTV客户生命周期</a></li>
-                </ul>
-                <a href="12-商业化/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 14 -->
+        <article
+          class="module-card"
+          style="--module-color: #4f46e5; --module-bg: #e0e7ff"
+        >
+          <div class="module-header">
+            <div class="module-icon">💡</div>
+            <div class="module-title-group">
+              <div class="module-title">项目实战</div>
+              <div class="module-desc">从0到1的实战项目</div>
+            </div>
+            <span class="module-count">9</span>
+          </div>
+          <ul class="module-links">
+            <li>
+              <a href="14-项目实战/Project01-AI写作助手/README.md"
+                >AI写作助手</a
+              >
+            </li>
+            <li><a href="14-项目实战/Project02-AI翻译助手/">AI翻译助手</a></li>
+            <li>
+              <a href="14-项目实战/Project03-企业知识库/README.md"
+                >企业知识库</a
+              >
+            </li>
+            <li>
+              <a href="14-项目实战/Project04-Agent系统/README.md">Agent系统</a>
+            </li>
+          </ul>
+          <a href="14-项目实战/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 13 -->
-            <article class="module-card" style="--module-color: #ea580c; --module-bg: #ffedd5;">
-                <div class="module-header">
-                    <div class="module-icon">🔍</div>
-                    <div class="module-title-group">
-                        <div class="module-title">竞品分析</div>
-                        <div class="module-desc">主流AI产品深度分析</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="13-竞品分析/ChatGPT分析.md">ChatGPT分析</a></li>
-                    <li><a href="13-竞品分析/Claude分析.md">Claude分析</a></li>
-                    <li><a href="13-竞品分析/Cursor分析.md">Cursor分析</a></li>
-                    <li><a href="13-竞品分析/Perplexity分析.md">Perplexity分析</a></li>
-                </ul>
-                <a href="13-竞品分析/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 15 -->
+        <article
+          class="module-card"
+          style="--module-color: #0891b2; --module-bg: #cffafe"
+        >
+          <div class="module-header">
+            <div class="module-icon">🏗️</div>
+            <div class="module-title-group">
+              <div class="module-title">系统设计</div>
+              <div class="module-desc">AI系统架构设计</div>
+            </div>
+            <span class="module-count">8</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="15-系统设计/AI系统架构.md">AI系统架构</a></li>
+            <li><a href="15-系统设计/高并发设计.md">高并发设计</a></li>
+            <li><a href="15-系统设计/多租户设计.md">多租户设计</a></li>
+            <li><a href="15-系统设计/RAG平台设计.md">RAG平台设计</a></li>
+          </ul>
+          <a href="15-系统设计/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 14 -->
-            <article class="module-card" style="--module-color: #4f46e5; --module-bg: #e0e7ff;">
-                <div class="module-header">
-                    <div class="module-icon">💡</div>
-                    <div class="module-title-group">
-                        <div class="module-title">项目实战</div>
-                        <div class="module-desc">从0到1的实战项目</div>
-                    </div>
-                    <span class="module-count">9</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="14-项目实战/Project01-AI写作助手/README.md">AI写作助手</a></li>
-                    <li><a href="14-项目实战/Project02-AI翻译助手/">AI翻译助手</a></li>
-                    <li><a href="14-项目实战/Project03-企业知识库/README.md">企业知识库</a></li>
-                    <li><a href="14-项目实战/Project04-Agent系统/README.md">Agent系统</a></li>
-                </ul>
-                <a href="14-项目实战/index.md" class="module-more">查看更多 →</a>
-            </article>
+        <!-- 16 -->
+        <article
+          class="module-card"
+          style="--module-color: #7c3aed; --module-bg: #ede9fe"
+        >
+          <div class="module-header">
+            <div class="module-icon">💼</div>
+            <div class="module-title-group">
+              <div class="module-title">面试准备</div>
+              <div class="module-desc">面试题与答辩模板</div>
+            </div>
+            <span class="module-count">8</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="16-面试准备/AI产品经理面试题.md">面试题汇总</a></li>
+            <li><a href="16-面试准备/Agent面试题.md">Agent面试题</a></li>
+            <li><a href="16-面试准备/RAG面试题.md">RAG面试题</a></li>
+            <li><a href="16-面试准备/MCP面试题.md">MCP面试题</a></li>
+          </ul>
+          <a href="16-面试准备/index.md" class="module-more">查看更多 →</a>
+        </article>
 
-            <!-- 15 -->
-            <article class="module-card" style="--module-color: #0891b2; --module-bg: #cffafe;">
-                <div class="module-header">
-                    <div class="module-icon">🏗️</div>
-                    <div class="module-title-group">
-                        <div class="module-title">系统设计</div>
-                        <div class="module-desc">AI系统架构设计</div>
-                    </div>
-                    <span class="module-count">8</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="15-系统设计/AI系统架构.md">AI系统架构</a></li>
-                    <li><a href="15-系统设计/高并发设计.md">高并发设计</a></li>
-                    <li><a href="15-系统设计/多租户设计.md">多租户设计</a></li>
-                    <li><a href="15-系统设计/RAG平台设计.md">RAG平台设计</a></li>
-                </ul>
-                <a href="15-系统设计/index.md" class="module-more">查看更多 →</a>
-            </article>
-
-            <!-- 16 -->
-            <article class="module-card" style="--module-color: #7c3aed; --module-bg: #ede9fe;">
-                <div class="module-header">
-                    <div class="module-icon">💼</div>
-                    <div class="module-title-group">
-                        <div class="module-title">面试准备</div>
-                        <div class="module-desc">面试题与答辩模板</div>
-                    </div>
-                    <span class="module-count">8</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="16-面试准备/AI产品经理面试题.md">面试题汇总</a></li>
-                    <li><a href="16-面试准备/Agent面试题.md">Agent面试题</a></li>
-                    <li><a href="16-面试准备/RAG面试题.md">RAG面试题</a></li>
-                    <li><a href="16-面试准备/MCP面试题.md">MCP面试题</a></li>
-                </ul>
-                <a href="16-面试准备/index.md" class="module-more">查看更多 →</a>
-            </article>
-
-            <!-- 17 -->
-            <article class="module-card" style="--module-color: #db2777; --module-bg: #fce7f3;">
+        <!-- 17 -->
+        <!-- <article class="module-card" style="--module-color: #db2777; --module-bg: #fce7f3;">
                 <div class="module-header">
                     <div class="module-icon">📝</div>
                     <div class="module-title-group">
@@ -763,33 +855,38 @@
                     <li><a href="17-作品集/架构设计.md">架构设计</a></li>
                 </ul>
                 <a href="17-作品集/index.md" class="module-more">查看更多 →</a>
-            </article>
+            </article> -->
 
-            <!-- 18 -->
-            <article class="module-card" style="--module-color: #dc2626; --module-bg: #fee2e2;">
-                <div class="module-header">
-                    <div class="module-icon">🚀</div>
-                    <div class="module-title-group">
-                        <div class="module-title">AI创业</div>
-                        <div class="module-desc">AI创业实战指南</div>
-                    </div>
-                    <span class="module-count">8</span>
-                </div>
-                <ul class="module-links">
-                    <li><a href="18-AI创业/AI创业方向.md">AI创业方向</a></li>
-                    <li><a href="18-AI创业/PMF验证.md">PMF验证</a></li>
-                    <li><a href="18-AI创业/MVP开发.md">MVP开发</a></li>
-                    <li><a href="18-AI创业/冷启动增长.md">冷启动增长</a></li>
-                </ul>
-                <a href="18-AI创业/index.md" class="module-more">查看更多 →</a>
-            </article>
-        </div>
+        <!-- 18 -->
+        <article
+          class="module-card"
+          style="--module-color: #dc2626; --module-bg: #fee2e2"
+        >
+          <div class="module-header">
+            <div class="module-icon">🚀</div>
+            <div class="module-title-group">
+              <div class="module-title">AI创业</div>
+              <div class="module-desc">AI创业实战指南</div>
+            </div>
+            <span class="module-count">8</span>
+          </div>
+          <ul class="module-links">
+            <li><a href="18-AI创业/AI创业方向.md">AI创业方向</a></li>
+            <li><a href="18-AI创业/PMF验证.md">PMF验证</a></li>
+            <li><a href="18-AI创业/MVP开发.md">MVP开发</a></li>
+            <li><a href="18-AI创业/冷启动增长.md">冷启动增长</a></li>
+          </ul>
+          <a href="18-AI创业/index.md" class="module-more">查看更多 →</a>
+        </article>
+      </div>
     </main>
 
     <!-- Footer -->
     <footer class="site-footer">
-        <p>AI-PM-Knowledge · 系统学习AI产品管理知识体系</p>
-        <p style="margin-top: 8px;">托管于 <a href="https://gitee.com" target="_blank">Gitee Pages</a></p>
+      <p>AI-PM-Knowledge · 系统学习AI产品管理知识体系</p>
+      <p style="margin-top: 8px">
+        托管于 <a href="https://gitee.com" target="_blank">Gitee Pages</a>
+      </p>
     </footer>
-</body>
+  </body>
 </html>
