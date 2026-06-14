@@ -1,0 +1,3 @@
+{"question":"订单显示已签收但我没收到怎么办？","reference":"请先核实签收人和快递柜信息，再发起物流核查。","required_keywords":["签收人","物流核查"]}
+{"question":"发票能改成公司抬头吗？","reference":"若订单尚未开票，可以提供公司抬头和税号进行修改。","required_keywords":["公司抬头","税号"]}
+{"question":"订单待揽收很久怎么办？","reference":"请先核实仓库是否出库，再确认快递是否已揽件。","required_keywords":["出库","揽件"]} 

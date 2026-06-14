@@ -1,0 +1,15 @@
+{
+  "files": [
+    "data/cleaned/chat_demo_corpus.txt",
+    "data/cleaned/chat_demo_corpus_valid.txt"
+  ],
+  "vocab_size": 2000,
+  "min_frequency": 1,
+  "output_dir": "outputs/tokenizer_chat_demo",
+  "special_tokens": [
+    "[PAD]",
+    "[UNK]",
+    "[BOS]",
+    "[EOS]"
+  ]
+}

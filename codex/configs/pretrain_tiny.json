@@ -1,0 +1,21 @@
+{
+  "train_file": "data/cleaned/sample_corpus.txt",
+  "validation_file": "data/cleaned/sample_corpus_valid.txt",
+  "tokenizer_dir": "outputs/tokenizer_hf",
+  "output_dir": "outputs/pretrain_tiny",
+  "cache_dir": ".cache/huggingface",
+  "block_size": 128,
+  "num_train_epochs": 3,
+  "per_device_train_batch_size": 4,
+  "per_device_eval_batch_size": 4,
+  "gradient_accumulation_steps": 4,
+  "learning_rate": 0.0003,
+  "logging_steps": 10,
+  "save_steps": 50,
+  "eval_steps": 50,
+  "hidden_size": 256,
+  "num_hidden_layers": 4,
+  "num_attention_heads": 4,
+  "intermediate_size": 1024,
+  "bf16": false
+}

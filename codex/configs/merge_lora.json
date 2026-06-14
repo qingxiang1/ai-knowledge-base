@@ -1,0 +1,7 @@
+{
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "adapter_path": "outputs/sft_qwen25_cs",
+  "output_dir": "outputs/qwen25_cs_merged",
+  "cache_dir": ".cache/huggingface",
+  "torch_dtype": "bfloat16"
+}

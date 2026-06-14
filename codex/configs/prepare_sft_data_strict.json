@@ -1,0 +1,11 @@
+{
+  "input_file": "data/raw/customer_support_raw.jsonl",
+  "output_file": "data/sft/customer_support_prepared.strict.jsonl",
+  "rejected_file": "outputs/data_prep/customer_support_rejected.strict.jsonl",
+  "min_question_chars": 4,
+  "min_answer_chars": 8,
+  "allowed_quality": [
+    "high"
+  ],
+  "default_system_prompt": "你是一个电商客服助手，回答准确、简洁、可执行。"
+}

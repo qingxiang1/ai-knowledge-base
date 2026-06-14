@@ -1,0 +1,1 @@
+{"question":"订单显示已签收但我没有收到，该怎么办？","reference":"请先核实签收人和快递柜信息，再发起物流核查。","prediction":"请先核实签收人、快递柜和代收点信息。如果仍未找到，我可以为你发起物流核查。","exact_match":0.0,"keyword_coverage":1.0,"nearest_training_examples":[{"score":0.65,"question":"订单显示已签收但我没收到怎么办？","answer":"请先核实签收人、门卫、快递柜和代收点信息。如果仍未找到，我可以为你发起物流核查。"}]}

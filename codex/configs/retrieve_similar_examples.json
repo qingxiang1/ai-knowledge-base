@@ -1,0 +1,4 @@
+{
+  "train_file": "data/sft/customer_support_sample.jsonl",
+  "ngram_size": 2
+}

@@ -1,3 +1,12 @@
+/**
+ * 创建时间: 2026-06-03
+ * 文件名: UploadModal.tsx
+ * 文件描述: Project03 企业知识库文档上传弹窗
+ * 作者: Felix(LQX5731@163.com)
+ * 版本号: v2.0.0
+ * 最后更新时间: 2026-06-14
+ */
+
 import React, { useState, useRef } from 'react';
 import { uploadDocument } from '../services/api';
 
@@ -42,10 +51,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploaded })
             <input
               ref={inputRef}
               type="file"
-              accept=".pdf,.docx,.md,.txt"
+              accept=".md,.txt"
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="w-full text-sm"
             />
+            <p className="mt-1 text-xs text-gray-400">
+              演示版支持 txt / md 纯文本文档，上传后会自动切片并入库。
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">标题</label>

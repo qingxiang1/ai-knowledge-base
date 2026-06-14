@@ -1,0 +1,13 @@
+{
+  "files": [
+    "data/cleaned/chat_demo_corpus.txt",
+    "data/cleaned/chat_demo_corpus_valid.txt"
+  ],
+  "vocab_size": 624,
+  "special_tokens": [
+    "[PAD]",
+    "[UNK]",
+    "[BOS]",
+    "[EOS]"
+  ]
+}

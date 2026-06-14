@@ -1,0 +1,12 @@
+torch
+transformers
+datasets
+tokenizers
+accelerate
+peft
+trl
+openai
+safetensors
+sentencepiece
+lm-eval
+bitsandbytes; platform_system == "Linux"
