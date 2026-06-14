@@ -1,126 +1,241 @@
-import React, { useState } from 'react';
-import { translateText } from '../services/api';
-import { TranslateRequest, LanguageOption } from '../types';
+/**
+ * 创建时间: 2026-06-03
+ * 文件名: Translator.tsx
+ * 文件描述: Project02 AI 翻译助手主翻译组件
+ * 作者: Felix(LQX5731@163.com)
+ * 版本号: v2.0.0
+ * 最后更新时间: 2026-06-14
+ */
 
-const languages: LanguageOption[] = [
-  { code: 'zh', name: '中文' },
-  { code: 'en', name: '英语' },
-  { code: 'ja', name: '日语' },
-  { code: 'ko', name: '韩语' },
-  { code: 'fr', name: '法语' },
-  { code: 'de', name: '德语' },
-  { code: 'es', name: '西班牙语' },
-  { code: 'ru', name: '俄语' },
-];
+import React, { useState } from "react";
+import { useTranslator } from "../hooks/useTranslator";
+import { HistoryPanel } from "./HistoryPanel";
+import { LANGUAGES, STYLE_OPTIONS, getLanguageName } from "../constants";
+import { TranslationStyle } from "../types";
+
+const MAX_LENGTH = 5000;
 
 /**
  * AI 翻译助手组件
  */
 export const Translator: React.FC = () => {
-  const [sourceText, setSourceText] = useState('');
-  const [targetText, setTargetText] = useState('');
-  const [sourceLang, setSourceLang] = useState('zh');
-  const [targetLang, setTargetLang] = useState('en');
-  const [style, setStyle] = useState<TranslateRequest['style']>('formal');
-  const [loading, setLoading] = useState(false);
+  const {
+    sourceText,
+    targetText,
+    sourceLang,
+    targetLang,
+    style,
+    alternatives,
+    detectedLang,
+    model,
+    loading,
+    error,
+    history,
+    setSourceText,
+    setSourceLang,
+    setTargetLang,
+    setStyle,
+    translate,
+    swap,
+    clearError,
+    applyAlternative,
+    restoreHistory,
+    removeHistory,
+    clearHistory,
+  } = useTranslator();
 
-  const handleTranslate = async () => {
-    if (!sourceText.trim()) return;
+  const [copied, setCopied] = useState(false);
 
-    setLoading(true);
+  /**
+   * 复制译文到剪贴板
+   */
+  const handleCopy = async () => {
+    if (!targetText) return;
     try {
-      const response = await translateText({
-        text: sourceText,
-        sourceLang,
-        targetLang,
-        style,
-      });
-      setTargetText(response.translatedText);
-    } catch (error) {
-      setTargetText(`翻译失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    } finally {
-      setLoading(false);
+      await navigator.clipboard.writeText(targetText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // 某些浏览器无剪贴板权限时静默失败
     }
   };
 
-  const handleSwap = () => {
-    setSourceLang(targetLang);
-    setTargetLang(sourceLang);
-    setSourceText(targetText);
-    setTargetText(sourceText);
-  };
+  const overLimit = sourceText.length > MAX_LENGTH;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">AI 翻译助手</h1>
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">AI 翻译助手</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            多语言互译 · 自动识别源语言 · 风格切换 · 备选译文 · 本地历史
+          </p>
+        </header>
 
-        <div className="bg-white rounded-lg shadow p-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <select
-              value={sourceLang}
-              onChange={(e) => setSourceLang(e.target.value)}
-              className="px-3 py-2 border rounded-lg"
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.name}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              {/* 语言与风格控制区 */}
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={sourceLang}
+                  onChange={(e) => setSourceLang(e.target.value)}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  <option value="auto">自动检测</option>
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
 
-            <button
-              onClick={handleSwap}
-              className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              ⇄
-            </button>
+                <button
+                  type="button"
+                  onClick={swap}
+                  title="交换源语言和目标语言"
+                  className="rounded-lg bg-gray-100 px-3 py-2 text-sm transition hover:bg-gray-200"
+                >
+                  ⇄
+                </button>
 
-            <select
-              value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value)}
-              className="px-3 py-2 border rounded-lg"
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.name}
-                </option>
-              ))}
-            </select>
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
 
-            <select
-              value={style}
-              onChange={(e) => setStyle(e.target.value as TranslateRequest['style'])}
-              className="px-3 py-2 border rounded-lg"
-            >
-              <option value="formal">正式</option>
-              <option value="casual">口语</option>
-              <option value="technical">技术</option>
-            </select>
+                <span className="mx-1 h-5 w-px bg-gray-200" />
+
+                <select
+                  value={style}
+                  onChange={(e) =>
+                    setStyle(e.target.value as TranslationStyle)
+                  }
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                >
+                  {STYLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}风格
+                    </option>
+                  ))}
+                </select>
+
+                {sourceLang === "auto" && detectedLang && (
+                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-600">
+                    识别为：{getLanguageName(detectedLang)}
+                  </span>
+                )}
+              </div>
+
+              {/* 输入 / 输出区 */}
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col">
+                  <textarea
+                    value={sourceText}
+                    onChange={(e) => setSourceText(e.target.value)}
+                    placeholder="输入要翻译的文本..."
+                    className="h-64 w-full resize-none rounded-lg border border-gray-300 p-4 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  />
+                  <div className="mt-1 flex justify-end text-xs">
+                    <span className={overLimit ? "text-rose-500" : "text-gray-400"}>
+                      {sourceText.length} / {MAX_LENGTH}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="relative h-64">
+                    <textarea
+                      value={targetText}
+                      readOnly
+                      placeholder="翻译结果..."
+                      className="h-64 w-full resize-none rounded-lg border border-gray-300 bg-gray-50 p-4"
+                    />
+                    {targetText && (
+                      <button
+                        type="button"
+                        onClick={handleCopy}
+                        className="absolute right-3 top-3 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-600 shadow-sm transition hover:bg-gray-50"
+                      >
+                        {copied ? "已复制" : "复制"}
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-1 flex justify-end text-xs text-gray-400">
+                    {model && <span>模型：{model}</span>}
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-rose-50 px-4 py-2.5 text-sm text-rose-600">
+                  <span>{error}</span>
+                  <button
+                    type="button"
+                    onClick={clearError}
+                    className="text-rose-400 hover:text-rose-600"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => void translate()}
+                disabled={loading || !sourceText.trim() || overLimit}
+                className="mt-4 w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "翻译中..." : "翻译"}
+              </button>
+            </div>
+
+            {/* 备选译文 */}
+            {alternatives.length > 0 && (
+              <div className="rounded-xl bg-white p-5 shadow-sm">
+                <h2 className="text-base font-semibold text-gray-900">
+                  备选译文
+                </h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  点击「采用」可将备选结果替换到结果区。
+                </p>
+                <div className="mt-3 space-y-2">
+                  {alternatives.map((alt, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3"
+                    >
+                      <p className="text-sm text-gray-700">{alt}</p>
+                      <button
+                        type="button"
+                        onClick={() => applyAlternative(alt)}
+                        className="shrink-0 rounded-md bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-100"
+                      >
+                        采用
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <textarea
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              placeholder="输入要翻译的文本..."
-              className="w-full h-64 p-4 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500"
+          {/* 历史侧栏 */}
+          <aside className="w-full shrink-0 lg:w-[320px]">
+            <HistoryPanel
+              history={history}
+              onRestore={restoreHistory}
+              onRemove={removeHistory}
+              onClear={clearHistory}
             />
-            <textarea
-              value={targetText}
-              readOnly
-              placeholder="翻译结果..."
-              className="w-full h-64 p-4 border rounded-lg resize-none bg-gray-50"
-            />
-          </div>
-
-          <button
-            onClick={handleTranslate}
-            disabled={loading || !sourceText.trim()}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? '翻译中...' : '翻译'}
-          </button>
+          </aside>
         </div>
       </div>
     </div>

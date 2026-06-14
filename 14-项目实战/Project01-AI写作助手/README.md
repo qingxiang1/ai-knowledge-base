@@ -92,6 +92,8 @@ Project01-AI写作助手/
 ├── tailwind.config.js
 ├── tsconfig.json
 ├── tsconfig.node.json
+├── start-dev.sh
+├── .gitignore
 ├── src/
 │   ├── App.tsx
 │   ├── main.tsx
@@ -110,16 +112,17 @@ Project01-AI写作助手/
     ├── package.json
     ├── tsconfig.json
     ├── .env.example
-    ├── routes/
-    │   └── writing.ts
-│   ├── config/
+    ├── types.ts
     ├── config/
     │   └── templates.ts
+    ├── routes/
+    │   └── writing.ts
     ├── services/
     │   ├── document-store.ts
     │   ├── compliance.ts
     │   └── openai.ts
-    └── types.ts
+    └── data/
+        └── documents.json
 ```
 
 最重要的文件可以这样理解：
@@ -166,26 +169,42 @@ Project01-AI写作助手/
 
 ## 六、运行方式
 
-### 1. 安装前端依赖
+> 下面所有命令都以**项目根目录**（即 `Project01-AI写作助手/`）为起点，使用相对路径，clone 到任意位置都能直接运行。
+
+### 方式一：一条命令同时启动前后端（推荐）
+
+项目根目录提供了 `start-dev.sh`，会自动安装依赖、准备 `.env` 并同时拉起前后端：
 
 ```bash
-cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手
+cd Project01-AI写作助手
+./start-dev.sh
+```
+
+脚本会在前台运行后端与前端，按 `Ctrl + C` 即可同时退出。
+
+### 方式二：手动分步启动
+
+如果你想理解每一步在做什么，可以手动执行。
+
+#### 1. 安装前端依赖
+
+```bash
+cd Project01-AI写作助手
 pnpm install
 ```
 
-### 2. 安装后端依赖
+#### 2. 安装后端依赖
 
 ```bash
-cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
+cd server
 pnpm install
 ```
 
-### 3. 配置环境变量
+#### 3. 配置环境变量
 
-项目后端目录已有 `.env.example`，可以复制为 `.env`：
+后端目录已有 `.env.example`，复制为 `.env` 即可：
 
 ```bash
-cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
 cp .env.example .env
 ```
 
@@ -198,25 +217,25 @@ PORT=3000
 
 如果不填 `OPENAI_API_KEY`，项目会自动进入 `mock` 模式，依然可以运行和演示。
 
-### 4. 启动后端
+#### 4. 启动后端（在 `server/` 目录下）
 
 ```bash
-cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手/server
 pnpm dev
 ```
 
-### 5. 启动前端
+#### 5. 启动前端（在项目根目录下，另开一个终端）
 
 ```bash
-cd /Users/luoqingxiang/Documents/my-project/ai-project-manager/14-项目实战/Project01-AI写作助手
 pnpm dev
 ```
 
-### 6. 默认访问地址
+### 默认访问地址
 
 - 前端：`http://localhost:5173`
 - 后端：`http://localhost:3000`
 - 健康检查：`http://localhost:3000/health`
+
+> 前端通过 Vite 代理把 `/api` 请求转发到后端 `3000` 端口（见 `vite.config.ts`），因此无需额外配置跨域。
 
 ---
 
