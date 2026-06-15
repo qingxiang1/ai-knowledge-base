@@ -116,7 +116,7 @@ export async function answerQuestion(
   topK = 4,
 ): Promise<ChatAnswer> {
   const chunks = getChunks(docIds);
-  const sources = retrieve(question, chunks, topK);
+  const sources = await retrieve(question, chunks, topK);
 
   let answer: string;
   let tokensUsed: number;

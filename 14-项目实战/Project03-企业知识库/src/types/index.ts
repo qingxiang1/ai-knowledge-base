@@ -37,12 +37,16 @@ export interface DocumentListResponse {
 
 /**
  * 检索来源
+ * relevance 为混合检索融合分；vector_score / lexical_score 为语义与词法两路子信号
  */
 export interface ChatSource {
   doc_id: string;
   doc_title: string;
   text: string;
   relevance: number;
+  vector_score: number;
+  lexical_score: number;
+  matched_terms: string[];
 }
 
 /**

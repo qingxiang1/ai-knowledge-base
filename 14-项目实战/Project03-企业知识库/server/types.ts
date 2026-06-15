@@ -37,12 +37,16 @@ export interface Chunk {
 
 /**
  * 检索命中来源
+ * relevance 为混合检索的融合分；vector_score / lexical_score 为两路子信号，便于展示与调试
  */
 export interface RetrievedSource {
   doc_id: string;
   doc_title: string;
   text: string;
   relevance: number;
+  vector_score: number;
+  lexical_score: number;
+  matched_terms: string[];
 }
 
 /**
@@ -64,5 +68,13 @@ export interface ChatAnswer {
 export interface KnowledgeStoreSnapshot {
   documents: DocumentRecord[];
   chunks: Chunk[];
+  lastUpdatedAt: string | null;
+}
+
+/**
+ * 对话历史存储快照
+ */
+export interface ChatStoreSnapshot {
+  history: ChatAnswer[];
   lastUpdatedAt: string | null;
 }

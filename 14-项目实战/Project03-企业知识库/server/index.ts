@@ -17,6 +17,7 @@ import {
   getStoreFilePath,
   initializeStore,
 } from "./services/document-store";
+import { initializeChatStore } from "./services/chat-store";
 import { isMockMode } from "./services/rag";
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.get("/health", (_req, res) => {
  */
 async function bootstrap(): Promise<void> {
   await initializeStore();
+  await initializeChatStore();
   app.listen(PORT, () => {
     const mode = isMockMode() ? "Mock" : "API";
     console.log(`Server running on http://localhost:${PORT} (${mode} mode)`);

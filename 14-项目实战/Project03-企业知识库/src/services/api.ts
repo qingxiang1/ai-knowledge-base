@@ -91,3 +91,19 @@ export async function askQuestion(
     body: JSON.stringify({ question, doc_ids: docIds, top_k: topK }),
   });
 }
+
+/**
+ * 获取持久化的问答历史
+ * @param limit 返回上限
+ * @returns 问答历史（按时间正序）
+ */
+export async function getChatHistory(limit = 50): Promise<ChatResponse[]> {
+  return request<ChatResponse[]>(`/chat/history?limit=${limit}`);
+}
+
+/**
+ * 清空问答历史
+ */
+export async function clearChatHistory(): Promise<void> {
+  await request<void>("/chat/history", { method: "DELETE" });
+}

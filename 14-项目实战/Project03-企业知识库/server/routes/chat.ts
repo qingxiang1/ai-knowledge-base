@@ -1,20 +1,21 @@
 /**
  * 创建时间: 2026-06-03
  * 文件名: chat.ts
- * 文件描述: Project03 企业知识库问答路由，基于检索结果生成答案并记录历史
+ * 文件描述: Project03 企业知识库问答路由，基于检索结果生成答案并持久化历史
  * 作者: Felix(LQX5731@163.com)
- * 版本号: v2.0.0
+ * 版本号: v2.1.0
  * 最后更新时间: 2026-06-14
  */
 
 import { Router } from "express";
 import { answerQuestion } from "../services/rag";
-import type { ChatAnswer } from "../types";
+import {
+  appendChatAnswer,
+  clearChatHistory,
+  listChatHistory,
+} from "../services/chat-store";
 
 const router = Router();
-
-const chatHistory: ChatAnswer[] = [];
-const HISTORY_LIMIT = 100;
 
 /**
  * 提交问题
@@ -35,11 +36,7 @@ router.post("/ask", async (req, res) => {
       typeof top_k === "number" && top_k > 0 && top_k <= 10 ? top_k : 4;
     const result = await answerQuestion(question.trim(), doc_ids, topK);
 
-    chatHistory.push(result);
-    if (chatHistory.length > HISTORY_LIMIT) {
-      chatHistory.shift();
-    }
-
+    await appendChatAnswer(result);
     return res.json(result);
   } catch (error) {
     return res.status(500).json({
@@ -53,7 +50,15 @@ router.post("/ask", async (req, res) => {
  */
 router.get("/history", (req, res) => {
   const limit = parseInt((req.query.limit as string) || "50", 10);
-  res.json(chatHistory.slice(-limit));
+  res.json(listChatHistory(limit));
+});
+
+/**
+ * 清空历史记录
+ */
+router.delete("/history", async (_req, res) => {
+  await clearChatHistory();
+  res.status(204).send();
 });
 
 export default router;
