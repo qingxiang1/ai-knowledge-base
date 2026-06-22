@@ -293,11 +293,53 @@ cd ai-knowledge-base
 
 ```bash
 # 使用 Python 启动简易服务器
-python -m http.server 8000
+python -m http.server 8080
 
 # 或使用 Node.js
 npx serve .
 ```
+
+启动后访问 `http://127.0.0.1:8080/`（首页为 `index.html`，文档页为 `docs.html`，基于 docsify 渲染）。
+
+---
+
+## 发布与分支说明
+
+> ⚠️ **重要**：本地开发分支与线上部署分支不同，发布前必须同步，否则线上内容会落后于本地。
+
+| 用途 | 分支 | 说明 |
+|------|------|------|
+| 日常开发 | `develop` | 所有内容编写、修改都在此分支进行，本地预览默认跑的也是它 |
+| GitHub Pages 部署 | `main` | GitHub Pages 配置为从 `main` 分支构建发布，**只有合并到 `main` 并推送后线上才会更新** |
+| Gitee 镜像 | `master` | Gitee 仓库对应分支 |
+
+### 发布流程（develop → main 同步即发布）
+
+在 `develop` 完成内容并确认本地预览无误后，将其同步到 `main` 触发线上更新：
+
+**方式一：通过 Pull Request（推荐，符合 `main` 受保护分支规范）**
+
+在 GitHub 上发起 `develop → main` 的 Pull Request 并合并，Pages 会自动重新构建。
+
+**方式二：本地合并后推送**
+
+```bash
+# 1. 切到 main 并拉取最新
+git checkout main
+git pull github main
+
+# 2. 合并 develop 的内容
+git merge develop
+
+# 3. 推送，触发 GitHub Pages 重新构建
+git push github main
+
+# 4. 切回开发分支
+git checkout develop
+```
+
+> 推送约 1 分钟后，访问 `https://qingxiang1.github.io/ai-knowledge-base/` 验证线上内容已与本地一致。
+> 若线上显示与本地（`http://127.0.0.1:8080/`）不一致，几乎都是因为 `develop` 的更新尚未同步到 `main`。
 
 ---
 
