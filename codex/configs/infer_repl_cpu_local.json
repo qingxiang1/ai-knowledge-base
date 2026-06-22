@@ -1,0 +1,11 @@
+{
+  "model_name_or_path": "outputs/sft_minimal_cpu_local",
+  "cache_dir": ".cache/huggingface",
+  "system_prompt": "你是一个电商客服助手，回答准确、简洁、可执行。",
+  "max_new_tokens": 32,
+  "min_new_tokens": 8,
+  "temperature": 0.8,
+  "top_p": 0.95,
+  "do_sample": true,
+  "repetition_penalty": 1.05
+}

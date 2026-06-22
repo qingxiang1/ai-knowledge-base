@@ -1,0 +1,9 @@
+{
+  "train_file": "data/sft/customer_support_sample.jsonl",
+  "method": "embedding",
+  "embedding_model_name_or_path": "intfloat/multilingual-e5-small",
+  "cache_dir": ".cache/huggingface",
+  "instruction_prefix": "query: ",
+  "document_prefix": "passage: ",
+  "ngram_size": 2
+}

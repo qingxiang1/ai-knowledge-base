@@ -1,0 +1,10 @@
+{
+  "input_file": "data/distill/questions_sample.jsonl",
+  "output_file": "outputs/distill/generated_teacher_answers.jsonl",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_url": "http://localhost:8000/v1",
+  "api_key": "dev-token",
+  "system_prompt": "你是企业知识助手，请回答准确、简洁、可执行。",
+  "temperature": 0.2,
+  "max_tokens": 256
+}

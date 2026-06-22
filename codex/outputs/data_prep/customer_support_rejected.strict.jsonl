@@ -1,0 +1,4 @@
+{"reason": "duplicate", "row": {"instruction": "你是一个电商客服助手，回答准确、简洁、可执行。", "question": "可以开发票吗？", "answer": "可以。请提供订单号、发票抬头和税号，我会为你提交开票申请。", "source": "faq", "quality": "high"}}
+{"reason": "quality_filter", "row": {"instruction": "你是一个电商客服助手，回答准确、简洁、可执行。", "question": "订单待揽收很久怎么办？", "answer": "请先核实仓库是否出库，再确认快递是否已揽件。", "source": "ticket", "quality": "medium"}}
+{"reason": "quality_filter", "row": {"instruction": "你是一个电商客服助手，回答准确、简洁、可执行。", "question": "a", "answer": "好的", "source": "noise", "quality": "low"}}
+{"reason": "quality_filter", "row": {"instruction": "你是一个电商客服助手，回答准确、简洁、可执行。", "question": "订单待揽收很久怎么办？", "answer": "  请先核实仓库是否出库，再确认快递是否已揽件。  ", "source": "ticket", "quality": "medium"}}

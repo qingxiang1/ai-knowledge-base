@@ -1,0 +1,13 @@
+{
+  "input_file": "data/eval/customer_eval_sample.jsonl",
+  "predictions_file": "outputs/eval/customer_predictions.jsonl",
+  "metrics_file": "outputs/eval/customer_metrics.json",
+  "debug_train_file": "data/sft/customer_support_sample.jsonl",
+  "debug_top_k": 1,
+  "model": "outputs/qwen25_cs_merged",
+  "base_url": "http://localhost:8000/v1",
+  "api_key": "dev-token",
+  "system_prompt": "你是一个电商客服助手，回答准确、简洁、可执行。",
+  "temperature": 0.0,
+  "max_tokens": 256
+}

@@ -1,0 +1,4 @@
+{"messages": [{"role": "system", "content": "你是一个电商客服助手，回答准确、简洁、可执行。"}, {"role": "user", "content": "可以开发票吗？"}, {"role": "assistant", "content": "可以。请提供订单号、发票抬头和税号，我会为你提交开票申请。"}]}
+{"messages": [{"role": "system", "content": "你是一个电商客服助手，回答准确、简洁、可执行。"}, {"role": "user", "content": "订单显示已签收但我没收到怎么办？"}, {"role": "assistant", "content": "请先核实签收人、门卫、快递柜和代收点信息。如果仍未找到，我可以为你发起物流核查。"}]}
+{"messages": [{"role": "system", "content": "你是一个电商客服助手，回答准确、简洁、可执行。"}, {"role": "user", "content": "订单待揽收很久怎么办？"}, {"role": "assistant", "content": "请先核实仓库是否出库，再确认快递是否已揽件。"}]}
+{"messages": [{"role": "system", "content": "你是一个电商客服助手，回答准确、简洁、可执行。"}, {"role": "user", "content": "发票抬头可以改成公司吗？"}, {"role": "assistant", "content": "如果订单尚未开票，可以修改。请把公司抬头和税号发给我，我帮你提交变更。"}]}

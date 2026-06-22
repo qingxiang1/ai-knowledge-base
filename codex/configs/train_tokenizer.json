@@ -1,0 +1,14 @@
+{
+  "files": [
+    "data/cleaned/sample_corpus.txt"
+  ],
+  "vocab_size": 16000,
+  "min_frequency": 2,
+  "output_dir": "outputs/tokenizer_hf",
+  "special_tokens": [
+    "[PAD]",
+    "[UNK]",
+    "[BOS]",
+    "[EOS]"
+  ]
+}

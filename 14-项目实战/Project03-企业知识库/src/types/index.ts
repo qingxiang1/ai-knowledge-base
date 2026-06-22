@@ -1,22 +1,16 @@
 /**
- * 文档类型枚举
+ * 创建时间: 2026-06-03
+ * 文件名: index.ts
+ * 文件描述: Project03 企业知识库前端类型定义
+ * 作者: Felix(LQX5731@163.com)
+ * 版本号: v2.0.0
+ * 最后更新时间: 2026-06-14
  */
-export enum DocumentType {
-  PDF = 'pdf',
-  DOCX = 'docx',
-  MD = 'md',
-  TXT = 'txt',
-}
 
 /**
- * 文档状态枚举
+ * 文档状态
  */
-export enum DocumentStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-}
+export type DocumentStatus = "completed" | "processing" | "failed";
 
 /**
  * 文档响应
@@ -24,8 +18,8 @@ export enum DocumentStatus {
 export interface DocumentResponse {
   id: string;
   title: string;
-  description?: string;
-  file_type: DocumentType;
+  description?: string | null;
+  file_type: string;
   file_size: number;
   status: DocumentStatus;
   chunk_count: number;
@@ -34,16 +28,36 @@ export interface DocumentResponse {
 }
 
 /**
- * 聊天响应
+ * 文档列表响应
+ */
+export interface DocumentListResponse {
+  total: number;
+  items: DocumentResponse[];
+}
+
+/**
+ * 检索来源
+ * relevance 为混合检索融合分；vector_score / lexical_score 为语义与词法两路子信号
+ */
+export interface ChatSource {
+  doc_id: string;
+  doc_title: string;
+  text: string;
+  relevance: number;
+  vector_score: number;
+  lexical_score: number;
+  matched_terms: string[];
+}
+
+/**
+ * 问答响应
  */
 export interface ChatResponse {
   id: string;
+  question: string;
   answer: string;
-  sources: Array<{
-    doc_id: string;
-    text: string;
-    relevance: number;
-  }>;
+  sources: ChatSource[];
   tokens_used: number;
+  mode: "mock" | "api";
   created_at: string;
 }

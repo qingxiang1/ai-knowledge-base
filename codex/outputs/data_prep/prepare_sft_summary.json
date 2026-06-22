@@ -1,0 +1,12 @@
+{
+  "input_rows": 7,
+  "accepted_rows": 3,
+  "rejected_rows": 4,
+  "stats": {
+    "accepted": 3,
+    "rejected_duplicate": 1,
+    "rejected_quality": 3
+  },
+  "output_file": "data/sft/customer_support_prepared.strict.jsonl",
+  "rejected_file": "outputs/data_prep/customer_support_rejected.strict.jsonl"
+}

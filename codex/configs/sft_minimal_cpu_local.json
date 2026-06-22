@@ -1,0 +1,20 @@
+{
+  "model_name_or_path": "outputs/pretrain_chat_demo",
+  "train_file": "data/sft/customer_support_sample.jsonl",
+  "validation_split_ratio": 0.2,
+  "output_dir": "outputs/sft_minimal_cpu_local",
+  "cache_dir": ".cache/huggingface",
+  "max_seq_length": 64,
+  "per_device_train_batch_size": 1,
+  "per_device_eval_batch_size": 1,
+  "gradient_accumulation_steps": 1,
+  "learning_rate": 0.0003,
+  "num_train_epochs": 2,
+  "logging_steps": 1,
+  "save_steps": 20,
+  "eval_steps": 20,
+  "bf16": false,
+  "fp16": false,
+  "gradient_checkpointing": false,
+  "system_prompt": "你是一个电商客服助手，回答准确、简洁、可执行。"
+}

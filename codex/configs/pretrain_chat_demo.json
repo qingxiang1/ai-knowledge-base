@@ -1,0 +1,21 @@
+{
+  "train_file": "data/cleaned/chat_demo_corpus.txt",
+  "validation_file": "data/cleaned/chat_demo_corpus_valid.txt",
+  "tokenizer_dir": "outputs/tokenizer_chat_demo",
+  "output_dir": "outputs/pretrain_chat_demo",
+  "cache_dir": ".cache/huggingface",
+  "block_size": 64,
+  "num_train_epochs": 40,
+  "per_device_train_batch_size": 2,
+  "per_device_eval_batch_size": 2,
+  "gradient_accumulation_steps": 1,
+  "learning_rate": 0.0004,
+  "logging_steps": 10,
+  "save_steps": 400,
+  "eval_steps": 400,
+  "hidden_size": 320,
+  "num_hidden_layers": 6,
+  "num_attention_heads": 4,
+  "intermediate_size": 1280,
+  "bf16": false
+}
