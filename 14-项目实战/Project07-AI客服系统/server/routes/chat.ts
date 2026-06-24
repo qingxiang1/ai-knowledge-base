@@ -1,142 +1,136 @@
 /**
- * 文件描述: 客服聊天路由，支持 OpenAI API 和 mock 降级
- * 作者: AI-PM-Knowledge
- * 创建日期: 2026-06-03
- * 最后修改日期: 2026-06-04
+ * 创建时间: 2026-06-03
+ * 文件名: chat.ts
+ * 文件描述: 客服聊天路由。串联意图识别、订单查询、FAQ 检索与转人工判定：
+ *           mock 模式直接返回确定性真实回复；API 模式把检索到的事实喂给大模型生成更自然的
+ *           回复（RAG 式，失败降级）。另提供会话历史、FAQ 与演示元数据接口。
+ * 作者: Felix(LQX5731@163.com)
+ * 版本号: v2.0.0
+ * 最后更新时间: 2026-06-24
  */
 
-import { Router } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
+import { Router } from "express";
+import { v4 as uuidv4 } from "uuid";
+import OpenAI from "openai";
+import { buildReply, replyFacts } from "../services/reply";
+import { FAQS } from "../services/knowledge";
+import { demoOrderNumbers } from "../services/orders";
+import type { SessionMessage } from "../types";
 
 const router = Router();
 
-const isMockMode = !process.env.OPENAI_API_KEY;
+/** 会话记忆（演示用内存版） */
+const sessions: Record<string, SessionMessage[]> = {};
 
 /**
- * 获取 OpenAI 客户端实例（延迟初始化）
+ * 演示元数据：模式、FAQ 列表、可用意图、演示订单号
+ * GET /api/meta
  */
-function getOpenAIClient() {
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-const sessions: Record<string, any[]> = {};
-
-/** 意图识别映射 */
-const intentMap: Record<string, string[]> = {
-  product_inquiry: ['产品', '功能', '价格', '多少钱', '费用', '套餐'],
-  technical_support: ['故障', '报错', '无法', '不能', '崩溃', 'bug'],
-  order_query: ['订单', '物流', '发货', '配送', '快递'],
-  refund: ['退款', '退货', '退钱', '取消订单'],
-  complaint: ['投诉', '不满', '差评', '态度差'],
-};
-
-/**
- * 识别用户意图
- * @param content 用户消息内容
- * @returns 意图和置信度
- */
-function detectIntent(content: string): { intent: string; confidence: number } {
-  for (const [intent, keywords] of Object.entries(intentMap)) {
-    if (keywords.some((kw) => content.includes(kw))) {
-      return { intent, confidence: 0.85 + Math.random() * 0.1 };
-    }
-  }
-  return { intent: 'general_inquiry', confidence: 0.7 + Math.random() * 0.15 };
-}
+router.get("/meta", (_req, res) => {
+  res.json({
+    mode: process.env.OPENAI_API_KEY ? "api" : "mock",
+    faqs: FAQS.map((f) => ({ question: f.question, category: f.category })),
+    demoOrders: demoOrderNumbers(),
+  });
+});
 
 /**
  * 发送消息
+ * POST /api/chat  body: { content, session_id }
  */
-router.post('/chat', async (req, res) => {
+router.post("/chat", async (req, res) => {
   try {
-    const { content, session_id } = req.body;
+    const { content, session_id } = req.body as { content?: string; session_id?: string };
 
     if (!content?.trim()) {
-      return res.status(400).json({ message: '内容不能为空' });
+      return res.status(400).json({ message: "内容不能为空" });
     }
 
     const sessionId = session_id || uuidv4();
-    if (!sessions[sessionId]) {
-      sessions[sessionId] = [];
+    if (!sessions[sessionId]) sessions[sessionId] = [];
+    sessions[sessionId].push({ role: "user", content: content.trim() });
+
+    // 本地确定性真实回复（始终先算，作为 mock 结果或 API 事实依据）
+    const reply = buildReply(content.trim());
+
+    let answer = reply.answer;
+    let mode: "mock" | "api" = "mock";
+
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        answer = await narrate(content.trim(), reply, sessions[sessionId]);
+        mode = "api";
+      } catch (error) {
+        answer = `（模型调用失败，返回标准答复：${error instanceof Error ? error.message : "未知错误"}）\n\n${reply.answer}`;
+      }
     }
 
-    const userMessage = {
+    sessions[sessionId].push({ role: "assistant", content: answer });
+
+    res.json({
       id: uuidv4(),
-      role: 'user',
-      content,
+      role: "assistant",
+      content: answer,
       timestamp: new Date().toISOString(),
-    };
-
-    sessions[sessionId].push(userMessage);
-
-    const { intent, confidence } = detectIntent(content);
-
-    if (isMockMode) {
-      await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 800));
-
-      const mockResponses: Record<string, string> = {
-        product_inquiry: `感谢您对我们产品的关注！\n\n我们提供多种套餐选择：\n- 基础版：¥99/月，适合个人用户\n- 专业版：¥299/月，适合团队使用\n- 企业版：定制方案，请联系销售\n\n请问您对哪个套餐感兴趣？`,
-        technical_support: `很抱歉您遇到了技术问题。请您提供以下信息以便我们更快定位问题：\n1. 使用的浏览器和版本\n2. 具体的错误提示\n3. 问题出现的频率\n\n我们的技术团队会尽快为您解决。`,
-        order_query: `我来帮您查询订单信息。请提供您的订单号，我将为您查询最新的物流状态。`,
-        refund: `关于退款事宜，请您放心。请提供订单号，我将为您核实退款条件并协助处理。一般退款会在 3-5 个工作日内到账。`,
-        complaint: `非常抱歉给您带来了不好的体验。我们非常重视您的反馈，会立即安排专人跟进处理。请问您方便留下联系方式吗？`,
-        general_inquiry: `感谢您的咨询！关于"${content}"，我们的客服团队会尽快为您解答。\n\n您也可以通过以下方式获取帮助：\n- 查看帮助中心\n- 发送邮件至 support@example.com\n- 工作时间拨打客服热线`,
-      };
-
-      const assistantMessage = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: mockResponses[intent] || mockResponses.general_inquiry,
-        timestamp: new Date().toISOString(),
-        intent,
-        confidence,
-      };
-
-      sessions[sessionId].push(assistantMessage);
-      return res.json(assistantMessage);
-    }
-
-    // 真实 AI 模式
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: '你是一位专业的客服代表，友好、耐心地回答用户的问题。请用中文回复。如果无法解决，建议用户联系人工客服。',
-        },
-        ...sessions[sessionId].slice(-10).map((msg) => ({
-          role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
-          content: msg.content,
-        })),
-      ],
-      temperature: 0.5,
-      max_tokens: 1000,
+      intent: reply.intent,
+      confidence: reply.confidence,
+      matched: reply.matched,
+      source: reply.source,
+      faq: reply.faq,
+      order: reply.order,
+      escalate: reply.escalate,
+      escalateReason: reply.escalateReason,
+      suggestions: reply.suggestions,
+      mode,
+      session_id: sessionId,
     });
-
-    const assistantMessage = {
-      id: uuidv4(),
-      role: 'assistant',
-      content: completion.choices[0]?.message?.content || '',
-      timestamp: new Date().toISOString(),
-      intent,
-      confidence,
-    };
-
-    sessions[sessionId].push(assistantMessage);
-    res.json(assistantMessage);
   } catch (error) {
-    res.status(500).json({ message: error instanceof Error ? error.message : '请求失败' });
+    res.status(500).json({ message: error instanceof Error ? error.message : "请求失败" });
   }
 });
 
 /**
- * 获取会话历史
+ * 用大模型基于检索到的事实生成自然回复（RAG 式）
+ * @param content 用户消息
+ * @param reply 本地真实回复（提供事实）
+ * @param history 会话历史
+ * @returns 模型回复文本
  */
-router.get('/chat/:sessionId/history', (req, res) => {
-  const { sessionId } = req.params;
-  res.json(sessions[sessionId] || []);
+async function narrate(
+  content: string,
+  reply: ReturnType<typeof buildReply>,
+  history: SessionMessage[],
+): Promise<string> {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL || undefined,
+  });
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+  const completion = await client.chat.completions.create({
+    model,
+    messages: [
+      {
+        role: "system",
+        content:
+          "你是专业、友好、耐心的在线客服。请严格依据下方提供的【知识库事实】回答用户，不要编造价格、政策或订单信息。" +
+          "若事实中标注建议转人工，请在结尾礼貌引导用户转人工。回复简洁，用中文。",
+      },
+      ...history.slice(-6).map((m) => ({ role: m.role, content: m.content }) as const),
+      { role: "user", content: `【知识库事实】\n${replyFacts(reply)}\n\n【用户问题】\n${content}` },
+    ],
+    temperature: 0.4,
+    max_tokens: 800,
+  });
+  return completion.choices[0]?.message?.content || reply.answer;
+}
+
+/**
+ * 获取会话历史
+ * GET /api/chat/:sessionId/history
+ */
+router.get("/chat/:sessionId/history", (req, res) => {
+  res.json(sessions[req.params.sessionId] || []);
 });
 
 export default router;
