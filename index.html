@@ -541,6 +541,10 @@
             <div class="stat-value">11</div>
             <div class="stat-label">实战项目</div>
           </div>
+          <div class="stat-item">
+            <div class="stat-value"><span id="vercount_value_site_pv">···</span></div>
+            <div class="stat-label">总访问量</div>
+          </div>
         </div>
       </div>
     </header>
@@ -1182,6 +1186,12 @@
       <p style="margin-top: 8px">
         托管于 <a href="https://gitee.com" target="_blank">Gitee Pages</a>
       </p>
+      <p style="margin-top: 8px">
+        👁 累计访客 <span id="vercount_value_site_uv">···</span> 人
+      </p>
     </footer>
+
+    <!-- 浏览量统计：不蒜子兼容的 vercount（POST + 全 URL 计数，比原版不蒜子更稳定） -->
+    <script defer src="https://cn.vercount.one/js"></script>
   </body>
 </html>
