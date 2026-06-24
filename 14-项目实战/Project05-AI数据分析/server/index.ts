@@ -30,5 +30,8 @@ app.get('/health', (_req, res) => {
 
 app.listen(PORT, () => {
   const mode = process.env.OPENAI_API_KEY ? 'API' : 'Mock';
-  console.log(`Server running on http://localhost:${PORT} (${mode} mode)`);
+  console.log(`Data-analysis server running on http://localhost:${PORT} (${mode} mode)`);
+  if (mode === 'Mock') {
+    console.log('提示：未配置 OPENAI_API_KEY，已启用本地统计引擎（真实计算摘要/趋势/异常/相关性）。');
+  }
 });
