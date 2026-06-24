@@ -30,5 +30,8 @@ app.get('/health', (_req, res) => {
 
 app.listen(PORT, () => {
   const mode = process.env.OPENAI_API_KEY ? 'API' : 'Mock';
-  console.log(`Server running on http://localhost:${PORT} (${mode} mode)`);
+  console.log(`Code-assistant server running on http://localhost:${PORT} (${mode} mode)`);
+  if (mode === 'Mock') {
+    console.log('提示：未配置 OPENAI_API_KEY，已启用本地引擎（静态分析 / 规则检查 / 自动修复 / 片段库，均真实可用）。');
+  }
 });
