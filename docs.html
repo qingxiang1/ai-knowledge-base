@@ -116,6 +116,19 @@
         color: inherit;
         padding: 0;
       }
+      /* 每章浏览量统计条 */
+      .page-views {
+        margin-top: 2.5em;
+        padding-top: 1em;
+        border-top: 1px dashed #e5e7eb;
+        color: #9ca3af;
+        font-size: 0.85em;
+        text-align: center;
+      }
+      .page-views span {
+        color: var(--theme-color);
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -185,6 +198,67 @@
             },
           },
         },
+        // 插件：每个章节底部展示浏览量
+        // vercount 的 page_pv 按「host + pathname」计数且忽略 #hash，而 docsify 是 hash 路由，
+        // 所有章节共享 pathname /docs.html。因此这里把 hash 路由折叠进 pathname，作为「虚拟页面」
+        // 标识（SPA 常见做法，vercount React SDK 亦如此），从而获得每章独立的浏览量。
+        plugins: [
+          function (hook) {
+            var API = "https://events.vercount.one/api/v2/log";
+            // 维护访客 cookie（与 vercount 行为一致：同站同浏览器首次记为新访客）
+            function isNewUv() {
+              var name =
+                "vercount_uv_" +
+                (location.host || "host").replace(/[^a-zA-Z0-9_-]/g, "_");
+              var has = document.cookie.split("; ").some(function (c) {
+                return c.indexOf(name + "=") === 0;
+              });
+              if (!has) {
+                document.cookie =
+                  name + "=1; path=/; max-age=31536000; samesite=lax";
+                return true;
+              }
+              return false;
+            }
+            hook.doneEach(function () {
+              var section = document.querySelector(".markdown-section");
+              if (!section) return;
+              var prev = document.getElementById("page-views-bar");
+              if (prev) prev.remove();
+              var bar = document.createElement("div");
+              bar.id = "page-views-bar";
+              bar.className = "page-views";
+              bar.innerHTML =
+                '👁 本页阅读量 <span id="pv-page">···</span> 次' +
+                '　|　本站访问量 <span id="pv-site">···</span> 次' +
+                '　|　访客 <span id="uv-site">···</span> 人';
+              section.appendChild(bar);
+
+              // 把 hash 路由折叠进 pathname，得到每章唯一的页面标识
+              var route = (location.hash || "#/").replace(/^#/, "");
+              var pageUrl = location.origin + "/docs.html" + route;
+              fetch(API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: pageUrl, isNewUv: isNewUv() }),
+              })
+                .then(function (r) {
+                  return r.json();
+                })
+                .then(function (res) {
+                  var d = (res && res.data) || res || {};
+                  var set = function (id, v) {
+                    var el = document.getElementById(id);
+                    if (el) el.textContent = String(v != null ? v : 0);
+                  };
+                  set("pv-page", d.page_pv);
+                  set("pv-site", d.site_pv);
+                  set("uv-site", d.site_uv);
+                })
+                .catch(function () {});
+            });
+          },
+        ],
       };
     </script>
 
