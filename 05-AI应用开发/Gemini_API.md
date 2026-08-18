@@ -9,6 +9,8 @@
 
 # Gemini API 使用指南
 
+> **历史示例说明（2026-08-18）**：本文的 Gemini 1.x/2.0 示例用于理解多模态、文件和工具调用。生产接入应区分 Gemini Developer API 与 Vertex AI，并重新核对 Model ID、区域、配额、数据条款和价格。
+
 > Gemini 是 Google DeepMind 推出的多模态大模型系列，原生支持文本、图像、音频、视频理解，与 Google 生态深度集成
 
 ---

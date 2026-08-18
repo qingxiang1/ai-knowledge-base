@@ -312,6 +312,14 @@ python -m http.server 8080
 npx serve .
 ```
 
+提交前建议执行站内文档链接检查：
+
+```bash
+ruby scripts/check_doc_links.rb
+```
+
+脚本只检查仓库内 Markdown/Docsify 本地链接，忽略代码块和外部 URL，避免历史重构再次产生失效导航。
+
 启动后访问 `http://127.0.0.1:8080/`（首页为 `index.html`，文档页为 `docs.html`，基于 docsify 渲染）。
 
 ---
