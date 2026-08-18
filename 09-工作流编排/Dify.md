@@ -18,7 +18,7 @@
 建议先阅读以下内容：
 
 - [工作流设计](./工作流设计.md)
-- [RAG应用.md](../06-RAG知识库/RAG应用.md)
+- [企业知识库设计](../06-RAG知识库/企业知识库设计.md)
 - [FunctionCalling](../05-AI应用开发/FunctionCalling.md)
 - [Agent产品设计](../07-Agent系统/Agent产品设计.md)
 
