@@ -18,7 +18,7 @@
 知识库采用模块化组织，每个章节包含理论讲解、代码示例（Python）和AI产品经理实践指南，帮助读者建立从理论到落地的完整认知。
 
 **核心特点：**
-- **体系完整**：19个模块、150+文档，覆盖AI产品全链路
+- **体系完整**：19 个模块、200+ 篇 Markdown 文档，覆盖 AI 产品与大模型训练全链路
 - **理论与实践结合**：每个技术点配有可运行的Python代码示例
 - **产品视角**：所有内容均从AI产品经理视角出发，强调技术原理的产品应用
 - **持续更新**：跟随AI技术发展持续迭代
@@ -201,13 +201,16 @@ AI-PM-Knowledge
 │
 ├── 14-项目实战                 # 实战项目
 │   ├── Project01-AI写作助手
-│   ├── Project02-AI代码助手
+│   ├── Project02-AI翻译助手
 │   ├── Project03-企业知识库
 │   ├── Project04-Agent系统
-│   ├── Project05-AI产品经理Copilot
-│   ├── Project06-AI招聘助手
+│   ├── Project05-AI数据分析
+│   ├── Project06-AI代码助手
 │   ├── Project07-AI客服系统
-│   └── Project08-AI销售助手
+│   ├── Project08-AI会议纪要
+│   ├── Project09-AI产品经理Copilot
+│   ├── Project10-AI销售助手
+│   └── Project11-AI招聘助手
 │
 ├── 15-系统设计                 # 架构设计
 │   ├── AI系统架构.md
@@ -216,7 +219,9 @@ AI-PM-Knowledge
 │   ├── AI网关设计.md
 │   ├── Prompt管理平台.md
 │   ├── RAG平台设计.md
-│   └── Agent平台设计.md
+│   ├── Agent平台设计.md
+│   ├── 企业级AI产品交付与治理.md
+│   └── 企业AI治理模板库.md
 │
 ├── 16-面试准备                 # 求职面试
 │   ├── AI产品经理面试题.md
@@ -306,6 +311,14 @@ python -m http.server 8080
 # 或使用 Node.js
 npx serve .
 ```
+
+提交前建议执行站内文档链接检查：
+
+```bash
+ruby scripts/check_doc_links.rb
+```
+
+脚本只检查仓库内 Markdown/Docsify 本地链接，忽略代码块和外部 URL，避免历史重构再次产生失效导航。
 
 启动后访问 `http://127.0.0.1:8080/`（首页为 `index.html`，文档页为 `docs.html`，基于 docsify 渲染）。
 

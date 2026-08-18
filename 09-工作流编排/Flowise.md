@@ -22,7 +22,7 @@
 - [LangGraph](./LangGraph.md)
 - [Dify](./Dify.md)
 - [MCP基础](../08-MCP生态/MCP基础.md)
-- [RAG应用](../06-RAG知识库/RAG应用.md)
+- [RAG基础](../06-RAG知识库/RAG基础.md)
 
 如果你之前没有接触过可视化 AI 编排工具，建议先建立以下基础认知：
 

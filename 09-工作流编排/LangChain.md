@@ -19,7 +19,7 @@
 
 - [FunctionCalling](../05-AI应用开发/FunctionCalling.md)
 - [ToolCalling](../05-AI应用开发/ToolCalling.md)
-- [RAG应用.md](../06-RAG知识库/RAG应用.md)
+- [RAG基础](../06-RAG知识库/RAG基础.md)
 - [MCP基础](../08-MCP生态/MCP基础.md)
 
 如果你之前没有框架认知，建议先记住一点：

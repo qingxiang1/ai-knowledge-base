@@ -20,7 +20,7 @@
 - [MCP基础](./MCP基础.md)
 - [MCP服务端开发](./MCP服务端开发.md)
 - [Memory](../07-Agent系统/Memory.md)
-- [RAG应用.md](../06-RAG知识库/RAG应用.md)
+- [企业知识库设计](../06-RAG知识库/企业知识库设计.md)
 
 如果你对 Notion 不够熟悉，建议先理解几个对象：
 
